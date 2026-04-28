@@ -3,5 +3,5 @@ import mdx from "@astrojs/mdx";
 
 export default defineConfig({
   integrations: [mdx()],
-  site: "https://LuG3Zz.github.io",
+  site: "https://lug3zz.github.io",
 });
