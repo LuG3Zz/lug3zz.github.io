@@ -1,0 +1,60 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+const siteName = "terminal-blog";
+const tagline = "a terminal-themed blog";
+const help = [
+  { cmd: "ls", desc: "列出文章" },
+  { cmd: "cat <post>", desc: "阅读文章" },
+  { cmd: "whoami", desc: "关于我" },
+  { cmd: "date", desc: "当前时间" },
+];
+---
+
+<Layout title={siteName}>
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@terminal-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>./welcome.sh --greet</span>
+  </div>
+  <p style="color: var(--yellow); margin-bottom: 1.5rem;">
+    Welcome to <strong>{siteName}</strong> — {tagline}
+  </p>
+
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@terminal-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>help --show-commands</span>
+  </div>
+  <p style="margin-bottom: 1rem;">Available commands:</p>
+
+  <div style="font-size: 0.875rem; margin-bottom: 2rem;">
+    {help.map(({ cmd, desc }) => (
+      <div style="display: flex; gap: 2rem; margin-bottom: 0.25rem;">
+        <span style="color: var(--yellow); min-width: 12rem;">  {cmd}</span>
+        <span style="color: var(--dim);">— {desc}</span>
+      </div>
+    ))}
+  </div>
+
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@terminal-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>ls --latest --posts 5</span>
+  </div>
+
+  <h2 style="font-size: 1rem; margin: 0 0 0.75rem; color: var(--fg-bright);">
+    ⚡ Latest Posts
+  </h2>
+
+  <ul class="post-list">
+    <li class="post-item">
+      <a class="post-title" href="/blog/hello-world">Hello, Terminal World!</a>
+      <span class="post-date">2026-04-28</span>
+    </li>
+  </ul>
+
+  <div style="margin-top: 1rem;">
+    <a href="/blog" class="tag" style="font-size: 0.875rem;">→ view all posts (ls -la /blog)</a>
+  </div>
+</Layout>

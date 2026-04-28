@@ -1,0 +1,68 @@
+---
+import "../styles/terminal.css";
+const { title } = Astro.props;
+const path = Astro.url.pathname;
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} — terminal-blog</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💻</text></svg>" />
+</head>
+<body>
+  <div class="container">
+    <header class="terminal-header">
+      <div class="ascii-art">  _                    _ _               _ _
+ | |_ _ __ ___  _ __ (_) |__  _ __ ___ | | |__   _____  __
+ | __| '__/ _ \| '_ \| | '_ \| '__/ _ \| | '_ \ / _ \ \/ /
+ | |_| | | (_) | |_) | | |_) | | | (_) | | |_) | (_) >  &lt;
+  \__|_|  \___/| .__/|_|_.__/|_|  \___/|_|_.__/ \___/_/\_\
+               |_|</div>
+
+      <div class="terminal-line">
+        <span class="prompt">
+          <span class="prompt-user">guest</span>
+          <span class="prompt-at">@</span>
+          <span class="prompt-host">terminal-blog</span>
+        </span>
+        <span class="prompt-sep"> ~ </span>
+        <span class="prompt-dir">/{path === "/" ? "" : path.replace(/\/$/, "").replace(/^\//, "") || "~"}</span>
+        <span class="prompt-end"> $</span>
+        <span class="cursor-block cursor-blink"></span>
+      </div>
+
+      <nav class="nav">
+        <a href="/" class={path === "/" ? "active" : ""}>home</a>
+        <a href="/blog" class={path.startsWith("/blog") ? "active" : ""}>blog</a>
+        <a href="/about" class={path === "/about" ? "active" : ""}>about</a>
+      </nav>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="terminal-footer">
+      <div class="terminal-line">
+        <span class="prompt-end">$</span>
+        <span>echo "EOF"</span>
+        <span class="cursor-block cursor-blink"></span>
+      </div>
+      <div style="margin-top: 0.5rem;">
+        <a href="https://github.com/LuG3Zz">github</a>
+        &nbsp;·&nbsp;
+        <span>powered by Astro</span>
+        &nbsp;·&nbsp;
+        <span>© {new Date().getFullYear()}</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
+
+<style>
+  .ascii-art { line-height: 1.1; }
+</style>
