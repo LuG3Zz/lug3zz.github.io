@@ -51,6 +51,8 @@ const path = Astro.url.pathname;
         <input type="text" id="cmd-input" class="cmd-input" autofocus spellcheck="false" autocomplete="off" />
       </div>
 
+      <div id="cmd-suggestions" class="cmd-suggestions"></div>
+
       <nav class="nav">
         <a href="/" class={path === "/" ? "active" : ""}>home</a>
         <a href="/blog" class={path.startsWith("/blog") ? "active" : ""}>blog</a>
@@ -177,6 +179,26 @@ const path = Astro.url.pathname;
   }
   .cmd-toast.show {
     display: block;
+  }
+  .cmd-suggestions {
+    display: none;
+    margin-top: 0.25rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--yellow);
+    animation: slideDown 0.15s ease-out;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+  .cmd-suggestions.show { display: inline-block; }
+  .cmd-suggestions .sug-item { cursor: pointer; transition: color 0.1s; }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   .cmd-toast .dismiss {
     color: var(--dim);
@@ -310,14 +332,71 @@ const path = Astro.url.pathname;
     }
   }
 
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
+  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","heatmap","home"];
+  var suggestions = document.getElementById("cmd-suggestions");
+
+  var tabMatches = [];
+  var tabIndex = -1;
+
+  function showSuggestions(items) {
+    tabMatches = items;
+    tabIndex = -1;
+    var html = "";
+    for (var i = 0; i < items.length; i++) {
+      html += '<span class="sug-item" data-idx="' + i + '">' + items[i] + "</span>";
+      if (i < items.length - 1) html += "  ";
+    }
+    suggestions.innerHTML = html;
+    suggestions.classList.add("show");
+  }
+  function hideSuggestions() {
+    suggestions.classList.remove("show");
+    tabMatches = [];
+    tabIndex = -1;
+  }
+  function highlightSug(idx) {
+    var items = suggestions.querySelectorAll(".sug-item");
+    items.forEach(function(el, i) {
+      el.style.color = i === idx ? "var(--green)" : "";
+      el.style.textDecoration = i === idx ? "underline" : "";
+    });
+  }
+
+  input.addEventListener("input", hideSuggestions);
+  input.addEventListener("keydown", function(e) {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      var val = input.value.trim();
+      var parts = val.split(/\s+/);
+      if (parts.length <= 1) {
+        var matches = commands_list.filter(function(c) { return c.startsWith(val); });
+        if (matches.length === 1) {
+          hideSuggestions();
+          input.value = matches[0] + " ";
+        } else if (matches.length > 1) {
+          if (tabMatches.length === matches.length && tabMatches.every(function(v, i) { return v === matches[i]; })) {
+            tabIndex = (tabIndex + 1) % matches.length;
+          } else {
+            tabMatches = matches;
+            tabIndex = 0;
+          }
+          input.value = tabMatches[tabIndex] + " ";
+          showSuggestions(matches);
+          highlightSug(tabIndex);
+        } else {
+          hideSuggestions();
+        }
+      }
+    } else if (e.key === "Escape") {
+      hideSuggestions();
+    } else if (e.key === "Enter") {
+      hideSuggestions();
       handleCommand(input.value);
       input.value = "";
     }
   });
 
-  document.addEventListener("click", () => input.focus());
+  document.addEventListener("click", function() { hideSuggestions(); input.focus(); });
 
   // Theme switcher
   const themeSelect = document.getElementById("theme-select");
