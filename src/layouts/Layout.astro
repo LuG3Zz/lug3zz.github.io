@@ -404,7 +404,12 @@ const path = Astro.url.pathname;
     }
   });
 
-  document.addEventListener("click", function() { hideSuggestions(); input.focus(); });
+  document.addEventListener("click", function(e) {
+    hideSuggestions();
+    if (e.target.tagName !== "A" && e.target.tagName !== "IMG" && !window.getSelection().toString()) {
+      input.focus();
+    }
+  });
 
   // Theme switcher
   const themeSelect = document.getElementById("theme-select");
