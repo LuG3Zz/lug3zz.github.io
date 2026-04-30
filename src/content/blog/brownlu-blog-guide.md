@@ -141,10 +141,45 @@ chmod +x hello.sh
 
 ## 部署
 
+### 新电脑上搭建
+
 ```bash
-npm run dev      # 本地开发（localhost:4321）
-npm run build    # 构建（含类型检查）
-git push origin main  # 自动部署到 GitHub Pages
+# 克隆仓库
+git clone git@github.com:LuG3Zz/lug3zz.github.io.git
+cd lug3zz.github.io
+
+# 安装依赖
+npm install
+
+# 本地开发
+npm run dev        # 浏览器打开 http://localhost:4321
+
+# 构建（含类型检查）
+npm run build
+
+# 推送到 GitHub Actions 自动部署
+git push origin main
 ```
 
-GitHub Actions 自动执行构建并部署。
+新机器首次使用需配置 Git 和 SSH 密钥：
+
+```bash
+git config --global user.name "你的用户名"
+git config --global user.email "你的邮箱"
+# 生成 SSH 密钥并添加到 GitHub
+ssh-keygen -t ed25519 -C "你的邮箱"
+cat ~/.ssh/id_ed25519.pub
+# 复制输出到 https://github.com/settings/keys
+```
+
+### 日常开发
+
+```bash
+npm run dev        # 本地预览
+# 写文章、改代码...
+git add -A
+git commit -m "描述改动"
+git push origin main   # 自动部署
+```
+
+GitHub Actions 自动执行构建并发布到 `https://lug3zz.github.io`。
