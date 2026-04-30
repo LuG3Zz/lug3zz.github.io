@@ -329,8 +329,8 @@ img {
   border: 1px solid var(--border);
 }
 
-.zen-mode .header-top,
-.zen-mode nav,
-.zen-mode .help-section,
-.zen-mode .terminal-footer { display: none !important; }
-.zen-mode .terminal-header { border-bottom: none !important; margin-bottom: 1rem !important; padding-bottom: 0 !important; }
+html[data-zen="true"] .header-top,
+html[data-zen="true"] nav,
+html[data-zen="true"] .help-section,
+html[data-zen="true"] .terminal-footer { display: none !important; }
+html[data-zen="true"] .terminal-header { border-bottom: none !important; margin-bottom: 1rem !important; padding-bottom: 0 !important; }

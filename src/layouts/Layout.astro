@@ -8,7 +8,10 @@ const path = Astro.url.pathname;
 <html lang="zh-CN">
 <head>
   <script is:inline>
-    (function(){document.documentElement.setAttribute("data-theme",localStorage.getItem("theme")||"terminal")})();
+    (function(){
+      document.documentElement.setAttribute("data-theme",localStorage.getItem("theme")||"terminal");
+      if (localStorage.getItem("zen") === "true") document.documentElement.setAttribute("data-zen","true");
+    })();
   </script>
   <style>
     :root { --bg:#0d0d0d;--fg:#c0c0c0;--fg-bright:#fff;--green:#33ff33;--yellow:#ffff33;--red:#ff3333;--blue:#33aaff;--dim:#666;--border:#333;--cursor:#33ff33;--selection:rgba(255,255,255,0.15);--font-mono:"JetBrains Mono","Fira Code","Cascadia Code","Consolas","Noto Sans SC","PingFang SC","Microsoft YaHei","WenQuanYi Micro Hei",monospace; }
@@ -328,8 +331,8 @@ const path = Astro.url.pathname;
         showToast("cd: " + path + ": No such directory");
       }
     } else if (name === "zen") {
-      document.body.classList.toggle("zen-mode");
-      var on = document.body.classList.contains("zen-mode");
+      var on = document.documentElement.getAttribute("data-zen") !== "true";
+      document.documentElement.setAttribute("data-zen", on ? "true" : "false");
       localStorage.setItem("zen", on ? "true" : "false");
       showToast(on ? "zen mode on" : "zen mode off");
     } else {
@@ -402,9 +405,6 @@ const path = Astro.url.pathname;
   });
 
   document.addEventListener("click", function() { hideSuggestions(); input.focus(); });
-
-  // Restore zen mode
-  if (localStorage.getItem("zen") === "true") document.body.classList.add("zen-mode");
 
   // Theme switcher
   const themeSelect = document.getElementById("theme-select");
