@@ -327,12 +327,17 @@ const path = Astro.url.pathname;
       } else {
         showToast("cd: " + path + ": No such directory");
       }
+    } else if (name === "zen") {
+      document.body.classList.toggle("zen-mode");
+      var on = document.body.classList.contains("zen-mode");
+      localStorage.setItem("zen", on ? "true" : "false");
+      showToast(on ? "zen mode on" : "zen mode off");
     } else {
       showToast(`command not found: ${name}. Type 'help'`);
     }
   }
 
-  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","heatmap","home"];
+  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","heatmap","home","zen"];
   var suggestions = document.getElementById("cmd-suggestions");
 
   var tabMatches = [];
@@ -397,6 +402,9 @@ const path = Astro.url.pathname;
   });
 
   document.addEventListener("click", function() { hideSuggestions(); input.focus(); });
+
+  // Restore zen mode
+  if (localStorage.getItem("zen") === "true") document.body.classList.add("zen-mode");
 
   // Theme switcher
   const themeSelect = document.getElementById("theme-select");
