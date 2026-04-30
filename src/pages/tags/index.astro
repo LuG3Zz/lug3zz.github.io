@@ -1,0 +1,38 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+const posts = await getCollection("blog");
+const tags = new Map<string, number>();
+for (const post of posts) {
+  for (const tag of post.data.tags ?? []) {
+    tags.set(tag, (tags.get(tag) || 0) + 1);
+  }
+}
+const sorted = [...tags.entries()].sort((a, b) => b[1] - a[1]);
+---
+
+<Layout title="tags">
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@brownlu-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>ls /tags</span>
+  </div>
+
+  <p style="margin-bottom: 1rem; color: var(--dim);">total {sorted.length}</p>
+
+  <ul class="post-list">
+    {sorted.map(([tag, count]) => (
+      <li class="post-item">
+        <a class="post-title" href={`/tags/${tag}`} style="font-size: 0.875rem;">
+          <span class="tag" style="margin-right: 0.5rem;">{tag}</span>
+        </a>
+        <span class="post-date">{count} post{count > 1 ? "s" : ""}</span>
+      </li>
+    ))}
+  </ul>
+
+  <div style="margin-top: 1rem;">
+    <a href="/blog" class="tag" style="font-size: 0.875rem;">← back to /blog</a>
+  </div>
+</Layout>

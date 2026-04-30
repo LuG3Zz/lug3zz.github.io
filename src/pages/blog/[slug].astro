@@ -1,0 +1,36 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+const path = `/blog/${post.slug}`;
+---
+
+<Layout title={post.data.title}>
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@brownlu-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>cat {post.slug}.md</span>
+  </div>
+  <Content />
+  <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+    {post.data.tags && post.data.tags.length > 0 && (
+      <div style="margin-bottom: 1rem;">
+        <span style="color: var(--dim);">tags: </span>
+        {post.data.tags.map((tag) => (
+          <a href={`/tags/${tag}`} class="tag">{tag}</a>
+        ))}
+      </div>
+    )}
+    <a href="/blog" style="color: var(--green);">← back to /blog</a>
+  </div>
+</Layout>

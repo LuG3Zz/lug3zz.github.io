@@ -1,29 +1,37 @@
 ---
+import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
+
+const posts = (await getCollection("blog")).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
 ---
 
 <Layout title="blog">
   <div style="margin-bottom: 0.5rem;">
-    <span style="color: var(--green);">[guest@terminal-blog]</span>
+    <span style="color: var(--green);">[guest@brownlu-blog]</span>
     <span style="color: var(--dim);"> ~ $ </span>
     <span>ls -la /blog</span>
   </div>
 
-  <p style="margin-bottom: 1rem; color: var(--dim);">total 1</p>
+  <p style="margin-bottom: 1rem; color: var(--dim);">total {posts.length}</p>
 
   <ul class="post-list">
-    <li class="post-item">
-      <div>
-        <span style="color: var(--dim);">-rw-r--r--</span>
-        <span style="color: var(--yellow); margin-left: 1rem;">1</span>
-        <span style="color: var(--dim); margin-left: 1rem;">guest</span>
-        <span style="color: var(--dim); margin-left: 1rem;">guest</span>
-        <span style="color: var(--dim); margin-left: 1rem;">1.2K</span>
-      </div>
-      <div style="display: flex; justify-content: space-between; align-items: baseline; width: 100%;">
-        <a class="post-title" href="/blog/hello-world" style="margin-left: 0.5rem;">hello-world.md</a>
-        <span class="post-date">Apr 28 21:42</span>
-      </div>
-    </li>
+    {posts.map((post) => {
+      const date = post.data.date.toISOString().slice(0, 10);
+      return (
+        <li class="post-item">
+          <span style="color: var(--dim); white-space: nowrap;">-rw-r--r-- 1 guest guest 1.2K</span>
+          <a class="post-title" href={`/blog/${post.slug}`}>
+            {post.slug}.md
+          </a>
+          <span class="post-date" style="margin-left: auto;">{date}</span>
+        </li>
+      );
+    })}
   </ul>
+
+  <div style="margin-top: 1rem;">
+    <a href="/tags" class="tag" style="font-size: 0.875rem;">→ browse by tags (/tags)</a>
+  </div>
 </Layout>

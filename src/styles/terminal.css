@@ -10,8 +10,64 @@
   --border: #333333;
   --prompt: var(--green);
   --cursor: #33ff33;
-  --selection: rgba(51, 255, 51, 0.3);
-  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+  --selection: rgba(255, 255, 255, 0.15);
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "WenQuanYi Micro Hei", monospace;
+}
+
+[data-theme="catppuccin"] {
+  --bg: #1e1e2e;
+  --fg: #cdd6f4;
+  --fg-bright: #ffffff;
+  --green: #a6e3a1;
+  --yellow: #f9e2af;
+  --red: #f38ba8;
+  --blue: #89b4fa;
+  --dim: #6c7086;
+  --border: #45475a;
+  --cursor: #b4befe;
+  --selection: rgba(180, 190, 254, 0.2);
+}
+
+[data-theme="matrix"] {
+  --bg: #000000;
+  --fg: #00cc00;
+  --fg-bright: #00ff00;
+  --green: #00ff00;
+  --yellow: #00cc00;
+  --red: #009900;
+  --blue: #006600;
+  --dim: #004400;
+  --border: #003300;
+  --cursor: #00ff00;
+  --selection: rgba(0, 255, 0, 0.3);
+}
+
+[data-theme="nord"] {
+  --bg: #2e3440;
+  --fg: #d8dee9;
+  --fg-bright: #eceff4;
+  --green: #a3be8c;
+  --yellow: #ebcb8b;
+  --red: #bf616a;
+  --blue: #81a1c1;
+  --dim: #4c566a;
+  --border: #434c5e;
+  --cursor: #d8dee9;
+  --selection: rgba(216, 222, 233, 0.15);
+}
+
+[data-theme="gruvbox"] {
+  --bg: #282828;
+  --fg: #ebdbb2;
+  --fg-bright: #d5c4a1;
+  --green: #b8bb26;
+  --yellow: #fabd2f;
+  --red: #fb4934;
+  --blue: #83a598;
+  --dim: #928374;
+  --border: #3c3836;
+  --cursor: #ebdbb2;
+  --selection: rgba(235, 219, 178, 0.2);
 }
 
 * {
@@ -115,13 +171,13 @@ a:visited {
   font-size: 0.875rem;
   transition: all 0.15s;
 }
-.nav a:first-child {
+.nav a:first-of-type {
   border-radius: 4px 0 0 4px;
 }
-.nav a:last-child {
+.nav a:last-of-type {
   border-radius: 0 4px 4px 0;
 }
-.nav a:not(:last-child) {
+.nav a:not(:last-of-type) {
   border-right: none;
 }
 .nav a:hover,
@@ -136,8 +192,7 @@ a:visited {
   line-height: 1.2;
   font-size: 0.75rem;
   white-space: pre;
-  margin-bottom: 1.5rem;
-  overflow-x: auto;
+  overflow: hidden;
 }
 
 .post-list {
@@ -145,10 +200,9 @@ a:visited {
 }
 
 .post-item {
-  padding: 1rem 0;
+  padding: 0.5rem 0;
   border-bottom: 1px solid var(--border);
   display: flex;
-  justify-content: space-between;
   align-items: baseline;
   gap: 1rem;
 }

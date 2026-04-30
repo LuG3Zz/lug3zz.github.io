@@ -1,0 +1,50 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  const tags = new Set<string>();
+  for (const post of posts) {
+    for (const tag of post.data.tags ?? []) {
+      tags.add(tag);
+    }
+  }
+  return [...tags].map((tag) => ({ params: { tag } }));
+}
+
+const { tag } = Astro.params;
+const posts = (await getCollection("blog"))
+  .filter((p) => p.data.tags?.includes(tag as string))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<Layout title={`tag: ${tag}`}>
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@brownlu-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>find /tags -name "{tag}"</span>
+  </div>
+
+  <p style="margin-bottom: 1rem; color: var(--dim);">
+    <span class="tag" style="font-size: 1rem;">{tag}</span>
+    — {posts.length} post{posts.length > 1 ? "s" : ""}
+  </p>
+
+  <ul class="post-list">
+    {posts.map((post) => (
+      <li class="post-item">
+        <a class="post-title" href={`/blog/${post.slug}`}>
+          {post.data.title}
+        </a>
+        <span class="post-date" style="margin-left: auto;">
+          {post.data.date.toISOString().slice(0, 10)}
+        </span>
+      </li>
+    ))}
+  </ul>
+
+  <div style="margin-top: 1rem;">
+    <a href="/tags" class="tag" style="font-size: 0.875rem;">← back to /tags</a>
+  </div>
+</Layout>

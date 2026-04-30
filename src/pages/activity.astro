@@ -1,0 +1,126 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+
+const posts = await getCollection("blog");
+const now = new Date();
+const year = now.getFullYear();
+
+const dayPosts = new Map();
+for (const p of posts) {
+  const d = new Date(p.data.date);
+  if (d.getFullYear() === year) {
+    const key = d.toISOString().slice(0, 10);
+    if (!dayPosts.has(key)) dayPosts.set(key, []);
+    dayPosts.get(key).push(p);
+  }
+}
+
+const start = new Date(year, 0, 1);
+const end = new Date(year, 11, 31);
+const dayOrder = [1, 2, 3, 4, 5, 6, 0];
+const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+const colLabels = [];
+const grid = dayOrder.map(() => []);
+
+let d = new Date(start);
+while (d <= end) {
+  const dow = d.getDay();
+  const rowIdx = dayOrder.indexOf(dow);
+  const key = d.toISOString().slice(0, 10);
+  const dps = dayPosts.get(key) || [];
+  grid[rowIdx].push({ count: dps.length, posts: dps, date: key });
+  if (rowIdx === 0) {
+    const weekNum = Math.ceil(((d.getTime() - start.getTime()) / 86400000 + start.getDay()) / 7);
+    if (grid[rowIdx].length % 4 === 1 || grid[rowIdx].length === 1) {
+      colLabels[grid[rowIdx].length - 1] = weekNum;
+    }
+  }
+  d.setDate(d.getDate() + 1);
+}
+
+const maxCols = Math.max(...grid.map((r) => r.length));
+for (const row of grid) {
+  while (row.length < maxCols) row.push({ count: 0, posts: [], date: "" });
+}
+
+const chars = [" ", "░", "▒", "▓", "█"];
+const colors = ["var(--dim)", "var(--green)", "var(--green)", "var(--yellow)", "var(--red)"];
+
+// Build HTML string for the heatmap
+let html = '<div style="font-size:0.75rem;line-height:1.6;font-family:var(--font-mono);white-space:nowrap;">';
+html += '<div style="color:var(--green);margin-bottom:0.25rem;">Activity in ' + year + '</div>';
+html += '<div style="margin-bottom:0.25rem;"><span style="display:inline-block;width:3rem;"></span>';
+for (let ci = 0; ci < colLabels.length; ci++) {
+  const label = colLabels[ci];
+  html += '<span style="display:inline-block;width:4rem;text-align:center;color:var(--dim);font-size:0.6875rem;">' + (label !== undefined ? label : "") + '</span>';
+}
+html += "</div>";
+
+for (let ri = 0; ri < grid.length; ri++) {
+  html += "<div>";
+  html += '<span style="display:inline-block;width:3rem;color:var(--dim);font-size:0.6875rem;">' + dayNames[ri] + "</span>";
+  for (const cell of grid[ri]) {
+    if (cell.count > 0) {
+      const href = cell.posts.length === 1 ? "/blog/" + cell.posts[0].slug : "#";
+      const title = cell.posts.map((p) => p.data.title).join(" | ");
+      const clr = colors[Math.min(cell.count, 4)];
+      html += '<a href="' + href + '" title="' + title + '" style="color:' + clr + ';text-decoration:none;display:inline-block;width:1.2rem;text-align:center;">' + chars[Math.min(cell.count, 4)] + "</a>";
+    } else {
+      html += '<span style="color:var(--dim);display:inline-block;width:1.2rem;text-align:center;"> </span>';
+    }
+  }
+  html += "</div>";
+}
+
+html += '<div style="margin-top:0.5rem;color:var(--dim);font-size:0.6875rem;">';
+for (let i = 0; i < chars.length; i++) {
+  html += '<span style="margin-right:0.5rem;"><span style="color:' + colors[i] + '">' + chars[i] + "</span> " + i + "</span>";
+}
+html += '<span style="margin-left:1rem;">Total: ' + posts.length + " posts</span></div></div>";
+
+// Tag distribution bar chart
+const tagCounts = new Map();
+for (const p of posts) {
+  for (const t of p.data.tags || []) {
+    tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
+  }
+}
+const sortedTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
+const maxTagCount = sortedTags.length > 0 ? sortedTags[0][1] : 1;
+const barMax = 20;
+
+let tagHtml = '<div style="font-size:0.75rem;line-height:1.6;font-family:var(--font-mono);white-space:nowrap;">';
+tagHtml += '<div style="color:var(--green);margin-bottom:0.5rem;">tags distribution</div>';
+for (const [tag, count] of sortedTags) {
+  const barLen = Math.round((count / maxTagCount) * barMax);
+  const bar = "█".repeat(Math.max(1, barLen)) + "░".repeat(Math.max(0, barMax - barLen));
+  tagHtml += '<div><span style="color:var(--yellow);display:inline-block;width:10rem;">  ' + tag + "</span><span style=\"color:var(--green);\">" + bar + '</span><span style="color:var(--dim);margin-left:0.5rem;">' + count + "</span></div>";
+}
+tagHtml += "</div>";
+---
+
+<Layout title="activity">
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@brownlu-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>heatmap --year {year}</span>
+  </div>
+
+  <div style="border: 1px solid var(--border); border-radius: 6px; padding: 1rem; background: #111; margin-bottom: 1rem; overflow-x: auto;" set:html={html}></div>
+
+  <div style="border: 1px solid var(--border); border-radius: 6px; padding: 1rem; background: #111; margin-bottom: 1.5rem; overflow-x: auto;" set:html={tagHtml}></div>
+
+  <p style="margin-bottom: 0.5rem; color: var(--dim);">recent posts</p>
+  <ul class="post-list">
+    {posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 10).map((p) => (
+      <li class="post-item">
+        <a class="post-title" href={"/blog/" + p.slug} style="font-size: 0.8125rem;">
+          {p.data.title}
+        </a>
+        <span class="post-date">{p.data.date.toISOString().slice(0, 10)}</span>
+      </li>
+    ))}
+  </ul>
+</Layout>

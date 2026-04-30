@@ -7,37 +7,61 @@ const path = Astro.url.pathname;
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+  <script is:inline>
+    (function(){document.documentElement.setAttribute("data-theme",localStorage.getItem("theme")||"terminal")})();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{title} — terminal-blog</title>
+  <title>{title} — brownlu-blog</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💻</text></svg>" />
 </head>
 <body>
   <div class="container">
     <header class="terminal-header">
-      <div class="ascii-art">  _                    _ _               _ _
- | |_ _ __ ___  _ __ (_) |__  _ __ ___ | | |__   _____  __
- | __| '__/ _ \| '_ \| | '_ \| '__/ _ \| | '_ \ / _ \ \/ /
- | |_| | | (_) | |_) | | |_) | | | (_) | | |_) | (_) >  &lt;
-  \__|_|  \___/| .__/|_|_.__/|_|  \___/|_|_.__/ \___/_/\_\
-               |_|</div>
+      <div class="header-top">
+        <div class="ascii-art">  _                             _
+ | |__  _ __ _____      ___ __ | |_   _
+ | '_ \| '__/ _ \ \ /\ / / '_ \| | | | |
+ | |_) | | | (_) \ V  V /| | | | | |_| |
+ |_.__/|_|  \___/ \_/\_/ |_| |_|_|\__,_|</div>
+        {path === "/" && (
+          <div class="weather-box">
+            <div class="weather-title">$ curl wttr.in</div>
+            <div class="weather-body" id="weather-body"><span class="weather-loading">fetching...</span></div>
+          </div>
+        )}
+      </div>
 
       <div class="terminal-line">
         <span class="prompt">
           <span class="prompt-user">guest</span>
           <span class="prompt-at">@</span>
-          <span class="prompt-host">terminal-blog</span>
+          <span class="prompt-host">brownlu-blog</span>
         </span>
         <span class="prompt-sep"> ~ </span>
         <span class="prompt-dir">/{path === "/" ? "" : path.replace(/\/$/, "").replace(/^\//, "") || "~"}</span>
         <span class="prompt-end"> $</span>
-        <span class="cursor-block cursor-blink"></span>
+        <input type="text" id="cmd-input" class="cmd-input" autofocus spellcheck="false" autocomplete="off" />
       </div>
 
       <nav class="nav">
         <a href="/" class={path === "/" ? "active" : ""}>home</a>
         <a href="/blog" class={path.startsWith("/blog") ? "active" : ""}>blog</a>
+        <a href="/tags" class={path.startsWith("/tags") ? "active" : ""}>tags</a>
+        <a href="/activity" class={path === "/activity" ? "active" : ""}>activity</a>
+        <a href="/travel" class={path === "/travel" ? "active" : ""}>travel</a>
+        <a href="/scripts" class={path === "/scripts" ? "active" : ""}>scripts</a>
+        <a href="/downloads" class={path === "/downloads" ? "active" : ""}>downloads</a>
         <a href="/about" class={path === "/about" ? "active" : ""}>about</a>
+        <span class="theme-selector-wrap">
+          <select id="theme-select" class="theme-select">
+            <option value="terminal">terminal</option>
+            <option value="catppuccin">catppuccin</option>
+            <option value="matrix">matrix</option>
+            <option value="nord">nord</option>
+            <option value="gruvbox">gruvbox</option>
+          </select>
+        </span>
       </nav>
     </header>
 
@@ -60,9 +84,239 @@ const path = Astro.url.pathname;
       </div>
     </footer>
   </div>
+
+  <div id="cmd-toast" class="cmd-toast"><span id="toast-msg"></span><span class="dismiss">[x]</span></div>
 </body>
 </html>
 
 <style>
   .ascii-art { line-height: 1.1; }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .weather-box {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    flex-shrink: 0;
+  }
+  .weather-title {
+    color: var(--dim);
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+  .weather-body {
+    color: var(--green);
+    font-size: 0.8125rem;
+    margin: 0;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  .weather-loading {
+    color: var(--dim);
+  }
+  .theme-selector-wrap { margin-left: auto; }
+  .theme-select {
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    outline: none;
+  }
+  .theme-select:hover {
+    border-color: var(--green);
+  }
+  .theme-select option {
+    background: var(--bg);
+    color: var(--fg);
+  }
+  .cmd-input {
+    flex: 1;
+    min-width: 80px;
+    background: none;
+    border: none;
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    outline: none;
+    caret-color: var(--cursor);
+  }
+  .cmd-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem 1.5rem;
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    display: none;
+    cursor: pointer;
+    z-index: 100;
+    user-select: none;
+  }
+  .cmd-toast.show {
+    display: block;
+  }
+  .cmd-toast .dismiss {
+    color: var(--dim);
+    margin-left: 1rem;
+  }
 </style>
+
+<script>
+  const input = document.getElementById("cmd-input");
+  const toast = document.getElementById("cmd-toast");
+  const toastMsg = document.getElementById("toast-msg");
+
+  function hideToast() {
+    toast.classList.remove("show");
+  }
+
+  function showToast(msg) {
+    toastMsg.textContent = msg;
+    toast.classList.add("show");
+  }
+
+  toast.addEventListener("click", hideToast);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hideToast();
+  });
+
+  // Weather
+  function windArrow(dir) {
+    const m = { N:"↓", NNE:"↙", NE:"↙", ENE:"←", E:"←", ESE:"↖", SE:"↖", SSE:"↑", S:"↑", SSW:"↗", SW:"↗", WSW:"→", W:"→", WNW:"↘", NW:"↘", NNW:"↓" };
+    return m[dir] || "―";
+  }
+  function weatherEmoji(desc) {
+    const d = desc.toLowerCase();
+    if (d.includes("sunny") || d.includes("clear")) return "☀️";
+    if (d.includes("rain") || d.includes("drizzle") || d.includes("shower")) return "🌧️";
+    if (d.includes("snow") || d.includes("sleet") || d.includes("ice")) return "❄️";
+    if (d.includes("thunder") || d.includes("storm")) return "⛈️";
+    if (d.includes("fog") || d.includes("mist") || d.includes("haze")) return "🌫️";
+    if (d.includes("cloud") || d.includes("overcast")) return "☁️";
+    return "🌤️";
+  }
+  const weatherEl = document.getElementById("weather-body");
+  if (weatherEl) {
+    const ac = new AbortController();
+    setTimeout(() => ac.abort(), 8000);
+    fetch("https://wttr.in/?format=j1&lang=zh", { signal: ac.signal })
+      .then((r) => r.json())
+      .then((j) => {
+        const cc = j.current_condition[0];
+        const desc = cc.lang_zh || cc.weatherDesc[0].value;
+        const emoji = weatherEmoji(desc);
+        const wind = windArrow(cc.winddir16Point) + " " + cc.windspeedKmph + " km/h";
+        weatherEl.textContent = emoji + " " + desc + "  ·  " + cc.temp_C + "°C  ·  💧 " + cc.humidity + "%  ·  " + wind;
+      })
+      .catch(() => { weatherEl.textContent = "--.-°C"; });
+  }
+
+  function handleCommand(cmd) {
+    const parts = cmd.trim().split(/\s+/);
+    const name = parts[0].toLowerCase();
+
+    if (!name) return;
+
+    if (name === "cat") {
+      const slug = parts.slice(1).join(" ");
+      if (!slug) {
+        showToast("Usage: cat <slug>");
+        return;
+      }
+      if (slug.includes("/")) {
+        showToast("cat: " + slug + ": No such file");
+        return;
+      }
+      window.location.href = "/blog/" + slug;
+    } else if (name === "activity" || name === "heatmap") {
+      window.location.href = "/activity";
+    } else if (name === "travel") {
+      window.location.href = "/travel";
+    } else if (name === "downloads") {
+      window.location.href = "/downloads";
+    } else if (name === "scripts") {
+      window.location.href = "/scripts";
+    } else if (name === "ls") {
+      window.location.href = "/blog";
+    } else if (name === "whoami") {
+      window.location.href = "/about";
+    } else if (name === "get") {
+      const script = parts.slice(1).join(" ");
+      if (!script) {
+        window.location.href = "/scripts";
+      } else {
+        window.location.href = `/scripts/${script}`;
+      }
+    } else if (name === "help") {
+      showToast("ls | cat <slug> | cd <path> | get <script> | whoami | date | tag <name> | activity | downloads | clear");
+    } else if (name === "clear") {
+      window.location.reload();
+    } else if (name === "date") {
+      const now = new Date();
+      showToast(now.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" }));
+    } else if (name === "tag") {
+      const tag = parts.slice(1).join(" ");
+      if (!tag) {
+        window.location.href = "/tags";
+      } else {
+        window.location.href = `/tags/${tag}`;
+      }
+    } else if (name === "cd") {
+      const knownPaths = ["/", "/home", "/blog", "/tags", "/travel", "/activity", "/scripts", "/downloads", "/about"];
+      const knownPrefixes = ["/tags/", "/blog/", "/scripts/"];
+      const target = parts.slice(1).join(" ");
+      let path;
+      if (!target || target === "/" || target === "~" || target === "home") {
+        path = "/";
+      } else if (target === "..") {
+        const current = window.location.pathname.replace(/\/$/, "");
+        path = current.substring(0, current.lastIndexOf("/")) || "/";
+      } else {
+        path = target.startsWith("/") ? target : "/" + target;
+      }
+      path = path.replace(/\/$/, "") || "/";
+      const valid = knownPaths.includes(path) || knownPrefixes.some(function(p) { return path.startsWith(p); });
+      if (valid) {
+        window.location.href = path;
+      } else {
+        showToast("cd: " + path + ": No such directory");
+      }
+    } else {
+      showToast(`command not found: ${name}. Type 'help'`);
+    }
+  }
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      handleCommand(input.value);
+      input.value = "";
+    }
+  });
+
+  document.addEventListener("click", () => input.focus());
+
+  // Theme switcher
+  const themeSelect = document.getElementById("theme-select");
+  themeSelect.value = localStorage.getItem("theme") || "terminal";
+  themeSelect.addEventListener("change", () => {
+    const theme = themeSelect.value;
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  });
+</script>

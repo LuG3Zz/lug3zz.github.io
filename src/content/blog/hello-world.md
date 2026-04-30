@@ -1,16 +1,10 @@
 ---
-layout: ../../layouts/Layout.astro
 title: "Hello, Terminal World!"
 date: 2026-04-28
 description: "我的第一篇博客，用终端风格开启新的旅程"
 tags: ["hello", "astro", "terminal"]
+slug: hello-world
 ---
-
-<div style="margin-bottom: 0.5rem;">
-  <span style="color: var(--green);">[guest@terminal-blog]</span>
-  <span style="color: var(--dim);"> ~ $ </span>
-  <span>cat hello-world.md</span>
-</div>
 
 Welcome to my terminal-style blog! 🚀
 

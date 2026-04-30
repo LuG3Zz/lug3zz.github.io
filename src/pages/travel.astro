@@ -1,0 +1,66 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { places } from "../data/travel";
+import "leaflet/dist/leaflet.css";
+---
+
+<Layout title="travel">
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@brownlu-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>cat /travel</span>
+  </div>
+
+  <div id="travel-map" style="height: 400px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 1.5rem;"></div>
+
+  <p style="margin-bottom: 1rem; color: var(--dim);">{places.length} cities visited</p>
+
+  <ul class="post-list">
+    {places.map((p) => (
+      <li class="post-item">
+        <span class="post-title" style="font-size: 0.875rem;">📍 {p.city}</span>
+        <span style="color: var(--fg); font-size: 0.8125rem;">{p.description}</span>
+        <span class="post-date" style="margin-left: auto;">{p.date}</span>
+      </li>
+    ))}
+  </ul>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
+    {places.map((p) => {
+      const imgs = p.images || (p.image ? [p.image] : []);
+      return imgs.length > 0 && (
+        <div style="border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; min-width: 200px; flex: 1;">
+          <div style="color: var(--yellow); font-size: 0.8125rem; margin-bottom: 0.5rem;">📸 {p.city}</div>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            {imgs.map((src) => (
+              <img src={src} style="width:100%;border-radius:4px;border:1px solid var(--border);" loading="lazy" />
+            ))}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  <div id="travel-data" data-places={JSON.stringify(places)} style="display:none"></div>
+</Layout>
+
+<script>
+import L from "leaflet";
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({ iconUrl: "/images/marker-icon.png", iconRetinaUrl: "/images/marker-icon-2x.png", shadowUrl: "/images/marker-shadow.png" });
+var el = document.getElementById("travel-data");
+var data = JSON.parse(el.getAttribute("data-places"));
+var map = L.map("travel-map").setView([35, 110], 5);
+L.tileLayer("https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}", {
+  maxZoom: 18, attribution: "\u9AD8\u5FB7\u5730\u56FE"
+}).addTo(map);
+data.forEach(function(p) {
+  var imgs = p.images || (p.image ? [p.image] : []);
+  var imgHtml = "";
+  for (var i = 0; i < imgs.length; i++) {
+    imgHtml += '<br><img src="' + imgs[i] + '" style="max-width:180px;border-radius:4px;margin-top:4px">';
+  }
+  L.marker([p.lat, p.lng]).addTo(map).bindPopup("<strong>" + p.city + "</strong><br>" + p.date + "<br>" + p.description + imgHtml);
+});
+if (data.length > 0) map.fitBounds(data.map(function(p) { return [p.lat, p.lng]; }), { padding: [50, 50] });
+</script>

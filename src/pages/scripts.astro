@@ -1,0 +1,53 @@
+---
+import { readdirSync, statSync } from "fs";
+import { join } from "path";
+import Layout from "../layouts/Layout.astro";
+
+const scriptsDir = join(process.cwd(), "public", "scripts");
+let scripts = [];
+try {
+  scripts = readdirSync(scriptsDir)
+    .filter((f) => statSync(join(scriptsDir, f)).isFile())
+    .map((f) => {
+      const s = statSync(join(scriptsDir, f));
+      return { name: f, size: s.size, mtime: s.mtime.toISOString().slice(0, 10) };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+} catch (_) {}
+const baseUrl = "https://lug3zz.github.io";
+---
+
+<Layout title="scripts">
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@brownlu-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>ls /scripts</span>
+  </div>
+
+  <p style="margin-bottom: 1rem; color: var(--dim);">total {scripts.length}</p>
+
+  {scripts.length === 0 && (
+    <p style="color: var(--dim);">No scripts yet.</p>
+  )}
+
+  <ul class="post-list">
+    {scripts.map((s) => (
+      <li class="post-item">
+        <span style="color: var(--dim); white-space: nowrap;">-rwxr-xr-x 1 guest guest {s.size.toString().padStart(6)}</span>
+        <a class="post-title" href={`/scripts/${s.name}`} style="font-size: 0.875rem;">
+          {s.name}
+        </a>
+        <span class="post-date" style="margin-left: auto;">{s.mtime}</span>
+      </li>
+    ))}
+  </ul>
+
+  <div style="margin-top: 1.5rem; padding: 1rem; border: 1px solid var(--border); border-radius: 6px;">
+    <div style="margin-bottom: 0.5rem; color: var(--yellow);">$ cat README.md</div>
+    <p style="margin-bottom: 0.5rem;">Fetch any script with curl or wget:</p>
+    <pre style="margin: 0.5rem 0; padding: 0.5rem; background: #1a1a1a; border: 1px solid var(--border); border-radius: 4px;">curl -O {baseUrl}/scripts/hello.sh
+chmod +x hello.sh
+./hello.sh</pre>
+    <pre style="margin: 0.5rem 0; padding: 0.5rem; background: #1a1a1a; border: 1px solid var(--border); border-radius: 4px;">wget {baseUrl}/scripts/hello.sh</pre>
+  </div>
+</Layout>

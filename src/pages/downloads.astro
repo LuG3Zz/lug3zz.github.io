@@ -1,0 +1,51 @@
+---
+import { readdirSync, statSync } from "fs";
+import { join } from "path";
+import Layout from "../layouts/Layout.astro";
+
+const dlDir = join(process.cwd(), "public", "downloads");
+let files = [];
+try {
+  files = readdirSync(dlDir)
+    .filter((f) => statSync(join(dlDir, f)).isFile())
+    .filter((f) => !f.startsWith("."))
+    .map((f) => {
+      const s = statSync(join(dlDir, f));
+      const size = s.size < 1024 ? s.size + " B" : (s.size / 1024).toFixed(1) + " KB";
+      return { name: f, size, mtime: s.mtime.toISOString().slice(0, 10), bytes: s.size };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+} catch (_) {}
+const totalSize = files.reduce((s, f) => s + f.bytes, 0);
+const totalSizeStr = totalSize < 1024 ? totalSize + " B" : (totalSize / 1024).toFixed(1) + " KB";
+---
+
+<Layout title="downloads">
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@brownlu-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>ls -la /downloads</span>
+  </div>
+
+  <p style="margin-bottom: 1rem; color: var(--dim);">total {files.length}  ({totalSizeStr})</p>
+
+  {files.length === 0 && <p style="color: var(--dim);">No files yet.</p>}
+
+  <ul class="post-list">
+    {files.map((f) => (
+      <li class="post-item">
+        <span style="color: var(--dim); white-space: nowrap;">-rw-r--r-- 1 guest guest {f.size.padStart(8)}</span>
+        <a class="post-title" href={"/downloads/" + f.name} style="font-size: 0.875rem;" download>
+          {f.name}
+        </a>
+        <span class="post-date" style="margin-left: auto;">{f.mtime}</span>
+      </li>
+    ))}
+  </ul>
+
+  <div style="margin-top: 1.5rem; padding: 1rem; border: 1px solid var(--border); border-radius: 6px;">
+    <div style="margin-bottom: 0.5rem; color: var(--yellow);">$ cat README.md</div>
+    <p style="margin-bottom: 0.5rem;">Download via browser or curl:</p>
+    <pre style="margin: 0.5rem 0; padding: 0.5rem; background: #1a1a1a; border: 1px solid var(--border); border-radius: 4px;">curl -O https://lug3zz.github.io/downloads/cheatsheet.md</pre>
+  </div>
+</Layout>
