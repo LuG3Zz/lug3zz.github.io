@@ -1,4 +1,6 @@
 ---
+import { readFileSync } from "fs";
+import { join } from "path";
 import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 
@@ -12,7 +14,8 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content } = await post.render();
-const path = `/blog/${post.slug}`;
+const rawMd = readFileSync(join(process.cwd(), "src/content/blog", post.id), "utf-8");
+const downloadUri = "data:text/markdown;charset=utf-8," + encodeURIComponent(rawMd);
 ---
 
 <Layout title={post.data.title}>
@@ -21,7 +24,16 @@ const path = `/blog/${post.slug}`;
     <span style="color: var(--dim);"> ~ $ </span>
     <span>cat {post.slug}.md</span>
   </div>
-  <Content />
+
+  <div class="article-layout">
+    <nav class="toc" id="toc">
+      <div style="color: var(--dim); font-size: 0.75rem; margin-bottom: 0.5rem;">INDEX</div>
+    </nav>
+    <div class="article-content" id="article-content">
+      <Content />
+    </div>
+  </div>
+
   <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
     {post.data.tags && post.data.tags.length > 0 && (
       <div style="margin-bottom: 1rem;">
@@ -31,6 +43,91 @@ const path = `/blog/${post.slug}`;
         ))}
       </div>
     )}
-    <a href="/blog" style="color: var(--green);">← back to /blog</a>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <a href="/blog" style="color: var(--green);">← back to /blog</a>
+      <span style="color: var(--dim);">|</span>
+      <a href={downloadUri} download={post.slug + ".md"} style="color: var(--yellow); font-size: 0.8125rem;">↓ download .md</a>
+    </div>
   </div>
 </Layout>
+
+<style>
+  .article-layout {
+    display: flex;
+    gap: 2rem;
+  }
+  .article-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .toc {
+    display: none;
+    width: 180px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    font-size: 0.8125rem;
+    line-height: 1.8;
+    border-right: 1px solid var(--border);
+    padding-right: 1rem;
+  }
+  .toc a {
+    display: block;
+    color: var(--dim);
+    text-decoration: none;
+    transition: color 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .toc a:hover, .toc a.active {
+    color: var(--green);
+  }
+  .toc .h2 { padding-left: 0; }
+  .toc .h3 { padding-left: 0.75rem; font-size: 0.75rem; }
+  @media (min-width: 900px) {
+    .toc { display: block; }
+  }
+</style>
+
+<script>
+var content = document.getElementById("article-content");
+var toc = document.getElementById("toc");
+var headings = content.querySelectorAll("h1, h2, h3");
+
+// Build TOC
+headings.forEach(function(h, i) {
+  if (!h.id) h.id = "heading-" + i;
+  var a = document.createElement("a");
+  a.href = "#" + h.id;
+  a.textContent = h.textContent;
+  a.className = h.tagName.toLowerCase();
+  a.dataset.target = h.id;
+  toc.appendChild(a);
+});
+
+// Scroll spy
+function updateActive() {
+  var scrollY = window.scrollY + 80;
+  var active = null;
+  headings.forEach(function(h) {
+    if (h.offsetTop <= scrollY) active = h;
+  });
+  toc.querySelectorAll("a").forEach(function(a) {
+    a.classList.toggle("active", a.dataset.target === (active ? active.id : null));
+  });
+}
+window.addEventListener("scroll", updateActive);
+updateActive();
+
+// Reading progress bar
+var bar = document.createElement("div");
+bar.style.cssText = "position:fixed;top:0;left:0;height:2px;background:var(--green);z-index:1000;transition:width 0.1s;";
+document.body.appendChild(bar);
+window.addEventListener("scroll", function() {
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + "%";
+});
+</script>
