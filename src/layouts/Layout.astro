@@ -219,10 +219,11 @@ const path = Astro.url.pathname;
       .then((r) => r.json())
       .then((j) => {
         const cc = j.current_condition[0];
+        const city = j.nearest_area?.[0]?.region?.[0]?.value || j.nearest_area?.[0]?.areaName?.[0]?.value || "";
         const desc = (cc.lang_zh?.[0]?.value) || cc.weatherDesc[0].value;
         const emoji = weatherEmoji(desc);
         const wind = windArrow(cc.winddir16Point) + " " + cc.windspeedKmph + " km/h";
-        weatherEl.textContent = emoji + " " + desc + "  ·  " + cc.temp_C + "°C  ·  💧 " + cc.humidity + "%  ·  " + wind;
+        weatherEl.textContent = (city ? city + "  " : "") + emoji + " " + desc + "  ·  " + cc.temp_C + "°C  ·  💧 " + cc.humidity + "%  ·  " + wind;
       })
       .catch(() => { weatherEl.textContent = "--.-°C"; });
   }
