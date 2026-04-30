@@ -16,6 +16,17 @@ const { post } = Astro.props;
 const { Content } = await post.render();
 const rawMd = readFileSync(join(process.cwd(), "src/content/blog", post.id), "utf-8");
 const downloadUri = "data:text/markdown;charset=utf-8," + encodeURIComponent(rawMd);
+
+// Parse headings from markdown for server-side TOC
+const headingLines = rawMd
+  .split("\n")
+  .filter((l) => /^#{1,3}\s/.test(l))
+  .map((l) => {
+    const match = l.match(/^(#{1,3})\s+(.+)/);
+    if (!match) return null;
+    return { level: match[1].length, text: match[2].replace(/[`*_~]/g, "").trim() };
+  })
+  .filter(Boolean);
 ---
 
 <Layout title={post.data.title}>
@@ -25,13 +36,24 @@ const downloadUri = "data:text/markdown;charset=utf-8," + encodeURIComponent(raw
     <span>cat {post.slug}.md</span>
   </div>
 
-  <div class="article-layout">
-    <nav class="toc" id="toc">
-      <div style="color: var(--dim); font-size: 0.75rem; margin-bottom: 0.5rem;">INDEX</div>
-    </nav>
-    <div class="article-content" id="article-content">
-      <Content />
-    </div>
+  <nav class="toc" id="toc">
+    <div style="color: var(--dim); font-size: 0.75rem; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Index</div>
+    {headingLines.length > 0 && (
+      <ul style="list-style:none;padding:0;margin:0;">
+        {headingLines.map((h) => (
+          <li style={{ 2: "padding-left:0", 3: "padding-left:1rem" }[h.level] || "padding-left:0"}>
+            <a href={"#" + h.text.toLowerCase().replace(/\s+/g, "-").replace(/[^\w\u4e00-\u9fff-]/g, "")} style="color:var(--dim);text-decoration:none;display:block;font-size:0.8125rem;line-height:1.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              {h.level === 3 && <span style="color:var(--dim);margin-right:0.25rem;">└─</span>}
+              {h.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+    {headingLines.length === 0 && <span style="color:var(--dim);font-size:0.75rem;">(no headings)</span>}
+  </nav>
+  <div class="article-content" id="article-content">
+    <Content />
   </div>
 
   <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
@@ -52,71 +74,39 @@ const downloadUri = "data:text/markdown;charset=utf-8," + encodeURIComponent(raw
 </Layout>
 
 <style>
-  .article-layout {
-    display: flex;
-    gap: 2rem;
-  }
-  .article-content {
-    flex: 1;
-    min-width: 0;
-  }
+  .article-content { max-width: 100%; }
   .toc {
     display: none;
-    width: 180px;
-    flex-shrink: 0;
-    position: sticky;
-    top: 1rem;
-    max-height: calc(100vh - 2rem);
+    position: fixed;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 160px;
+    max-height: 70vh;
     overflow-y: auto;
-    font-size: 0.8125rem;
-    line-height: 1.8;
-    border-right: 1px solid var(--border);
-    padding-right: 1rem;
+    z-index: 100;
   }
-  .toc a {
-    display: block;
-    color: var(--dim);
-    text-decoration: none;
-    transition: color 0.15s;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .toc a:hover, .toc a.active {
-    color: var(--green);
-  }
-  .toc .h2 { padding-left: 0; }
-  .toc .h3 { padding-left: 0.75rem; font-size: 0.75rem; }
-  @media (min-width: 900px) {
-    .toc { display: block; }
-  }
+  .toc a:hover { color: var(--green) !important; }
+  @media (min-width: 1200px) { .toc { display: block; } }
 </style>
 
 <script>
-var content = document.getElementById("article-content");
-var toc = document.getElementById("toc");
-var headings = content.querySelectorAll("h1, h2, h3");
-
-// Build TOC
-headings.forEach(function(h, i) {
-  if (!h.id) h.id = "heading-" + i;
-  var a = document.createElement("a");
-  a.href = "#" + h.id;
-  a.textContent = h.textContent;
-  a.className = h.tagName.toLowerCase();
-  a.dataset.target = h.id;
-  toc.appendChild(a);
+// Scroll spy for TOC
+var links = document.querySelectorAll(".toc a");
+var headings = [];
+links.forEach(function(a) {
+  var id = a.getAttribute("href").slice(1);
+  var el = document.getElementById(id) || document.querySelector("[id='" + id + "']");
+  if (el) headings.push({ el: el, link: a });
 });
-
-// Scroll spy
 function updateActive() {
   var scrollY = window.scrollY + 80;
   var active = null;
   headings.forEach(function(h) {
-    if (h.offsetTop <= scrollY) active = h;
+    if (h.el.offsetTop <= scrollY) active = h;
   });
-  toc.querySelectorAll("a").forEach(function(a) {
-    a.classList.toggle("active", a.dataset.target === (active ? active.id : null));
+  headings.forEach(function(h) {
+    h.link.style.color = h === active ? "var(--green)" : "var(--dim)";
   });
 }
 window.addEventListener("scroll", updateActive);
@@ -129,5 +119,23 @@ document.body.appendChild(bar);
 window.addEventListener("scroll", function() {
   var h = document.documentElement.scrollHeight - window.innerHeight;
   bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + "%";
+});
+
+// Copy button for code blocks
+document.querySelectorAll(".article-content pre").forEach(function(pre) {
+  var btn = document.createElement("button");
+  btn.textContent = "copy";
+  btn.style.cssText = "position:absolute;top:4px;right:4px;background:var(--bg);color:var(--green);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-family:var(--font-mono);font-size:0.75rem;cursor:pointer;opacity:0;transition:opacity 0.15s;";
+  pre.style.position = "relative";
+  pre.appendChild(btn);
+  pre.addEventListener("mouseenter", function() { btn.style.opacity = "1"; });
+  pre.addEventListener("mouseleave", function() { btn.style.opacity = "0"; });
+  btn.addEventListener("click", function() {
+    var code = pre.querySelector("code");
+    navigator.clipboard.writeText(code ? code.textContent : pre.textContent).then(function() {
+      btn.textContent = "done!";
+      setTimeout(function() { btn.textContent = "copy"; }, 1500);
+    });
+  });
 });
 </script>

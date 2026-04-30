@@ -10,6 +10,13 @@ const path = Astro.url.pathname;
   <script is:inline>
     (function(){document.documentElement.setAttribute("data-theme",localStorage.getItem("theme")||"terminal")})();
   </script>
+  <style>
+    :root { --bg:#0d0d0d;--fg:#c0c0c0;--fg-bright:#fff;--green:#33ff33;--yellow:#ffff33;--red:#ff3333;--blue:#33aaff;--dim:#666;--border:#333;--cursor:#33ff33;--selection:rgba(255,255,255,0.15);--font-mono:"JetBrains Mono","Fira Code","Cascadia Code","Consolas","Noto Sans SC","PingFang SC","Microsoft YaHei","WenQuanYi Micro Hei",monospace; }
+    [data-theme="catppuccin"]{--bg:#1e1e2e;--fg:#cdd6f4;--fg-bright:#fff;--green:#a6e3a1;--yellow:#f9e2af;--red:#f38ba8;--blue:#89b4fa;--dim:#6c7086;--border:#45475a;--cursor:#b4befe;--selection:rgba(180,190,254,0.2)}
+    [data-theme="matrix"]{--bg:#000;--fg:#00cc00;--fg-bright:#00ff00;--green:#00ff00;--yellow:#00cc00;--red:#009900;--blue:#006600;--dim:#004400;--border:#003300;--cursor:#00ff00;--selection:rgba(0,255,0,0.3)}
+    [data-theme="nord"]{--bg:#2e3440;--fg:#d8dee9;--fg-bright:#eceff4;--green:#a3be8c;--yellow:#ebcb8b;--red:#bf616a;--blue:#81a1c1;--dim:#4c566a;--border:#434c5e;--cursor:#d8dee9;--selection:rgba(216,222,233,0.15)}
+    [data-theme="gruvbox"]{--bg:#282828;--fg:#ebdbb2;--fg-bright:#d5c4a1;--green:#b8bb26;--yellow:#fabd2f;--red:#fb4934;--blue:#83a598;--dim:#928374;--border:#3c3836;--cursor:#ebdbb2;--selection:rgba(235,219,178,0.2)}
+  </style>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title} — brownlu-blog</title>
