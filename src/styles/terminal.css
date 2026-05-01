@@ -114,6 +114,8 @@ a:visited {
   max-width: 820px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .terminal-header {
@@ -361,6 +363,25 @@ html[data-zen="true"] .terminal-footer { display: none !important; }
 html[data-zen="true"] .terminal-header { border-bottom: none !important; margin-bottom: 1rem !important; padding-bottom: 0 !important; }
 html[data-zen="true"] .container { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
 html[data-zen="true"] main { width: 100%; }
+
+html[data-night="true"] main > :not(.toc):not(.toc-mobile),
+html[data-night="true"] .terminal-header .ascii-art,
+html[data-night="true"] .terminal-header .weather-box,
+html[data-night="true"] .terminal-header .terminal-line,
+html[data-night="true"] .terminal-footer { filter: brightness(0.7) sepia(0.15); transition: filter 0.5s; }
+
+html[data-night="true"] { background: var(--bg); }
+
+html[data-focus="true"] .header-top,
+html[data-focus="true"] nav,
+html[data-focus="true"] .terminal-footer,
+html[data-focus="true"] .toc,
+html[data-focus="true"] .toc-mobile,
+html[data-focus="true"] .help-section,
+html[data-focus="true"] .fortune-box,
+html[data-focus="true"] .back-to-top,
+html[data-focus="true"] .post-list,
+html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; transition: opacity 0.3s; }
 
 @media (max-width: 640px) {
   .container { padding: 1rem 0.75rem; }

@@ -38,6 +38,12 @@ const searchIndex = allPosts.map((p) => {
     (function(){
       document.documentElement.setAttribute("data-theme",localStorage.getItem("theme")||"terminal");
       if (localStorage.getItem("zen") === "true") document.documentElement.setAttribute("data-zen","true");
+      if (localStorage.getItem("focus") === "true") document.documentElement.setAttribute("data-focus","true");
+      if (localStorage.getItem("night") === "true") document.documentElement.setAttribute("data-night","true");
+      else {
+        var h = new Date().getHours();
+        if (h >= 22 || h < 6) document.documentElement.setAttribute("data-night","true");
+      }
     })();
   </script>
   <style>
@@ -70,6 +76,7 @@ const searchIndex = allPosts.map((p) => {
       </div>
 
       <div class="terminal-line">
+        <form id="cmd-form" style="display:contents;" onsubmit="return false;">
         <span class="prompt">
           <span class="prompt-user">guest</span>
           <span class="prompt-at">@</span>
@@ -86,6 +93,7 @@ const searchIndex = allPosts.map((p) => {
           <option value="nord">nord</option>
           <option value="gruvbox">gruvbox</option>
         </select>
+        </form>
       </div>
 
       <div id="cmd-suggestions" class="cmd-suggestions"></div>
@@ -580,6 +588,19 @@ const searchIndex = allPosts.map((p) => {
         "Use 'ip a' to see network interfaces (replaces ifconfig)",
       ];
       showToast(tips[Math.floor(Math.random() * tips.length)]);
+    } else if (name === "night") {
+      var on = document.documentElement.getAttribute("data-night") !== "true";
+      document.documentElement.setAttribute("data-night", on ? "true" : "false");
+      localStorage.setItem("night", on ? "true" : "false");
+      showToast(on ? "night mode on" : "night mode off");
+    } else if (name === "focus") {
+      var on = document.documentElement.getAttribute("data-focus") !== "true";
+      document.documentElement.setAttribute("data-focus", on ? "true" : "false");
+      localStorage.setItem("focus", on ? "true" : "false");
+      showToast(on ? "focus mode on (hover to reveal)" : "focus mode off");
+    } else if (name === "rand") {
+      var slugs = JSON.parse(document.getElementById("completion-data").textContent).slugs;
+      if (slugs.length > 0) window.location.href = "/blog/" + slugs[Math.floor(Math.random() * slugs.length)];
     } else if (name === "matrix") {
       if (window.matrixRain) {
         window.matrixRain.toggle();
@@ -587,12 +608,25 @@ const searchIndex = allPosts.map((p) => {
       } else {
         window.location.href = "/";
       }
+    } else if (name === "save") {
+      var dl = document.querySelector("a[download]");
+      if (dl) { dl.click(); showToast("saved"); }
+      else {
+        var text = document.title + "\n" + "-".repeat(document.title.length) + "\nURL: " + window.location.href + "\n\n" + (document.body.textContent || "").slice(0, 5000);
+        var blob = new Blob([text], { type: "text/plain" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "page.txt";
+        a.click();
+        URL.revokeObjectURL(a.href);
+        showToast("page saved");
+      }
     } else {
       showToast(`command not found: ${name}. Type 'help'`);
     }
   }
 
-  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","archive","home","zen","fortune","series","grep","weather","theme","uptime","tip","matrix"];
+  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","archive","home","zen","fortune","series","grep","weather","theme","uptime","tip","matrix","save","night","focus","rand"];
   var suggestions = document.getElementById("cmd-suggestions");
 
   var tabMatches = [];
@@ -660,6 +694,7 @@ const searchIndex = allPosts.map((p) => {
       grepResults.classList.add("show");
       return;
     }
+    sessionStorage.setItem("grep-query", query);
     var html = '<div class="gr-stats">' + scored.length + ' result' + (scored.length !== 1 ? "s" : "") + ' for "' + escHtml(query) + '"</div>';
     var maxShow = Math.min(scored.length, 5);
     for (var i = 0; i < maxShow; i++) {
@@ -676,11 +711,32 @@ const searchIndex = allPosts.map((p) => {
     grepResults.classList.add("show");
   }
 
+  document.addEventListener("keydown", function(e) {
+    if (e.key === ":" && document.activeElement !== input && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA" && document.activeElement?.getAttribute?.("contenteditable") !== "true") {
+      e.preventDefault();
+      input.focus();
+      input.value = ":";
+      input.setSelectionRange(1, 1);
+    }
+  });
+
   document.addEventListener("click", function(e) {
     if (grepResults && e.target.closest("#grep-results") === null) {
       grepResults.classList.remove("show");
     }
   });
+
+  // Mobile Enter fix
+  var cmdForm = document.getElementById("cmd-form");
+  if (cmdForm) {
+    cmdForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      hideSuggestions();
+      if (grepResults) grepResults.classList.remove("show");
+      handleCommand(input.value);
+      input.value = "";
+    });
+  }
 
   input.addEventListener("keydown", function(e) {
     if (e.key === "Tab") {
@@ -731,7 +787,7 @@ const searchIndex = allPosts.map((p) => {
 
   document.addEventListener("click", function(e) {
     hideSuggestions();
-    if (e.target.tagName !== "A" && e.target.tagName !== "IMG" && !window.getSelection().toString()) {
+    if (e.target.tagName !== "A" && e.target.tagName !== "IMG" && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA" && !window.getSelection().toString()) {
       input.focus();
     }
   });

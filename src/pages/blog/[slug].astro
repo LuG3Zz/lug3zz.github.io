@@ -85,21 +85,41 @@ for (const l of rawMd.split("\n")) {
     </ul>
     )}
   </nav>
-  <div style="margin-bottom: 1rem; color: var(--dim); font-size: 0.8125rem;" class="post-meta">
+  <div style="margin-bottom: 1rem; color: var(--dim); font-size: 0.8125rem;">
     <span>📖 {readingTime(rawMd)} min read</span>
     <span style="margin: 0 0.5rem;">·</span>
     <span>{rawMd.replace(/\s/g, "").length} chars</span>
     <span style="margin: 0 0.5rem;">·</span>
     <span>{post.data.date.toISOString().slice(0, 10)}</span>
+    {post.data.password && <span style="margin:0 0.5rem;">·</span>}
+    {post.data.password && <span style="color:var(--yellow);">🔒 locked</span>}
   </div>
   {post.data.image && (
     <div style="margin-left:-1.5rem;margin-right:-1.5rem;position:relative;">
       <img src={post.data.image} alt={post.data.title} style="display:block;width:100%;max-height:320px;object-fit:cover;-webkit-mask-image:linear-gradient(to bottom,black 50%,transparent 100%);mask-image:linear-gradient(to bottom,black 50%,transparent 100%);" />
     </div>
   )}
-  <div class="article-content" id="article-content" style={post.data.image ? "margin-top:-6rem;position:relative;z-index:1;" : ""}>
-    <Content />
-  </div>
+  {post.data.password ? (
+    <div id="locked-content" style="display:none;">
+    <div class="article-content" id="article-content" style={post.data.image ? "margin-top:-6rem;position:relative;z-index:1;" : ""}>
+      <Content />
+    </div>
+    </div>
+  ) : (
+    <div class="article-content" id="article-content" style={post.data.image ? "margin-top:-6rem;position:relative;z-index:1;" : ""}>
+      <Content />
+    </div>
+  )}
+  {post.data.password && (
+    <div id="password-form" style="border:1px solid var(--border);border-radius:6px;padding:2rem;text-align:center;margin:2rem 0;" data-password={post.data.password}>
+      <div style="font-size:2rem;margin-bottom:1rem;">🔒</div>
+      <div style="color:var(--dim);margin-bottom:1rem;">This page is password protected</div>
+      <input type="password" id="pwd-input" placeholder="enter password" style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:0.5rem;color:var(--fg);font-family:var(--font-mono);font-size:0.875rem;outline:none;width:200px;text-align:center;" />
+      <button id="pwd-btn" style="display:block;margin:0.75rem auto 0;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:0.4rem 1.5rem;color:var(--green);font-family:var(--font-mono);font-size:0.8125rem;cursor:pointer;">unlock</button>
+      <div id="pwd-error" style="color:var(--red);font-size:0.75rem;margin-top:0.5rem;display:none;">wrong password</div>
+    </div>
+  )}
+
 
   <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
     {post.data.tags && post.data.tags.length > 0 && (
@@ -216,14 +236,61 @@ function updateActive() {
 window.addEventListener("scroll", updateActive);
 updateActive();
 
-// Reading progress bar
-var bar = document.createElement("div");
-bar.style.cssText = "position:fixed;top:0;left:0;height:2px;background:var(--green);z-index:1000;transition:width 0.1s;";
-document.body.appendChild(bar);
+// Reading progress emoji (fixed position)
+var progEl = document.createElement("div");
+progEl.style.cssText = "position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);color:var(--dim);font-size:0.75rem;font-family:var(--font-mono);z-index:999;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 8px;";
+progEl.id = "progress-emoji";
+document.body.appendChild(progEl);
 window.addEventListener("scroll", function() {
   var h = document.documentElement.scrollHeight - window.innerHeight;
-  bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + "%";
+  if (h <= 0) { progEl.textContent = ""; return; }
+  var pct = Math.round((window.scrollY / h) * 100);
+  var filled = Math.round(pct / 10);
+  var empty = 10 - filled;
+  progEl.textContent = "📖 " + "█".repeat(filled) + "░".repeat(empty) + " " + pct + "%";
 });
+
+// Keyword highlighting from grep
+(function() {
+  var q = sessionStorage.getItem("grep-query");
+  if (!q) return;
+  sessionStorage.removeItem("grep-query");
+  var content = document.querySelector(".article-content");
+  if (!content) return;
+  var words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return;
+  function walk(el) {
+    if (el.tagName === "SCRIPT" || el.tagName === "STYLE" || el.tagName === "PRE" || el.tagName === "CODE") return;
+    if (el.nodeType === 3) {
+      var text = el.nodeValue;
+      var lower = text.toLowerCase();
+      var match = false;
+      for (var w = 0; w < words.length; w++) { if (lower.includes(words[w])) { match = true; break; } }
+      if (!match) return;
+      var parts = [];
+      var last = 0;
+      for (var w = 0; w < words.length; w++) {
+        var idx = lower.indexOf(words[w], last);
+        if (idx === -1) continue;
+        if (idx > last) parts.push(document.createTextNode(text.slice(last, idx)));
+        var span = document.createElement("span");
+        span.style.cssText = "background:rgba(255,255,51,0.3);color:var(--fg-bright);border-radius:2px;padding:0 2px;";
+        span.textContent = text.slice(idx, idx + words[w].length);
+        parts.push(span);
+        last = idx + words[w].length;
+      }
+      if (last < text.length) parts.push(document.createTextNode(text.slice(last)));
+      if (parts.length > 0) {
+        var parent = el.parentNode;
+        for (var p = 0; p < parts.length; p++) parent.insertBefore(parts[p], el);
+        parent.removeChild(el);
+      }
+    } else if (el.nodeType === 1 && el.childNodes) {
+      for (var c = el.childNodes.length - 1; c >= 0; c--) walk(el.childNodes[c]);
+    }
+  }
+  walk(content);
+})();
 
 // Copy button for code blocks
 document.querySelectorAll(".article-content pre").forEach(function(pre) {
@@ -242,4 +309,31 @@ document.querySelectorAll(".article-content pre").forEach(function(pre) {
     });
   });
 });
+
+// Password protection
+(function() {
+  var pwdForm = document.getElementById("password-form");
+  var lockedContent = document.getElementById("locked-content");
+  var pwdInput = document.getElementById("pwd-input");
+  var pwdBtn = document.getElementById("pwd-btn");
+  var pwdError = document.getElementById("pwd-error");
+  var correctPwd = pwdForm.getAttribute("data-password");
+  if (!pwdForm || !correctPwd) return;
+  // Check sessionStorage
+  if (sessionStorage.getItem("unlocked-" + window.location.pathname) === "1") {
+    pwdForm.style.display = "none";
+    lockedContent.style.display = "block";
+  }
+  function tryUnlock() {
+    if (pwdInput.value === correctPwd) {
+      pwdForm.style.display = "none";
+      lockedContent.style.display = "block";
+      sessionStorage.setItem("unlocked-" + window.location.pathname, "1");
+    } else {
+      pwdError.style.display = "block";
+    }
+  }
+  pwdBtn.addEventListener("click", tryUnlock);
+  pwdInput.addEventListener("keydown", function(e) { if (e.key === "Enter") tryUnlock(); });
+})();
 </script>

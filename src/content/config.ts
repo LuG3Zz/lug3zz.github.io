@@ -12,6 +12,7 @@ const blog = defineCollection({
     seriesOrder: z.number().optional(),
     pinned: z.boolean().optional(),
     image: z.string().optional(),
+    password: z.string().optional(),
   }),
   slug: ({ data, defaultSlug }) => data.slug || defaultSlug,
 });
