@@ -7,7 +7,7 @@
 
 ## Architecture
 - **Astro 5** static site, terminal-themed, language zh-CN
-- Pure CSS theming via custom properties (5 themes: terminal, catppuccin, matrix, nord, gruvbox)
+- Pure CSS theming via custom properties (5 themes: terminal, catppuccin, matrix, nord, gruvbox, dracula, tokyo-night, one-dark)
 - Client-side command palette in Layout.astro (Tab completion with argument support for `cat`/`tag`/`series`/`get`/`cd`; cycling via `tabIsCmd` flag)
 - Tab completion data (slugs/tags/series/scripts) embedded as JSON at build time for client-side autocomplete
 - Theme selector on command line row
@@ -20,6 +20,7 @@
 - Cover images (`image` field in frontmatter, banner with transparency gradient on detail page, thumbnails in listings)
 - Inline grep search (results panel below command input, no page navigation)
 - Remark plugins for Obsidian syntax (`[[wikilink]]`, `![[image]]`, `> [!callout]`)
+- Component: BlogPostItem (DRY listing across blog/index, page/[page], index, tags/[tag])
 - No test/lint/formatter config
 
 ## Pages (all in `src/pages/`)
