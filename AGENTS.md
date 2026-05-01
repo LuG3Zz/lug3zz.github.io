@@ -7,7 +7,7 @@
 
 ## Architecture
 - **Astro 5** static site, terminal-themed, language zh-CN
-- Pure CSS theming via custom properties (5 themes: terminal, catppuccin, matrix, nord, gruvbox, dracula, tokyo-night, one-dark)
+- Pure CSS theming via custom properties (8 themes: terminal, catppuccin, matrix, nord, gruvbox, dracula, tokyo-night, one-dark)
 - Client-side command palette in Layout.astro (Tab completion with argument support for `cat`/`tag`/`series`/`get`/`cd`; cycling via `tabIsCmd` flag)
 - Tab completion data (slugs/tags/series/scripts) embedded as JSON at build time for client-side autocomplete
 - Theme selector on command line row

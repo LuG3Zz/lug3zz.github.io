@@ -41,11 +41,11 @@ const index = posts.map((p) => {
   </div>
 </Layout>
 
-<script is:inline id="search-index" type="application/json">{JSON.stringify(index)}</script>
+<script is:inline id="search-index-data" type="application/json">{JSON.stringify(index)}</script>
 
 <script>
 (function() {
-  const index = JSON.parse(document.getElementById("search-index").textContent);
+  const index = JSON.parse(document.getElementById("search-index-data").textContent);
   const input = document.getElementById("search-input");
   const results = document.getElementById("search-results");
   const stats = document.getElementById("search-stats");

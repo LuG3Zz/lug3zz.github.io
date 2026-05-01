@@ -3,6 +3,7 @@ import "../styles/terminal.css";
 import { getCollection } from "astro:content";
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
+import { execSync } from "child_process";
 const { title } = Astro.props;
 const path = Astro.url.pathname;
 
@@ -14,7 +15,10 @@ const scripts = readdirSync(join(process.cwd(), "public/scripts")).map(f => f.re
 const completionJson = JSON.stringify({ slugs, tags, series, scripts });
 
 // Get first commit date for uptime
-const firstCommitDate = "2026-04-28T22:28:26+08:00";
+const firstCommitDate = (function() {
+  try { return execSync("git log --reverse --format=%cI --date=iso-strict", { encoding: "utf-8" }).trim().split("\n")[0]; }
+  catch (_) { return "2026-04-28T22:28:26+08:00"; }
+})();
 
 const searchIndex = allPosts.map((p) => {
   const fp = join(process.cwd(), "src/content/blog", p.id);
@@ -46,19 +50,9 @@ const searchIndex = allPosts.map((p) => {
       }
     })();
   </script>
-  <style is:global>
-    :root{--bg:#0d0d0d;--fg:#c0c0c0;--fg-bright:#fff;--green:#33ff33;--yellow:#ffff33;--red:#ff3333;--blue:#33aaff;--cyan:#33ffff;--dim:#666;--border:#333;--cursor:#33ff33;--selection:rgba(255,255,255,0.15);--font-mono:"JetBrains Mono","Fira Code","Cascadia Code","Consolas","Noto Sans SC","PingFang SC","Microsoft YaHei","WenQuanYi Micro Hei",monospace}
-    [data-theme="catppuccin"]{--bg:#1e1e2e;--fg:#cdd6f4;--fg-bright:#fff;--green:#a6e3a1;--yellow:#f9e2af;--red:#f38ba8;--blue:#89b4fa;--cyan:#89dceb;--dim:#6c7086;--border:#45475a;--cursor:#b4befe;--selection:rgba(180,190,254,0.2)}
-    [data-theme="matrix"]{--bg:#000;--fg:#00cc00;--fg-bright:#00ff00;--green:#00ff00;--yellow:#00cc00;--red:#009900;--blue:#006600;--cyan:#00cc66;--dim:#004400;--border:#003300;--cursor:#00ff00;--selection:rgba(0,255,0,0.3)}
-    [data-theme="nord"]{--bg:#2e3440;--fg:#d8dee9;--fg-bright:#eceff4;--green:#a3be8c;--yellow:#ebcb8b;--red:#bf616a;--blue:#81a1c1;--cyan:#88c0d0;--dim:#4c566a;--border:#434c5e;--cursor:#d8dee9;--selection:rgba(216,222,233,0.15)}
-    [data-theme="gruvbox"]{--bg:#282828;--fg:#ebdbb2;--fg-bright:#d5c4a1;--green:#b8bb26;--yellow:#fabd2f;--red:#fb4934;--blue:#83a598;--cyan:#8ec07c;--dim:#928374;--border:#3c3836;--cursor:#ebdbb2;--selection:rgba(235,219,178,0.2)}
-    [data-theme="dracula"]{--bg:#282a36;--fg:#f8f8f2;--fg-bright:#f8f8f2;--green:#50fa7b;--yellow:#f1fa8c;--red:#ff5555;--blue:#bd93f9;--cyan:#8be9fd;--dim:#6272a4;--border:#44475a;--cursor:#f8f8f2;--selection:rgba(189,147,249,0.35)}
-    [data-theme="tokyo-night"]{--bg:#1a1b26;--fg:#a9b1d6;--fg-bright:#c0caf5;--green:#9ece6a;--yellow:#e0af68;--red:#f7768e;--blue:#7aa2f7;--cyan:#7dcfff;--dim:#565f89;--border:#24283b;--cursor:#c0caf5;--selection:rgba(122,162,247,0.3)}
-    [data-theme="one-dark"]{--bg:#282c34;--fg:#abb2bf;--fg-bright:#d4d7db;--green:#98c379;--yellow:#e5c07b;--red:#e06c75;--blue:#61afef;--cyan:#56b6c2;--dim:#5c6370;--border:#3e4451;--cursor:#abb2bf;--selection:rgba(97,175,239,0.2)}
-  </style>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{title} — brownlu-blog</title>
+  <title>{path === "/" ? "HOME" : title} | brownlu-blog</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💻</text></svg>" />
   </head>
 <body>
@@ -472,7 +466,11 @@ const searchIndex = allPosts.map((p) => {
     } else if (name === "help") {
       showToast("cat <slug> | cd <path> | tag <name> | grep <query> | series | activity | archive | fortune | clear");
     } else if (name === "clear") {
-      window.location.reload();
+      hideSuggestions();
+      if (grepResults) grepResults.classList.remove("show");
+      document.getElementById("pomodoro-display").style.display = "none";
+      input.value = "";
+      input.focus();
     } else if (name === "date") {
       const now = new Date();
       showToast(now.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" }));
@@ -663,7 +661,7 @@ const searchIndex = allPosts.map((p) => {
     }
   }
 
-  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","archive","home","zen","fortune","series","grep","weather","theme","uptime","tip","matrix","save","night","focus","rand","pomodoro","pomo"];
+  var commands_list = ["activity","archive","cat","cd","clear","date","downloads","focus","fortune","get","grep","help","home","ls","matrix","night","pomodoro","pomo","rand","save","scripts","series","tag","theme","tip","travel","uptime","weather","whoami","zen"];
   var suggestions = document.getElementById("cmd-suggestions");
 
   var tabMatches = [];
