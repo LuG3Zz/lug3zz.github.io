@@ -89,6 +89,8 @@ const fortune = quotes[Math.floor(Math.random() * quotes.length)];
   </div>
 </Layout>
 
+<canvas id="matrix-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none;display:none;"></canvas>
+
 <script define:vars={{ siteName, tagline }}>
 var el = document.getElementById("welcome-output");
 var cursor = '<span class="cursor-block" style="display:inline-block;"></span>';
@@ -125,4 +127,55 @@ if (helpSection) {
     helpToggle.textContent = helpSection.open ? "[-]" : "[+]";
   });
 }
+
+// Matrix rain
+(function() {
+  var canvas = document.getElementById("matrix-canvas");
+  if (!canvas) return;
+  var ctx = canvas.getContext("2d");
+  var drops, columns, fontSize = 14;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    columns = Math.floor(canvas.width / fontSize);
+    drops = [];
+    for (var i = 0; i < columns; i++) drops[i] = Math.random() * -canvas.height / fontSize;
+  }
+  resize();
+  var isMobile = window.innerWidth < 768;
+  var intervalTime = isMobile ? 80 : 50;
+  var rt;
+  window.addEventListener("resize", function() { clearTimeout(rt); rt = setTimeout(resize, 200); });
+
+  var chars = "0123456789ABCDEF0123456789";
+  function draw() {
+    ctx.fillStyle = "rgba(13,13,13,0.05)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#33ff33";
+    ctx.font = fontSize + "px monospace";
+    for (var i = 0; i < drops.length; i++) {
+      var text = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+  var interval;
+  function start() {
+    if (interval) return;
+    canvas.style.display = "block";
+    interval = setInterval(draw, intervalTime);
+  }
+  function stop() {
+    if (interval) { clearInterval(interval); interval = null; }
+    canvas.style.display = "none";
+  }
+  function toggle() {
+    if (interval) { stop(); localStorage.setItem("matrix-rain", "false"); }
+    else { start(); localStorage.setItem("matrix-rain", "true"); }
+  }
+  if (localStorage.getItem("matrix-rain") === "true") start();
+  window.matrixRain = { toggle: toggle, start: start, stop: stop, isOn: function() { return !!interval; } };
+})();
 </script>

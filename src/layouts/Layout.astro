@@ -13,6 +13,9 @@ const series = [...new Set(allPosts.map(p => p.data.series).filter(Boolean))];
 const scripts = readdirSync(join(process.cwd(), "public/scripts")).map(f => f.replace(/\.\w+$/, ""));
 const completionJson = JSON.stringify({ slugs, tags, series, scripts });
 
+// Get first commit date for uptime
+const firstCommitDate = "2026-04-28T22:28:26+08:00";
+
 const searchIndex = allPosts.map((p) => {
   const fp = join(process.cwd(), "src/content/blog", p.id);
   let content = "";
@@ -117,11 +120,14 @@ const searchIndex = allPosts.map((p) => {
         <span>powered by Astro</span>
         &nbsp;·&nbsp;
         <span>© {new Date().getFullYear()}</span>
+        &nbsp;·&nbsp;
+        <span>uptime: <span id="footer-uptime">--</span></span>
       </div>
     </footer>
   </div>
 
   <div id="cmd-toast" class="cmd-toast"><span id="toast-msg"></span><span class="dismiss">[x]</span></div>
+  <span id="uptime-data" style="display:none;" data-start={firstCommitDate}></span>
   <button id="back-to-top" class="back-to-top" aria-label="Back to top">^</button>
 
   <script id="completion-data" type="application/json" set:html={completionJson}></script>
@@ -360,7 +366,9 @@ const searchIndex = allPosts.map((p) => {
           var desc = (cc.lang_zh?.[0]?.value) || cc.weatherDesc[0].value;
           var emoji = weatherEmoji(desc);
           var wind = windArrow(cc.winddir16Point) + " " + cc.windspeedKmph + " km/h";
-          weatherEl.textContent = (loc ? loc + "  " : "") + emoji + " " + desc + "  ·  " + cc.temp_C + "°C  ·  💧 " + cc.humidity + "%  ·  " + wind;
+          weatherEl.innerHTML = '<div>' + (loc ? loc + "  " : "") + emoji + " " + desc + '</div>' +
+            '<div>🌡️ ' + cc.temp_C + '°C</div>' +
+            '<div>💧 ' + cc.humidity + '%  ·  🌀 ' + wind + '</div>';
         })
         .catch(function() { weatherEl.textContent = "☁️ --.-°C"; });
     }
@@ -500,12 +508,91 @@ const searchIndex = allPosts.map((p) => {
       document.documentElement.setAttribute("data-zen", on ? "true" : "false");
       localStorage.setItem("zen", on ? "true" : "false");
       showToast(on ? "zen mode on" : "zen mode off");
+    } else if (name === "uptime") {
+      var start = new Date(document.getElementById("uptime-data").getAttribute("data-start"));
+      var now = new Date();
+      var diff = Math.floor((now.getTime() - start.getTime()) / 1000);
+      var days = Math.floor(diff / 86400);
+      var hours = Math.floor((diff % 86400) / 3600);
+      var mins = Math.floor((diff % 3600) / 60);
+      showToast("uptime: " + days + " days, " + hours + " hours, " + mins + " mins");
+    } else if (name === "tip") {
+      var tips = [
+        "Use '!!' to re-run the last command: sudo !!",
+        "Press Ctrl+R to search command history",
+        "Use 'cd -' to go back to the previous directory",
+        "'cat file | less' — scroll through long output",
+        "Use 'du -sh *' to see disk usage per item",
+        "Wildcard tip: 'rm -rf *' won't delete hidden files (.xxx)",
+        "Use 'history | grep foo' to find past commands",
+        "Kill a process by name: pkill firefox",
+        "'watch -n 1 command' — run command every second",
+        "Use 'tree' to visualize directory structure",
+        "'df -h' shows disk usage in human-readable format",
+        "'free -h' shows memory usage",
+        "Add '&' at end of command to run in background",
+        "Use 'ncdu' for interactive disk usage analysis",
+        "'Ctrl+Z' suspends a process, 'bg' sends it to background",
+        "'!!:0' gets just the command name of last command",
+        "'ssh-copy-id user@host' copies your SSH key",
+        "Use 'tar -xvf file.tar.gz' to extract tarballs",
+        "'curl ifconfig.me' shows your public IP",
+        "'echo $?' shows exit code of last command (0 = success)",
+        "Use 'which command' to find where a program is installed",
+        "'chmod +x file' makes a file executable",
+        "Use 'file filename' to check what type of file it is",
+        "'head -n 20 file' shows first 20 lines, 'tail -n 20' last 20",
+        "Use 'diff file1 file2' to compare two files",
+        "'sort file | uniq -c' counts unique lines",
+        "Use 'grep -r pattern .' to recursively search all files",
+        "Combine commands with '&&': cmd1 && cmd2 (run if prev succeeds)",
+        "'cmd1 | tee file' shows output AND saves to file",
+        "Use 'alias ll=\"ls -la\"' to create shortcuts",
+        "'Ctrl+W' deletes the word before cursor in terminal",
+        "'Ctrl+U' clears the entire current line",
+        "'Ctrl+A' jumps to start of line, 'Ctrl+E' to end",
+        "Use 'ls -laS' to sort files by size",
+        "'ls -latr' lists files by date (oldest last)",
+        "Use 'find . -name \"*.txt\"' to find all txt files",
+        "'grep -c pattern file' counts matches instead of displaying",
+        "Use 'scp file user@host:/path/' to copy files over SSH",
+        "'rsync -av source/ dest/' syncs directories efficiently",
+        "Use 'journalctl -xe' to check system logs",
+        "'systemctl status service' checks if a service is running",
+        "Use 'htop' for interactive process management",
+        "'lsof -i :8080' shows what's listening on port 8080",
+        "Use 'ping -c 4 host' to send exactly 4 pings",
+        "'nslookup domain.com' or 'dig domain.com' for DNS lookup",
+        "Use 'cal' to display a calendar in terminal",
+        "'date +%Y-%m-%d' outputs date in YYYY-MM-DD format",
+        "Use 'time command' to measure how long a command takes",
+        "'mkpasswd -m sha-512' generates a secure password hash",
+        "Use 'openssl rand -base64 32' to generate a random key",
+        "'Ctrl+L' clears the screen (same as 'clear')",
+        "Use 'last' to see recent login history",
+        "'w' or 'who' shows who's logged in",
+        "Use 'id' to see your user and group IDs",
+        "'uname -a' shows all system info",
+        "Use 'lsblk' to list all block devices",
+        "'blkid' shows UUID of disk partitions",
+        "Use 'mtr host' combines ping + traceroute",
+        "'ss -tuln' shows listening ports",
+        "Use 'ip a' to see network interfaces (replaces ifconfig)",
+      ];
+      showToast(tips[Math.floor(Math.random() * tips.length)]);
+    } else if (name === "matrix") {
+      if (window.matrixRain) {
+        window.matrixRain.toggle();
+        showToast(window.matrixRain.isOn() ? "matrix rain on" : "matrix rain off");
+      } else {
+        window.location.href = "/";
+      }
     } else {
       showToast(`command not found: ${name}. Type 'help'`);
     }
   }
 
-  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","archive","home","zen","fortune","series","grep","weather","theme"];
+  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","archive","home","zen","fortune","series","grep","weather","theme","uptime","tip","matrix"];
   var suggestions = document.getElementById("cmd-suggestions");
 
   var tabMatches = [];
@@ -649,8 +736,21 @@ const searchIndex = allPosts.map((p) => {
     }
   });
 
+  // Footer uptime
+  var footerUptime = document.getElementById("footer-uptime");
+  var uptimeStart = new Date(document.getElementById("uptime-data").getAttribute("data-start"));
+  function updateUptime() {
+    var diff = Math.floor((Date.now() - uptimeStart.getTime()) / 1000);
+    var d = Math.floor(diff / 86400);
+    var h = Math.floor((diff % 86400) / 3600);
+    var m = Math.floor((diff % 3600) / 60);
+    footerUptime.textContent = d + " days, " + h + " hours";
+  }
+  updateUptime();
+  setInterval(updateUptime, 60000);
+
   // Back to top
-  const topBtn = document.getElementById("back-to-top");
+  var topBtn = document.getElementById("back-to-top");
   if (topBtn) {
     window.addEventListener("scroll", function() {
       topBtn.classList.toggle("show", window.scrollY > 300);

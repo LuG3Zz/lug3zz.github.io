@@ -361,3 +361,30 @@ html[data-zen="true"] .terminal-footer { display: none !important; }
 html[data-zen="true"] .terminal-header { border-bottom: none !important; margin-bottom: 1rem !important; padding-bottom: 0 !important; }
 html[data-zen="true"] .container { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
 html[data-zen="true"] main { width: 100%; }
+
+@media (max-width: 640px) {
+  .container { padding: 1rem 0.75rem; }
+  .header-top { flex-direction: column; }
+  .ascii-art { font-size: 0.5rem; white-space: pre; overflow-x: auto; max-width: 100%; }
+  .weather-box { width: 100%; }
+  .nav a { padding: 0.25rem 0.6rem; font-size: 0.75rem; }
+  .nav a:first-of-type { border-radius: 4px 0 0 4px; }
+  .nav a:nth-last-child(2) { border-radius: 0 4px 4px 0; }
+  .nav a:last-of-type { border-radius: 0; }
+  .post-item { gap: 0.5rem; flex-wrap: wrap; }
+  .post-item > span:first-of-type { font-size: 0.7rem; }
+  .post-title { font-size: 0.875rem; }
+  .terminal-line { gap: 0.15rem; }
+  .cmd-input { min-width: 60px; font-size: 0.875rem; }
+  .theme-select { font-size: 0.75rem; padding: 0.15rem 0.3rem; }
+  pre { font-size: 0.75rem; padding: 0.6rem; }
+  pre:not([style]) { max-width: 100%; overflow-x: auto; }
+  .article-content { font-size: 0.875rem; }
+  .article-content pre { margin: 0.75rem -0.5rem; border-radius: 0; }
+  h1 { font-size: 1.2rem; }
+  h2 { font-size: 1.1rem; }
+  h3 { font-size: 1rem; }
+  .toc-mobile { margin: 0 -0.25rem; }
+  .cmd-toast { font-size: 0.75rem; padding: 0.5rem 1rem; max-width: 90vw; }
+  .back-to-top { width: 2rem; height: 2rem; font-size: 1rem; bottom: 0.75rem; right: 0.75rem; }
+}
