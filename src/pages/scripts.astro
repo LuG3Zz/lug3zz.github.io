@@ -37,6 +37,8 @@ const baseUrl = "https://lug3zz.github.io";
         <a class="post-title" href={`/scripts/${s.name}`} style="font-size: 0.875rem;">
           {s.name}
         </a>
+        <button class="copy-cmd is-curl" data-cmd={"curl -O " + baseUrl + "/scripts/" + s.name} style="background:none;border:1px solid var(--border);border-radius:3px;color:var(--green);font-family:var(--font-mono);font-size:0.7rem;padding:0.15rem 0.5rem;cursor:pointer;flex-shrink:0;transition:all 0.15s;">curl</button>
+        <button class="copy-cmd is-wget" data-cmd={"wget " + baseUrl + "/scripts/" + s.name} style="background:none;border:1px solid var(--border);border-radius:3px;color:var(--blue);font-family:var(--font-mono);font-size:0.7rem;padding:0.15rem 0.5rem;cursor:pointer;flex-shrink:0;transition:all 0.15s;">wget</button>
         <span class="post-date" style="margin-left: auto;">{s.mtime}</span>
       </li>
     ))}
@@ -45,9 +47,27 @@ const baseUrl = "https://lug3zz.github.io";
   <div style="margin-top: 1.5rem; padding: 1rem; border: 1px solid var(--border); border-radius: 6px;">
     <div style="margin-bottom: 0.5rem; color: var(--yellow);">$ cat README.md</div>
     <p style="margin-bottom: 0.5rem;">Fetch any script with curl or wget:</p>
-    <pre style="margin: 0.5rem 0; padding: 0.5rem; background: #1a1a1a; border: 1px solid var(--border); border-radius: 4px;">curl -O {baseUrl}/scripts/hello.sh
+    <pre style="margin: 0.5rem 0; padding: 0.5rem; background: #1a1a1a; border: 1px solid var(--border); border-radius: 4px; position:relative;">curl -O {baseUrl}/scripts/hello.sh
 chmod +x hello.sh
-./hello.sh</pre>
-    <pre style="margin: 0.5rem 0; padding: 0.5rem; background: #1a1a1a; border: 1px solid var(--border); border-radius: 4px;">wget {baseUrl}/scripts/hello.sh</pre>
+./hello.sh<button class="copy-cmd" data-cmd="curl -O {baseUrl}/scripts/hello.sh && chmod +x hello.sh && ./hello.sh" style="position:absolute;top:4px;right:4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--green);font-family:var(--font-mono);font-size:0.7rem;padding:0.15rem 0.5rem;cursor:pointer;">copy</button></pre>
+    <pre style="margin: 0.5rem 0; padding: 0.5rem; background: #1a1a1a; border: 1px solid var(--border); border-radius: 4px; position:relative;">wget {baseUrl}/scripts/hello.sh<button class="copy-cmd" data-cmd="wget {baseUrl}/scripts/hello.sh" style="position:absolute;top:4px;right:4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--green);font-family:var(--font-mono);font-size:0.7rem;padding:0.15rem 0.5rem;cursor:pointer;">copy</button></pre>
   </div>
 </Layout>
+
+<script>
+document.querySelectorAll(".copy-cmd").forEach(function(btn) {
+  btn.addEventListener("click", function() {
+    var cmd = btn.getAttribute("data-cmd");
+    navigator.clipboard.writeText(cmd).then(function() {
+      btn.textContent = "done!";
+      btn.style.color = "var(--green)";
+      btn.style.borderColor = "var(--green)";
+      setTimeout(function() {
+        btn.textContent = btn.classList.contains("is-curl") ? "curl" : "wget";
+        btn.style.color = btn.classList.contains("is-curl") ? "var(--green)" : "var(--blue)";
+        btn.style.borderColor = "var(--border)";
+      }, 1500);
+    });
+  });
+});
+</script>
