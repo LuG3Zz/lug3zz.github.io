@@ -31,7 +31,7 @@ const sortedYears = [...grouped.keys()].sort((a, b) => b - a);
     const sortedMonths = [...months.keys()].sort((a, b) => b - a);
     return (
       <div style="margin-bottom: 1.5rem;">
-        <div style="color: var(--yellow); font-size: 1rem; margin-bottom: 0.5rem;">{year}</div>
+        <div id={"year-" + year} style="color: var(--yellow); font-size: 1rem; margin-bottom: 0.5rem;">{year}</div>
         {sortedMonths.map((month) => {
           const mposts = months.get(month);
           return (

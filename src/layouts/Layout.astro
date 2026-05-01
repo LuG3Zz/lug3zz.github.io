@@ -38,11 +38,11 @@ const searchIndex = allPosts.map((p) => {
     })();
   </script>
   <style>
-    :root { --bg:#0d0d0d;--fg:#c0c0c0;--fg-bright:#fff;--green:#33ff33;--yellow:#ffff33;--red:#ff3333;--blue:#33aaff;--dim:#666;--border:#333;--cursor:#33ff33;--selection:rgba(255,255,255,0.15);--font-mono:"JetBrains Mono","Fira Code","Cascadia Code","Consolas","Noto Sans SC","PingFang SC","Microsoft YaHei","WenQuanYi Micro Hei",monospace; }
-    [data-theme="catppuccin"]{--bg:#1e1e2e;--fg:#cdd6f4;--fg-bright:#fff;--green:#a6e3a1;--yellow:#f9e2af;--red:#f38ba8;--blue:#89b4fa;--dim:#6c7086;--border:#45475a;--cursor:#b4befe;--selection:rgba(180,190,254,0.2)}
-    [data-theme="matrix"]{--bg:#000;--fg:#00cc00;--fg-bright:#00ff00;--green:#00ff00;--yellow:#00cc00;--red:#009900;--blue:#006600;--dim:#004400;--border:#003300;--cursor:#00ff00;--selection:rgba(0,255,0,0.3)}
-    [data-theme="nord"]{--bg:#2e3440;--fg:#d8dee9;--fg-bright:#eceff4;--green:#a3be8c;--yellow:#ebcb8b;--red:#bf616a;--blue:#81a1c1;--dim:#4c566a;--border:#434c5e;--cursor:#d8dee9;--selection:rgba(216,222,233,0.15)}
-    [data-theme="gruvbox"]{--bg:#282828;--fg:#ebdbb2;--fg-bright:#d5c4a1;--green:#b8bb26;--yellow:#fabd2f;--red:#fb4934;--blue:#83a598;--dim:#928374;--border:#3c3836;--cursor:#ebdbb2;--selection:rgba(235,219,178,0.2)}
+    :root { --bg:#0d0d0d;--fg:#c0c0c0;--fg-bright:#fff;--green:#33ff33;--yellow:#ffff33;--red:#ff3333;--blue:#33aaff;--cyan:#33ffff;--dim:#666;--border:#333;--cursor:#33ff33;--selection:rgba(255,255,255,0.15);--font-mono:"JetBrains Mono","Fira Code","Cascadia Code","Consolas","Noto Sans SC","PingFang SC","Microsoft YaHei","WenQuanYi Micro Hei",monospace; }
+    [data-theme="catppuccin"]{--bg:#1e1e2e;--fg:#cdd6f4;--fg-bright:#fff;--green:#a6e3a1;--yellow:#f9e2af;--red:#f38ba8;--blue:#89b4fa;--cyan:#89dceb;--dim:#6c7086;--border:#45475a;--cursor:#b4befe;--selection:rgba(180,190,254,0.2)}
+    [data-theme="matrix"]{--bg:#000;--fg:#00cc00;--fg-bright:#00ff00;--green:#00ff00;--yellow:#00cc00;--red:#009900;--blue:#006600;--cyan:#00cc66;--dim:#004400;--border:#003300;--cursor:#00ff00;--selection:rgba(0,255,0,0.3)}
+    [data-theme="nord"]{--bg:#2e3440;--fg:#d8dee9;--fg-bright:#eceff4;--green:#a3be8c;--yellow:#ebcb8b;--red:#bf616a;--blue:#81a1c1;--cyan:#88c0d0;--dim:#4c566a;--border:#434c5e;--cursor:#d8dee9;--selection:rgba(216,222,233,0.15)}
+    [data-theme="gruvbox"]{--bg:#282828;--fg:#ebdbb2;--fg-bright:#d5c4a1;--green:#b8bb26;--yellow:#fabd2f;--red:#fb4934;--blue:#83a598;--cyan:#8ec07c;--dim:#928374;--border:#3c3836;--cursor:#ebdbb2;--selection:rgba(235,219,178,0.2)}
   </style>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -76,6 +76,13 @@ const searchIndex = allPosts.map((p) => {
         <span class="prompt-dir">/{path === "/" ? "" : path.replace(/\/$/, "").replace(/^\//, "") || "~"}</span>
         <span class="prompt-end"> $</span>
         <input type="text" id="cmd-input" class="cmd-input" spellcheck="false" autocomplete="off" />
+        <select id="theme-select" class="theme-select" style="margin-left:0.5rem;flex-shrink:0;">
+          <option value="terminal">terminal</option>
+          <option value="catppuccin">catppuccin</option>
+          <option value="matrix">matrix</option>
+          <option value="nord">nord</option>
+          <option value="gruvbox">gruvbox</option>
+        </select>
       </div>
 
       <div id="cmd-suggestions" class="cmd-suggestions"></div>
@@ -91,15 +98,6 @@ const searchIndex = allPosts.map((p) => {
         <a href="/travel" class={path === "/travel" ? "active" : ""}>travel</a>
 
         <a href="/about" class={path === "/about" ? "active" : ""}>about</a>
-        <span class="theme-selector-wrap">
-          <select id="theme-select" class="theme-select">
-            <option value="terminal">terminal</option>
-            <option value="catppuccin">catppuccin</option>
-            <option value="matrix">matrix</option>
-            <option value="nord">nord</option>
-            <option value="gruvbox">gruvbox</option>
-          </select>
-        </span>
       </nav>
     </header>
 
@@ -185,7 +183,6 @@ const searchIndex = allPosts.map((p) => {
   .weather-loading {
     color: var(--dim);
   }
-  .theme-selector-wrap { margin-left: auto; }
   .theme-select {
     background: var(--bg);
     color: var(--fg);
@@ -340,29 +337,51 @@ const searchIndex = allPosts.map((p) => {
   }
   function weatherEmoji(desc) {
     const d = desc.toLowerCase();
-    if (d.includes("sunny") || d.includes("clear")) return "☀️";
-    if (d.includes("rain") || d.includes("drizzle") || d.includes("shower")) return "🌧️";
-    if (d.includes("snow") || d.includes("sleet") || d.includes("ice")) return "❄️";
-    if (d.includes("thunder") || d.includes("storm")) return "⛈️";
-    if (d.includes("fog") || d.includes("mist") || d.includes("haze")) return "🌫️";
-    if (d.includes("cloud") || d.includes("overcast")) return "☁️";
+    if (d.includes("sunny") || d.includes("clear") || d.includes("晴")) return "☀️";
+    if (d.includes("rain") || d.includes("drizzle") || d.includes("shower") || d.includes("雨") || d.includes("阵雨")) return "🌧️";
+    if (d.includes("snow") || d.includes("sleet") || d.includes("ice") || d.includes("雪") || d.includes("冰")) return "❄️";
+    if (d.includes("thunder") || d.includes("storm") || d.includes("雷") || d.includes("暴")) return "⛈️";
+    if (d.includes("fog") || d.includes("mist") || d.includes("haze") || d.includes("雾") || d.includes("霾")) return "🌫️";
+    if (d.includes("cloud") || d.includes("overcast") || d.includes("云") || d.includes("阴")) return "☁️";
     return "🌤️";
   }
   const weatherEl = document.getElementById("weather-body");
   if (weatherEl) {
-    const ac = new AbortController();
-    setTimeout(() => ac.abort(), 8000);
-    fetch("https://wttr.in/?format=j1&lang=zh", { signal: ac.signal })
-      .then((r) => r.json())
-      .then((j) => {
-        const cc = j.current_condition[0];
-        const city = j.nearest_area?.[0]?.region?.[0]?.value || j.nearest_area?.[0]?.areaName?.[0]?.value || "";
-        const desc = (cc.lang_zh?.[0]?.value) || cc.weatherDesc[0].value;
-        const emoji = weatherEmoji(desc);
-        const wind = windArrow(cc.winddir16Point) + " " + cc.windspeedKmph + " km/h";
-        weatherEl.textContent = (city ? city + "  " : "") + emoji + " " + desc + "  ·  " + cc.temp_C + "°C  ·  💧 " + cc.humidity + "%  ·  " + wind;
-      })
-      .catch(() => { weatherEl.textContent = "--.-°C"; });
+    function fetchWeather(url) {
+      var ac = new AbortController();
+      setTimeout(function() { ac.abort(); }, 8000);
+      fetch(url, { signal: ac.signal })
+        .then(function(r) { return r.json(); })
+        .then(function(j) {
+          var cc = j.current_condition[0];
+          var city = j.nearest_area?.[0]?.areaName?.[0]?.value || "";
+          var region = j.nearest_area?.[0]?.region?.[0]?.value || "";
+          var loc = city + (city && region && region !== city ? ", " + region : region ? ", " + region : "");
+          var desc = (cc.lang_zh?.[0]?.value) || cc.weatherDesc[0].value;
+          var emoji = weatherEmoji(desc);
+          var wind = windArrow(cc.winddir16Point) + " " + cc.windspeedKmph + " km/h";
+          weatherEl.textContent = (loc ? loc + "  " : "") + emoji + " " + desc + "  ·  " + cc.temp_C + "°C  ·  💧 " + cc.humidity + "%  ·  " + wind;
+        })
+        .catch(function() { weatherEl.textContent = "☁️ --.-°C"; });
+    }
+    var savedCity = localStorage.getItem("weather-city");
+    if (savedCity) {
+      fetchWeather("https://wttr.in/" + encodeURIComponent(savedCity) + "?format=j1&lang=zh");
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function(pos) {
+          // Round to 1 decimal (~11km resolution) for city-level only
+          var lat = Math.round(pos.coords.latitude * 10) / 10;
+          var lng = Math.round(pos.coords.longitude * 10) / 10;
+          fetchWeather("https://wttr.in/" + lat + "," + lng + "?format=j1&lang=zh");
+          localStorage.setItem("weather-city", lat + "," + lng);
+        },
+        function() { fetchWeather("https://wttr.in/?format=j1&lang=zh"); },
+        { timeout: 8000, enableHighAccuracy: true }
+      );
+    } else {
+      fetchWeather("https://wttr.in/?format=j1&lang=zh");
+    }
   }
 
   function handleCommand(cmd) {
@@ -388,6 +407,28 @@ const searchIndex = allPosts.map((p) => {
       window.location.href = "/activity";
     } else if (name === "archive") {
       window.location.href = "/archive";
+    } else if (name === "weather") {
+      var wcity = parts.slice(1).join(" ");
+      if (wcity) {
+        localStorage.setItem("weather-city", wcity);
+        window.location.reload();
+      } else {
+        var cur = localStorage.getItem("weather-city");
+        showToast(cur ? "weather: " + cur + " (type 'weather <city>' to change)" : "weather: auto (type 'weather <city>' to set)");
+      }
+    } else if (name === "theme") {
+      var tname = parts.slice(1).join(" ");
+      var themes = ["terminal","catppuccin","matrix","nord","gruvbox"];
+      if (!tname) {
+        showToast("theme: " + (localStorage.getItem("theme") || "terminal") + " (" + themes.join("/") + ")");
+      } else if (themes.indexOf(tname) !== -1) {
+        document.documentElement.setAttribute("data-theme", tname);
+        localStorage.setItem("theme", tname);
+        themeSelect.value = tname;
+        showToast("theme set to " + tname);
+      } else {
+        showToast("theme: unknown theme \"" + tname + "\" (" + themes.join("/") + ")");
+      }
     } else if (name === "travel") {
       window.location.href = "/travel";
     } else if (name === "downloads") {
@@ -464,16 +505,16 @@ const searchIndex = allPosts.map((p) => {
     }
   }
 
-  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","archive","home","zen","fortune","series","grep"];
+  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","archive","home","zen","fortune","series","grep","weather","theme"];
   var suggestions = document.getElementById("cmd-suggestions");
 
   var tabMatches = [];
   var tabIndex = -1;
   var tabPartial = "";
+  var tabIsCmd = false;
 
   function showSuggestions(items) {
     tabMatches = items;
-    tabIndex = -1;
     var html = "";
     for (var i = 0; i < items.length; i++) {
       html += '<span class="sug-item" data-idx="' + i + '">' + items[i] + "</span>";
@@ -486,6 +527,7 @@ const searchIndex = allPosts.map((p) => {
     suggestions.classList.remove("show");
     tabMatches = [];
     tabIndex = -1;
+    tabIsCmd = false;
   }
   function highlightSug(idx) {
     var items = suggestions.querySelectorAll(".sug-item");
@@ -560,25 +602,27 @@ const searchIndex = allPosts.map((p) => {
       var trimmed = val.trim();
       var parts = trimmed.split(/\s+/);
       var cmd = parts[0].toLowerCase();
-      var completingCmd = parts.length === 1 && !val.endsWith(" ");
+      var completingCmd = (parts.length === 1 && !val.endsWith(" ")) || tabIsCmd;
       var matches;
       if (completingCmd) {
-        matches = commands_list.filter(function(c) { return c.startsWith(trimmed); });
+        if (!tabIsCmd) tabPartial = trimmed;
+        matches = commands_list.filter(function(c) { return c.startsWith(tabIsCmd ? tabPartial : trimmed); });
       } else {
         var partial = tabMatches.length ? tabPartial : (parts[parts.length - 1] || "");
         var candidates = argMap[cmd];
         matches = candidates ? candidates.filter(function(c) { return c.startsWith(partial); }) : [];
       }
       if (matches.length === 1) {
-        hideSuggestions(); tabMatches = []; tabPartial = ""; tabIndex = -1;
+        hideSuggestions(); tabMatches = []; tabPartial = ""; tabIndex = -1; tabIsCmd = false;
         input.value = completingCmd ? matches[0] + " " : val.replace(/\S+$/, "") + matches[0] + " ";
       } else if (matches.length > 1) {
         if (tabMatches.length === matches.length && tabMatches.every(function(v, i) { return v === matches[i]; })) {
           tabIndex = (tabIndex + 1) % matches.length;
         } else {
           tabMatches = matches;
-          tabPartial = completingCmd ? "" : (parts[parts.length - 1] || "");
+          tabPartial = completingCmd ? trimmed : (parts[parts.length - 1] || "");
           tabIndex = 0;
+          tabIsCmd = completingCmd;
         }
         input.value = completingCmd ? tabMatches[tabIndex] + " " : val.replace(/\S+$/, "") + tabMatches[tabIndex];
         showSuggestions(matches);

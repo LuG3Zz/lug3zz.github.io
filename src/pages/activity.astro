@@ -14,12 +14,75 @@ const totalChars = posts.reduce((sum, p) => {
   const raw = readFileSync(join(process.cwd(), "src/content/blog", p.id), "utf-8");
   return sum + raw.replace(/\s/g, "").length;
 }, 0);
+const totalWords = posts.reduce((sum, p) => {
+  const raw = readFileSync(join(process.cwd(), "src/content/blog", p.id), "utf-8");
+  const body = raw.replace(/---[\s\S]*?---/, "").trim();
+  const en = (body.match(/[a-zA-Z]+/g) || []).length;
+  const cjk = (body.match(/[\u4e00-\u9fff]/g) || []).length;
+  return sum + en + cjk;
+}, 0);
+const codeLines = posts.reduce((sum, p) => {
+  const raw = readFileSync(join(process.cwd(), "src/content/blog", p.id), "utf-8");
+  const blocks = raw.match(/```[\s\S]*?```/g) || [];
+  return sum + blocks.reduce((s, b) => s + b.split("\n").length - 2, 0);
+}, 0);
+const allImages = posts.reduce((sum, p) => {
+  const raw = readFileSync(join(process.cwd(), "src/content/blog", p.id), "utf-8");
+  const body = raw.replace(/---[\s\S]*?---/, "");
+  return sum + (body.match(/!\[.*?\]\(.*?\)/g) || []).length + ((p.data.image ? 1 : 0));
+}, 0);
 const dates = posts.map(p => p.data.date).sort((a, b) => a.valueOf() - b.valueOf());
 const earliest = dates.length > 0 ? dates[0] : null;
 const latest = dates.length > 0 ? dates[dates.length - 1] : null;
 const allTags = new Set(posts.flatMap(p => p.data.tags ?? []));
 const daySpan = latest && earliest ? Math.ceil((latest.valueOf() - earliest.valueOf()) / 86400000) + 1 : 0;
 const postsPerMonth = daySpan > 0 ? (totalPosts / (daySpan / 30)).toFixed(1) : "-";
+const avgPostChars = totalPosts > 0 ? Math.round(totalChars / totalPosts) : 0;
+const longestPost = posts.reduce((best, p) => {
+  const raw = readFileSync(join(process.cwd(), "src/content/blog", p.id), "utf-8");
+  const len = raw.replace(/\s/g, "").length;
+  return len > (best.len || 0) ? { slug: p.slug, len, title: p.data.title } : best;
+}, {} as { slug?: string; len?: number; title?: string });
+const seriesCount = new Set(posts.map(p => p.data.series).filter(Boolean)).size;
+const withCover = posts.filter(p => p.data.image).length;
+const totalLinks = posts.reduce((sum, p) => {
+  const raw = readFileSync(join(process.cwd(), "src/content/blog", p.id), "utf-8");
+  const body = raw.replace(/---[\s\S]*?---/, "");
+  return sum + (body.match(/\[.*?\]\(.*?\)/g) || []).length;
+}, 0);
+const totalExtLinks = posts.reduce((sum, p) => {
+  const raw = readFileSync(join(process.cwd(), "src/content/blog", p.id), "utf-8");
+  const body = raw.replace(/---[\s\S]*?---/, "");
+  return sum + (body.match(/\[.*?\]\(https?:\/\/.*?\)/g) || []).length;
+}, 0);
+const withSeries = posts.filter(p => p.data.series).length;
+
+// Yearly distribution
+const years = [...new Set(posts.map(p => p.data.date.getFullYear()))].sort((a, b) => b - a);
+const yearCounts = years.map(y => ({ year: y, count: posts.filter(p => p.data.date.getFullYear() === y).length }));
+
+// Weekday distribution
+const wdNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const wdCounts = [0, 0, 0, 0, 0, 0, 0];
+for (const p of posts) {
+  wdCounts[p.data.date.getDay()]++;
+}
+const maxWd = Math.max(...wdCounts);
+
+// Cumulative posts over time
+const sortedPosts = [...posts].sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf());
+const monthGroups = new Map<string, number>();
+for (const p of sortedPosts) {
+  const mk = p.data.date.toISOString().slice(0, 7);
+  monthGroups.set(mk, (monthGroups.get(mk) || 0) + 1);
+}
+const monthLabels = [...monthGroups.keys()];
+let cumulative = 0;
+const cumData = monthLabels.map(m => {
+  cumulative += monthGroups.get(m) || 0;
+  return { month: m, count: cumulative };
+});
+const maxCum = cumData.length > 0 ? cumData[cumData.length - 1].count : 1;
 
 const dayPosts = new Map();
 for (const p of posts) {
@@ -60,40 +123,53 @@ for (const row of grid) {
   while (row.length < maxCols) row.push({ count: 0, posts: [], date: "" });
 }
 
-const chars = [" ", "░", "▒", "▓", "█"];
-const colors = ["var(--dim)", "var(--green)", "var(--green)", "var(--yellow)", "var(--red)"];
+const heatColors = {
+  0: "var(--bg)",
+  1: "rgba(51,255,51,0.25)",
+  2: "rgba(51,255,51,0.50)",
+  3: "rgba(255,255,51,0.60)",
+  4: "rgba(255,51,51,0.70)",
+};
 
-// Build HTML string for the heatmap
-let html = '<div style="font-size:0.75rem;line-height:1.6;font-family:var(--font-mono);white-space:nowrap;">';
-html += '<div style="color:var(--green);margin-bottom:0.25rem;">Activity in ' + year + '</div>';
-html += '<div style="margin-bottom:0.25rem;"><span style="display:inline-block;width:3rem;"></span>';
-for (let ci = 0; ci < colLabels.length; ci++) {
-  const label = colLabels[ci];
-  html += '<span style="display:inline-block;width:4rem;text-align:center;color:var(--dim);font-size:0.6875rem;">' + (label !== undefined ? label : "") + '</span>';
+// Build heatmap as styled squares
+let html = '<div style="font-size:0.75rem;font-family:var(--font-mono);">';
+html += '<div style="color:var(--green);margin-bottom:0.5rem;">Activity in ' + year + '</div>';
+html += '<div style="display:flex;gap:2px;">';
+html += '<div style="display:flex;flex-direction:column;gap:2px;margin-right:4px;">';
+for (let ri = 0; ri < grid.length; ri++) {
+  html += '<span style="color:var(--dim);font-size:0.625rem;height:12px;line-height:12px;text-align:right;padding-right:2px;">' + dayNames[ri].slice(0, 2) + "</span>";
 }
 html += "</div>";
-
-for (let ri = 0; ri < grid.length; ri++) {
-  html += "<div>";
-  html += '<span style="display:inline-block;width:3rem;color:var(--dim);font-size:0.6875rem;">' + dayNames[ri] + "</span>";
-  for (const cell of grid[ri]) {
-    if (cell.count > 0) {
+for (let ci = 0; ci < maxCols; ci++) {
+  const weekNum = colLabels[ci];
+  html += '<div style="display:flex;flex-direction:column;gap:2px;">';
+  if (weekNum !== undefined) {
+    html += '<span style="color:var(--dim);font-size:0.5rem;height:12px;line-height:12px;text-align:center;">' + weekNum + "</span>";
+  } else {
+    html += '<span style="height:12px;"></span>';
+  }
+  for (let ri = 0; ri < grid.length; ri++) {
+    const cell = grid[ri][ci];
+    if (cell && cell.count > 0) {
       const href = cell.posts.length === 1 ? "/blog/" + cell.posts[0].slug : "#";
       const title = cell.posts.map((p) => p.data.title).join(" | ");
-      const clr = colors[Math.min(cell.count, 4)];
-      html += '<a href="' + href + '" title="' + title + '" style="color:' + clr + ';text-decoration:none;display:inline-block;width:1.2rem;text-align:center;">' + chars[Math.min(cell.count, 4)] + "</a>";
+      const level = Math.min(cell.count, 4);
+      html += '<a href="' + href + '" title="' + title + " (" + cell.posts.length + " posts)" + '" style="display:inline-block;width:12px;height:12px;border-radius:2px;background:' + heatColors[level] + ';border:1px solid var(--border);text-decoration:none;"></a>';
     } else {
-      html += '<span style="color:var(--dim);display:inline-block;width:1.2rem;text-align:center;"> </span>';
+      html += '<span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:' + heatColors[0] + ';border:1px solid var(--border);"></span>';
     }
   }
   html += "</div>";
 }
+html += "</div>";
 
-html += '<div style="margin-top:0.5rem;color:var(--dim);font-size:0.6875rem;">';
-for (let i = 0; i < chars.length; i++) {
-  html += '<span style="margin-right:0.5rem;"><span style="color:' + colors[i] + '">' + chars[i] + "</span> " + i + "</span>";
+html += '<div style="display:flex;align-items:center;gap:4px;margin-top:0.5rem;">';
+html += '<span style="color:var(--dim);font-size:0.6875rem;">Less</span>';
+for (let i = 0; i <= 4; i++) {
+  html += '<span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:' + heatColors[i] + ';border:1px solid var(--border);"></span>';
 }
-html += '<span style="margin-left:1rem;">Total: ' + posts.length + " posts</span></div></div>";
+html += '<span style="color:var(--dim);font-size:0.6875rem;">More</span>';
+html += '<span style="margin-left:1rem;color:var(--dim);font-size:0.6875rem;">Total: ' + posts.length + " posts</span></div></div>";
 
 // Tag distribution bar chart
 const tagCounts = new Map();
@@ -104,37 +180,191 @@ for (const p of posts) {
 }
 const sortedTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
 const maxTagCount = sortedTags.length > 0 ? sortedTags[0][1] : 1;
-const barMax = 20;
 
-let tagHtml = '<div style="font-size:0.75rem;line-height:1.6;font-family:var(--font-mono);white-space:nowrap;">';
+let tagHtml = '<div style="font-size:0.75rem;line-height:1.6;font-family:var(--font-mono);">';
 tagHtml += '<div style="color:var(--green);margin-bottom:0.5rem;">tags distribution</div>';
 for (const [tag, count] of sortedTags) {
-  const barLen = Math.round((count / maxTagCount) * barMax);
-  const bar = "█".repeat(Math.max(1, barLen)) + "░".repeat(Math.max(0, barMax - barLen));
-  tagHtml += '<div><span style="color:var(--yellow);display:inline-block;width:10rem;">  ' + tag + "</span><span style=\"color:var(--green);\">" + bar + '</span><span style="color:var(--dim);margin-left:0.5rem;">' + count + "</span></div>";
+  const pct = count / maxTagCount;
+  const barW = Math.round(pct * 100);
+  tagHtml += '<div style="display:flex;align-items:center;margin-bottom:4px;">' +
+    '<span style="color:var(--yellow);min-width:8rem;font-size:0.75rem;">' + tag + '</span>' +
+    '<div style="flex:1;height:14px;background:var(--bg);border:1px solid var(--border);border-radius:3px;overflow:hidden;margin:0 8px;">' +
+    '<div style="height:100%;width:' + barW + '%;background:var(--green);border-radius:2px;"></div></div>' +
+    '<span style="color:var(--dim);min-width:2rem;text-align:right;font-size:0.75rem;">' + count + '</span></div>';
 }
 tagHtml += "</div>";
+
+// Pie chart for tag distribution — SVG with hover segments
+const pieColors = ["#33ff33","#ffff33","#ff3333","#33aaff","#33ffff","#ff33aa","#aa33ff","#ff8833","#666"];
+const totalTagAssignments = sortedTags.reduce((s, [, c]) => s + c, 0);
+const pieR = 50, pieCx = 60, pieCy = 60, pieSize = 120;
+let pieSvg = '<svg width="' + pieSize + '" height="' + pieSize + '" viewBox="0 0 ' + pieSize + ' ' + pieSize + '" style="display:block;">';
+let curAngle = -90;
+sortedTags.forEach(([tag, count], i) => {
+  const pct = count / totalTagAssignments;
+  const angle = pct * 360;
+  const startRad = (curAngle * Math.PI) / 180;
+  const endRad = ((curAngle + angle) * Math.PI) / 180;
+  const x1 = pieCx + pieR * Math.cos(startRad);
+  const y1 = pieCy + pieR * Math.sin(startRad);
+  const x2 = pieCx + pieR * Math.cos(endRad);
+  const y2 = pieCy + pieR * Math.sin(endRad);
+  const large = angle > 180 ? 1 : 0;
+  const path = "M" + pieCx + "," + pieCy + " L" + x1 + "," + y1 + " A" + pieR + "," + pieR + " 0 " + large + ",1 " + x2 + "," + y2 + " Z";
+  pieSvg += '<path d="' + path + '" fill="' + pieColors[i % pieColors.length] + '" stroke="var(--bg)" stroke-width="1" class="pie-seg" data-tag="' + tag + ' (' + count + ')"/>';
+  curAngle += angle;
+});
+pieSvg += "</svg>";
+pieSvg += '<div id="pie-tooltip" style="position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.75rem;color:var(--yellow);display:none;pointer-events:none;white-space:nowrap;z-index:10;"></div>';
+pieSvg += `<script is:inline>(function(){var segs=document.querySelectorAll('.pie-seg');var tip=document.getElementById('pie-tooltip');segs.forEach(function(s){s.addEventListener('mouseenter',function(e){tip.textContent=s.getAttribute('data-tag');tip.style.display='block';});s.addEventListener('mousemove',function(e){tip.style.left=(e.pageX+10)+'px';tip.style.top=(e.pageY-20)+'px';});s.addEventListener('mouseleave',function(){tip.style.display='none';});});})();</script>`;
+
+// Radar chart for weekday activity
+const wdMax = Math.max(...wdCounts, 1);
+const radarSize = 120;
+const cx = radarSize / 2, cy = radarSize / 2;
+const radius = 50;
+let radarPoints = "";
+let radarAxes = "";
+let radarLabels = "";
+for (let i = 0; i < 7; i++) {
+  const angle = (i * 360 / 7 - 90) * Math.PI / 180;
+  const x = cx + radius * Math.cos(angle);
+  const y = cy + radius * Math.sin(angle);
+  radarAxes += '<line x1="' + cx + '" y1="' + cy + '" x2="' + x + '" y2="' + y + '" stroke="var(--border)" stroke-width="1"/>';
+  const val = wdCounts[i] / wdMax;
+  const px = cx + radius * val * Math.cos(angle);
+  const py = cy + radius * val * Math.sin(angle);
+  radarPoints += (i === 0 ? "" : " ") + px + "," + py;
+  const lx = cx + (radius + 15) * Math.cos(angle);
+  const ly = cy + (radius + 15) * Math.sin(angle);
+  radarLabels += '<text x="' + lx + '" y="' + ly + '" fill="var(--dim)" font-size="8" text-anchor="middle" dominant-baseline="middle" font-family="var(--font-mono)">' + wdNames[i].slice(0, 3) + '</text>';
+}
+let radarHtml = '<svg width="' + radarSize + '" height="' + radarSize + '" viewBox="0 0 ' + radarSize + ' ' + radarSize + '" style="display:block;">';
+for (let r = 1; r <= 3; r++) {
+  const rr = (radius / 3) * r;
+  const pts = [];
+  for (let i = 0; i < 7; i++) {
+    const a = (i * 360 / 7 - 90) * Math.PI / 180;
+    pts.push(cx + rr * Math.cos(a) + "," + (cy + rr * Math.sin(a)));
+  }
+  radarHtml += '<polygon points="' + pts.join(" ") + '" fill="none" stroke="var(--border)" stroke-width="0.5"/>';
+}
+radarHtml += radarAxes;
+radarHtml += '<polygon points="' + radarPoints + '" fill="rgba(51,255,51,0.2)" stroke="var(--green)" stroke-width="1.5"/>';
+radarHtml += radarLabels + "</svg>";
+
+// Line chart: cumulative posts over months
+const lcW = 300, lcH = 120, lcPad = 30;
+const lcChartW = lcW - lcPad * 2, lcChartH = lcH - lcPad * 2;
+let linePoints = "";
+let lineLabelsBottom = "";
+let lineLabelsSide = "";
+for (let i = 0; i < cumData.length; i++) {
+  const x = lcPad + (i / Math.max(cumData.length - 1, 1)) * lcChartW;
+  const y = lcPad + lcChartH - (cumData[i].count / maxCum) * lcChartH;
+  linePoints += (i === 0 ? "" : " ") + x + "," + y;
+  if (i === 0 || i === cumData.length - 1 || i === Math.floor(cumData.length / 2)) {
+    lineLabelsBottom += '<text x="' + x + '" y="' + (lcH - 5) + '" fill="var(--dim)" font-size="7" text-anchor="middle" font-family="var(--font-mono)">' + cumData[i].month.slice(5) + '</text>';
+  }
+}
+// Y-axis labels
+for (let i = 0; i <= 4; i++) {
+  const val = Math.round((maxCum / 4) * i);
+  const y = lcPad + lcChartH - (val / maxCum) * lcChartH;
+  lineLabelsSide += '<text x="' + (lcPad - 5) + '" y="' + (y + 2) + '" fill="var(--dim)" font-size="7" text-anchor="end" font-family="var(--font-mono)">' + val + '</text>';
+}
+// Grid lines
+let lineGrid = "";
+for (let i = 1; i <= 3; i++) {
+  const y = lcPad + (lcChartH / 4) * i;
+  lineGrid += '<line x1="' + lcPad + '" y1="' + y + '" x2="' + (lcW - lcPad) + '" y2="' + y + '" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/>';
+}
+let lineHtml = '<svg width="' + lcW + '" height="' + lcH + '" viewBox="0 0 ' + lcW + ' ' + lcH + '" style="display:block;">';
+lineHtml += '<line x1="' + lcPad + '" y1="' + lcPad + '" x2="' + lcPad + '" y2="' + (lcH - lcPad) + '" stroke="var(--border)" stroke-width="1"/>';
+lineHtml += '<line x1="' + lcPad + '" y1="' + (lcH - lcPad) + '" x2="' + (lcW - lcPad) + '" y2="' + (lcH - lcPad) + '" stroke="var(--border)" stroke-width="1"/>';
+lineHtml += lineGrid;
+lineHtml += lineLabelsSide;
+lineHtml += '<polyline points="' + linePoints + '" fill="none" stroke="var(--green)" stroke-width="1.5"/>';
+// Area fill under the line
+lineHtml += '<polygon points="' + linePoints + ' ' + (lcPad + lcChartW) + ',' + (lcPad + lcChartH) + ' ' + lcPad + ',' + (lcPad + lcChartH) + '" fill="rgba(51,255,51,0.1)"/>';
+lineHtml += lineLabelsBottom + "</svg>";
 ---
 
 <Layout title="activity">
   <div style="margin-bottom: 0.5rem;">
     <span style="color: var(--green);">[guest@brownlu-blog]</span>
     <span style="color: var(--dim);"> ~ $ </span>
-    <span>heatmap --year {year}</span>
+    <span>activity --stats</span>
   </div>
 
-  <div style="border:1px solid var(--border);border-radius:6px;padding:1rem;background:#111;margin-bottom:1rem;font-size:0.8125rem;font-family:var(--font-mono);line-height:1.8;">
-    <div style="color:var(--green);margin-bottom:0.5rem;">$ stats</div>
-    <div><span style="color:var(--dim);display:inline-block;width:10rem;">total posts</span><span>{totalPosts}</span></div>
-    <div><span style="color:var(--dim);display:inline-block;width:10rem;">total chars</span><span>{totalChars.toLocaleString()}</span></div>
-    <div><span style="color:var(--dim);display:inline-block;width:10rem;">tags</span><span>{allTags.size}</span></div>
-    <div><span style="color:var(--dim);display:inline-block;width:10rem;">time span</span><span>{earliest ? earliest.toISOString().slice(0, 10) : "-"} ~ {latest ? latest.toISOString().slice(0, 10) : "-"}</span></div>
-    <div><span style="color:var(--dim);display:inline-block;width:10rem;">posts per month</span><span>{postsPerMonth}</span></div>
+  <div style="border:1px solid var(--border);border-radius:6px;padding:0.75rem 1rem;background:var(--bg);margin-bottom:1rem;font-size:0.8125rem;font-family:var(--font-mono);">
+    <div style="color:var(--green);margin-bottom:0.4rem;">$ stats</div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;">
+      <span><span style="color:var(--dim);">posts</span> <span>{totalPosts}</span></span>
+      <span><span style="color:var(--dim);">chars</span> <span>{totalChars.toLocaleString()}</span></span>
+      <span><span style="color:var(--dim);">words</span> <span>{totalWords.toLocaleString()}</span></span>
+      <span><span style="color:var(--dim);">avg/post</span> <span>{avgPostChars.toLocaleString()} chars</span></span>
+      <span><span style="color:var(--dim);">longest</span> <span><a href={"/blog/" + longestPost.slug} style="color:var(--fg);text-decoration:none;">{longestPost.title}</a> ({longestPost.len?.toLocaleString()} chars)</span></span>
+      <span><span style="color:var(--dim);">code lines</span> <span>{codeLines.toLocaleString()}</span></span>
+      <span><span style="color:var(--dim);">images</span> <span>{allImages}</span></span>
+      <span><span style="color:var(--dim);">tags</span> <span>{allTags.size}</span></span>
+      <span><span style="color:var(--dim);">time span</span> <span>{earliest ? earliest.toISOString().slice(0, 10) : "-"} ~ {latest ? latest.toISOString().slice(0, 10) : "-"}</span></span>
+      <span><span style="color:var(--dim);">posts/mo</span> <span>{postsPerMonth}</span></span>
+    </div>
   </div>
 
-  <div style="border: 1px solid var(--border); border-radius: 6px; padding: 1rem; background: #111; margin-bottom: 1rem; overflow-x: auto;" set:html={html}></div>
+  <div style="border:1px solid var(--border);border-radius:6px;padding:0.75rem 1rem;background:var(--bg);margin-bottom:1rem;font-size:0.75rem;font-family:var(--font-mono);">
+    <div style="color:var(--green);margin-bottom:0.4rem;">$ tables</div>
+    <div style="display:flex;gap:2rem;flex-wrap:wrap;">
+      <div>
+        <div style="color:var(--dim);margin-bottom:0.25rem;">by year</div>
+        {yearCounts.map(({ year: y, count: c }) => (
+          <div><a href={"/archive#year-" + y} style="color:var(--yellow);display:inline-block;width:4rem;text-decoration:none;">{y}</a><span>{c} post{c > 1 ? "s" : ""}</span></div>
+        ))}
+        <div style="border-top:1px solid var(--border);margin-top:0.25rem;padding-top:0.25rem;">
+          <span style="color:var(--dim);">series: {seriesCount}</span>
+          <span style="color:var(--dim);margin-left:1rem;">with series: {withSeries}</span>
+        </div>
+      </div>
+      <div>
+        <div style="color:var(--dim);margin-bottom:0.25rem;">by weekday</div>
+        {wdCounts.map((c, i) => (
+          <div style="display:flex;align-items:center;margin-bottom:2px;">
+            <span style="color:var(--yellow);display:inline-block;width:3rem;">{wdNames[i]}</span>
+            <div style="width:{Math.round((c / maxWd) * 100)}%;height:12px;background:var(--green);border-radius:2px;min-width:{c > 0 ? '4px' : '0'};"></div>
+            <span style="color:var(--dim);margin-left:4px;">{c}</span>
+          </div>
+        ))}
+      </div>
+      <div>
+        <div style="color:var(--dim);margin-bottom:0.25rem;">content</div>
+        <div><span style="color:var(--dim);">cover images: </span><span>{withCover}/{totalPosts}</span></div>
+        <div><span style="color:var(--dim);">links: </span><span>{totalLinks} (external: {totalExtLinks})</span></div>
+      </div>
+    </div>
+  </div>
 
-  <div style="border: 1px solid var(--border); border-radius: 6px; padding: 1rem; background: #111; margin-bottom: 1.5rem; overflow-x: auto;" set:html={tagHtml}></div>
+  <div style="border: 1px solid var(--border); border-radius: 6px; padding: 1rem; background: var(--bg); margin-bottom: 1rem; overflow-x: auto;" set:html={html}></div>
+
+  <div style="border: 1px solid var(--border); border-radius: 6px; padding: 1rem; background: var(--bg); margin-bottom: 1.5rem; overflow-x: auto;" set:html={tagHtml}></div>
+
+  <div style="border:1px solid var(--border);border-radius:6px;padding:1rem;background:var(--bg);margin-bottom:1.5rem;font-size:0.75rem;font-family:var(--font-mono);">
+    <div style="color:var(--green);margin-bottom:0.5rem;">$ charts</div>
+    <div style="display:flex;gap:2rem;align-items:flex-start;justify-content:space-around;">
+      <div>
+        <div style="color:var(--dim);margin-bottom:0.5rem;">tags pie</div>
+        <div set:html={pieSvg}></div>
+      </div>
+      <div>
+        <div style="color:var(--dim);margin-bottom:0.5rem;">weekday radar</div>
+        <div set:html={radarHtml}></div>
+      </div>
+      <div>
+        <div style="color:var(--dim);margin-bottom:0.5rem;">cumulative posts</div>
+        <div set:html={lineHtml}></div>
+      </div>
+    </div>
+  </div>
 
   <p style="margin-bottom: 0.5rem; color: var(--dim);">recent posts</p>
   <ul class="post-list">

@@ -122,6 +122,68 @@ git push origin main # 自动部署到 GitHub Pages
 
 > 提示：希望用 AI 协助写作时，可参考 `AGENTS.md` 了解项目结构与约定，让 AI 更快理解系统。
 
+### 使用 Neovim
+
+Neovim 配合本系统的推荐工作流：
+
+1. 打开项目根目录：`nvim .`
+2. 新建文章：`src/content/blog/my-post.md`
+3. 粘贴 frontmatter 模板并填写
+4. 分屏预览：`:terminal npm run dev` 启动开发服务器，浏览器查看
+5. 使用 `gf` 命令跳转图片/链接路径进行验证
+
+可选：在 `~/.config/nvim/snippets/` 或 `~/.config/nvim/UltiSnips/` 中添加 markdown 文章模板片段：
+
+```snippet
+snippet frontmatter "Blog post frontmatter"
+---
+title: "${1:文章标题}"
+date: ${2:`date +%Y-%m-%d`}
+description: "${3:描述}"
+tags: [${4:}]
+slug: ${5:my-post}
+---
+$0
+endsnippet
+```
+
+### 适配 Obsidian
+
+本系统的 `.md` 文件可直接在 Obsidian 中打开和编辑，将项目目录作为 Obsidian 仓库即可。
+
+系统内置了三个 remark 插件自动转换 Obsidian 语法为标准 markdown：
+
+**`[[wikilink]]` 内部链接**
+
+```markdown
+[[astro-intro]]              → <a href="/blog/astro-intro">
+[[astro-intro|显示文字]]      → <a href="/blog/astro-intro">显示文字</a>
+[[series/Astro 入门]]        → <a href="/series/Astro 入门">
+```
+
+**`![[image]]` 图片嵌入**
+
+```markdown
+![[cover.jpg]]               → ![](/images/cover.jpg)
+![[travel/beach.jpg]]        → ![](/images/travel/beach.jpg)
+```
+
+**`> [!type]` 标注块**
+
+```markdown
+> [!note] 标题
+> 支持 note / tip / warning / danger / info
+```
+
+注意事项：
+
+- 避免在文章中使用 `[[about]]` 这样的短链接 — 会被转为 `/blog/about`，如需链接到 `/about` 页面请用 `[/about]`
+- 图片自动映射到 `public/images/` 目录，请确保文件存在
+- 链接目标为不存在的 slug 时会产生 404，不影响构建
+
+> [!tip]
+> 直接用 Obsidian 写文章即可，[[brownlu-blog-guide|本系统]]会自动处理语法转换！
+
 ### 插入图片
 
 图片文件放在 `public/images/` 目录下，在 markdown 中直接用相对路径引用：

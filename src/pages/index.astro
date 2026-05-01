@@ -19,9 +19,7 @@ const fortune = quotes[Math.floor(Math.random() * quotes.length)];
     <span style="color: var(--dim);"> ~ $ </span>
     <span>./welcome.sh --greet</span>
   </div>
-  <p style="color: var(--yellow); margin-bottom: 1.5rem; min-height: 2em;">
-    <span id="typewriter"></span><span class="cursor-block" id="tw-cursor" style="display:none;"></span>
-  </p>
+  <pre id="welcome-output" style="color: var(--yellow); margin: 0 0 1.5rem 0; line-height: 1.4; white-space: pre-wrap; background: none; border: none; padding: 0; font-family: inherit;"></pre>
 
   <details class="help-section" id="help-section">
     <summary style="margin-bottom: 0.5rem; cursor: pointer; list-style: none; display: flex; align-items: center; gap: 0.5rem;">
@@ -92,16 +90,30 @@ const fortune = quotes[Math.floor(Math.random() * quotes.length)];
 </Layout>
 
 <script define:vars={{ siteName, tagline }}>
-const text = "Welcome to " + siteName + " — " + tagline;
-const el = document.getElementById("typewriter");
-const cursor = document.getElementById("tw-cursor");
-let i = 0;
-cursor.style.display = "inline-block";
+var el = document.getElementById("welcome-output");
+var cursor = '<span class="cursor-block" style="display:inline-block;"></span>';
+
+var cow = "  \\   ^__^\n" +
+  "   \\  (oo)\\_______\n" +
+  "      (__)\\       )\\/\\\n" +
+  "          ||----w |\n" +
+  "          ||     ||";
+
+var msg = "Hello, guest! Welcome to " + siteName + ".";
+var border = "+" + "-".repeat(msg.length + 2) + "+";
+var bubble = border + "\n| " + msg + " |\n" + border;
+
+var fullText = "Welcome to " + siteName + " — " + tagline + ".\n\n" + bubble + "\n" + cow;
+var i = 0;
 function type() {
-  if (i < text.length) {
-    el.textContent += text[i];
+  if (i < fullText.length) {
+    var ch = fullText[i];
+    var escaped = ch === "<" ? "&lt;" : ch === ">" ? "&gt;" : ch === "&" ? "&amp;" : ch;
+    el.innerHTML = el.innerHTML.slice(0, -cursor.length) + escaped + cursor;
     i++;
-    setTimeout(type, 40 + Math.random() * 30);
+    setTimeout(type, 20 + Math.random() * 20);
+  } else {
+    el.innerHTML = el.innerHTML.slice(0, -cursor.length);
   }
 }
 type();
