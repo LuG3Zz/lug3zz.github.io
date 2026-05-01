@@ -1,7 +1,31 @@
 ---
 import "../styles/terminal.css";
+import { getCollection } from "astro:content";
+import { readdirSync, readFileSync } from "fs";
+import { join } from "path";
 const { title } = Astro.props;
 const path = Astro.url.pathname;
+
+const allPosts = await getCollection("blog");
+const slugs = allPosts.map(p => p.slug);
+const tags = [...new Set(allPosts.flatMap(p => p.data.tags ?? []))];
+const series = [...new Set(allPosts.map(p => p.data.series).filter(Boolean))];
+const scripts = readdirSync(join(process.cwd(), "public/scripts")).map(f => f.replace(/\.\w+$/, ""));
+const completionJson = JSON.stringify({ slugs, tags, series, scripts });
+
+const searchIndex = allPosts.map((p) => {
+  const fp = join(process.cwd(), "src/content/blog", p.id);
+  let content = "";
+  try { content = readFileSync(fp, "utf-8"); } catch (_) {}
+  return {
+    slug: p.slug,
+    title: p.data.title,
+    description: p.data.description ?? "",
+    tags: p.data.tags ?? [],
+    date: p.data.date.toISOString().slice(0, 10),
+    content: content.replace(/---[\s\S]*?---/, "").trim(),
+  };
+});
 ---
 
 <!DOCTYPE html>
@@ -51,19 +75,21 @@ const path = Astro.url.pathname;
         <span class="prompt-sep"> ~ </span>
         <span class="prompt-dir">/{path === "/" ? "" : path.replace(/\/$/, "").replace(/^\//, "") || "~"}</span>
         <span class="prompt-end"> $</span>
-        <input type="text" id="cmd-input" class="cmd-input" autofocus spellcheck="false" autocomplete="off" />
+        <input type="text" id="cmd-input" class="cmd-input" spellcheck="false" autocomplete="off" />
       </div>
 
       <div id="cmd-suggestions" class="cmd-suggestions"></div>
+      <div id="grep-results" class="grep-results"></div>
 
       <nav class="nav">
         <a href="/" class={path === "/" ? "active" : ""}>home</a>
         <a href="/blog" class={path.startsWith("/blog") ? "active" : ""}>blog</a>
         <a href="/tags" class={path.startsWith("/tags") ? "active" : ""}>tags</a>
+        <a href="/series" class={path.startsWith("/series") ? "active" : ""}>series</a>
         <a href="/activity" class={path === "/activity" ? "active" : ""}>activity</a>
+        <a href="/archive" class={path === "/archive" ? "active" : ""}>archive</a>
         <a href="/travel" class={path === "/travel" ? "active" : ""}>travel</a>
-        <a href="/scripts" class={path === "/scripts" ? "active" : ""}>scripts</a>
-        <a href="/downloads" class={path === "/downloads" ? "active" : ""}>downloads</a>
+
         <a href="/about" class={path === "/about" ? "active" : ""}>about</a>
         <span class="theme-selector-wrap">
           <select id="theme-select" class="theme-select">
@@ -98,6 +124,32 @@ const path = Astro.url.pathname;
   </div>
 
   <div id="cmd-toast" class="cmd-toast"><span id="toast-msg"></span><span class="dismiss">[x]</span></div>
+  <button id="back-to-top" class="back-to-top" aria-label="Back to top">^</button>
+
+  <script id="completion-data" type="application/json" set:html={completionJson}></script>
+  <script id="search-index" type="application/json" set:html={JSON.stringify(searchIndex)}></script>
+  <script is:inline id="fortune-data" type="application/json">[
+    {"text":"Talk is cheap. Show me the code.","author":"Linus Torvalds"},
+    {"text":"任何傻瓜都能写出计算机能理解的代码。优秀的程序员写的是人类能读懂的代码。","author":"Martin Fowler"},
+    {"text":"先有 Hello World，后有万水千山。","author":""},
+    {"text":"Simplicity is prerequisite for reliability.","author":"Edsger W. Dijkstra"},
+    {"text":"程序是写给人读的，顺便能在机器上跑。","author":"Harold Abelson"},
+    {"text":"在终端里，没有不可能的事，只有还没敲的命令。","author":""},
+    {"text":"Debugging is twice as hard as writing the code in the first place.","author":"Brian Kernighan"},
+    {"text":"打字是程序员最好的健身。","author":""},
+    {"text":"The best way to predict the future is to invent it.","author":"Alan Kay"},
+    {"text":"删除代码不是损失，是获得。","author":""},
+    {"text":"Keep it simple, stupid.","author":""},
+    {"text":"代码如诗，终端如画。","author":""},
+    {"text":"A journey of a thousand miles begins with a single step.","author":"Lao Tzu"},
+    {"text":"别重复造轮子，除非你想学习轮子的工作原理。","author":""},
+    {"text":"It works on my machine.","author":""},
+    {"text":"所谓程序员，就是一台将咖啡因转化为代码的机器。","author":""},
+    {"text":"The only way to learn a new programming language is by writing programs in it.","author":"Dennis Ritchie"},
+    {"text":"先让它跑起来，再让它跑得快。","author":""},
+    {"text":"读代码比写代码更难。所以如果你写不出干净的代码，你就看不懂你写了什么。","author":""},
+    {"text":"在这终端里，你就是 root。","author":""}
+  ]</script>
 </body>
 </html>
 
@@ -199,6 +251,30 @@ const path = Astro.url.pathname;
   }
   .cmd-suggestions.show { display: inline-block; }
   .cmd-suggestions .sug-item { cursor: pointer; transition: color 0.1s; }
+  .grep-results {
+    display: none;
+    margin-top: 0.25rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .grep-results.show { display: block; }
+  .grep-results .gr-item {
+    display: block;
+    padding: 0.3rem 0;
+    color: var(--fg);
+    text-decoration: none;
+    line-height: 1.6;
+  }
+  .grep-results .gr-item:hover { color: var(--green); }
+  .grep-results .gr-item .gr-title { color: var(--yellow); }
+  .grep-results .gr-item .gr-desc { color: var(--dim); font-size: 0.75rem; }
+  .grep-results .gr-stats { color: var(--dim); font-size: 0.75rem; margin-bottom: 0.4rem; }
   @keyframes slideDown {
     from { opacity: 0; transform: translateY(-6px); }
     to { opacity: 1; transform: translateY(0); }
@@ -206,6 +282,35 @@ const path = Astro.url.pathname;
   .cmd-toast .dismiss {
     color: var(--dim);
     margin-left: 1rem;
+  }
+  .back-to-top {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    background: var(--bg);
+    color: var(--green);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .back-to-top.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .back-to-top:hover {
+    border-color: var(--green);
+    background: #1a1a1a;
   }
 </style>
 
@@ -261,6 +366,8 @@ const path = Astro.url.pathname;
   }
 
   function handleCommand(cmd) {
+    // Clear grep results when running any command
+    if (grepResults) grepResults.classList.remove("show");
     const parts = cmd.trim().split(/\s+/);
     const name = parts[0].toLowerCase();
 
@@ -277,8 +384,10 @@ const path = Astro.url.pathname;
         return;
       }
       window.location.href = "/blog/" + slug;
-    } else if (name === "activity" || name === "heatmap") {
+    } else if (name === "activity") {
       window.location.href = "/activity";
+    } else if (name === "archive") {
+      window.location.href = "/archive";
     } else if (name === "travel") {
       window.location.href = "/travel";
     } else if (name === "downloads") {
@@ -297,12 +406,19 @@ const path = Astro.url.pathname;
         window.location.href = `/scripts/${script}`;
       }
     } else if (name === "help") {
-      showToast("ls | cat <slug> | cd <path> | get <script> | whoami | date | tag <name> | activity | downloads | clear");
+      showToast("cat <slug> | cd <path> | tag <name> | grep <query> | series | activity | archive | fortune | clear");
     } else if (name === "clear") {
       window.location.reload();
     } else if (name === "date") {
       const now = new Date();
       showToast(now.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" }));
+    } else if (name === "series") {
+      const s = parts.slice(1).join(" ");
+      if (!s) {
+        window.location.href = "/series";
+      } else {
+        window.location.href = "/series/" + s;
+      }
     } else if (name === "tag") {
       const tag = parts.slice(1).join(" ");
       if (!tag) {
@@ -311,7 +427,7 @@ const path = Astro.url.pathname;
         window.location.href = `/tags/${tag}`;
       }
     } else if (name === "cd") {
-      const knownPaths = ["/", "/home", "/blog", "/tags", "/travel", "/activity", "/scripts", "/downloads", "/about"];
+      const knownPaths = ["/", "/home", "/blog", "/tags", "/travel", "/activity", "/archive", "/search", "/scripts", "/downloads", "/about"];
       const knownPrefixes = ["/tags/", "/blog/", "/scripts/"];
       const target = parts.slice(1).join(" ");
       let path;
@@ -330,6 +446,14 @@ const path = Astro.url.pathname;
       } else {
         showToast("cd: " + path + ": No such directory");
       }
+    } else if (name === "grep") {
+      const q = parts.slice(1).join(" ");
+      if (!q) { showToast("Usage: grep <query>"); return; }
+      showGrepResults(q);
+    } else if (name === "fortune") {
+      const qs = JSON.parse(document.getElementById("fortune-data").textContent);
+      const q = qs[Math.floor(Math.random() * qs.length)];
+      showToast('"' + q.text + '"' + (q.author ? " — " + q.author : ""));
     } else if (name === "zen") {
       var on = document.documentElement.getAttribute("data-zen") !== "true";
       document.documentElement.setAttribute("data-zen", on ? "true" : "false");
@@ -340,11 +464,12 @@ const path = Astro.url.pathname;
     }
   }
 
-  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","heatmap","home","zen"];
+  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","archive","home","zen","fortune","series","grep"];
   var suggestions = document.getElementById("cmd-suggestions");
 
   var tabMatches = [];
   var tabIndex = -1;
+  var tabPartial = "";
 
   function showSuggestions(items) {
     tabMatches = items;
@@ -370,30 +495,96 @@ const path = Astro.url.pathname;
     });
   }
 
-  input.addEventListener("input", hideSuggestions);
+  var compData = JSON.parse(document.getElementById("completion-data").textContent);
+  var argMap = {
+    cat: compData.slugs, tag: compData.tags, series: compData.series,
+    get: compData.scripts,     cd: ["blog","tags","travel","activity","archive","search","scripts","downloads","about","home"],
+    grep: null,
+  };
+
+  // Inline grep
+  var grepResults = document.getElementById("grep-results");
+  var searchIndex = JSON.parse(document.getElementById("search-index").textContent);
+
+  function escHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function showGrepResults(query) {
+    var q = query.toLowerCase();
+    var scored = searchIndex.map(function(p) {
+      var title = p.title.toLowerCase();
+      var desc = p.description.toLowerCase();
+      var tags = p.tags.join(" ").toLowerCase();
+      var content = p.content.toLowerCase();
+      var s = 0;
+      if (title === q) s += 100;
+      if (title.includes(q)) s += 50;
+      if (tags.includes(q)) s += 30;
+      if (desc.includes(q)) s += 20;
+      if (content.includes(q)) s += 10;
+      return { post: p, score: s };
+    }).filter(function(p) { return p.score > 0; }).sort(function(a, b) { return b.score - a.score; });
+
+    if (scored.length === 0) {
+      grepResults.innerHTML = '<div class="gr-stats">0 results for "' + escHtml(query) + '"</div>';
+      grepResults.classList.add("show");
+      return;
+    }
+    var html = '<div class="gr-stats">' + scored.length + ' result' + (scored.length !== 1 ? "s" : "") + ' for "' + escHtml(query) + '"</div>';
+    var maxShow = Math.min(scored.length, 5);
+    for (var i = 0; i < maxShow; i++) {
+      var p = scored[i].post;
+      html += '<a class="gr-item" href="/blog/' + p.slug + '">' +
+        '<div class="gr-title">' + escHtml(p.title) + '</div>' +
+        '<div class="gr-desc">' + p.date + (p.description ? " · " + escHtml(p.description) : "") + '</div>' +
+        '</a>';
+    }
+    if (scored.length > 5) {
+      html += '<div class="gr-stats" style="margin-top:0.3rem;">and <a href="/search?q=' + encodeURIComponent(query) + '" style="color:var(--green);">' + (scored.length - 5) + ' more on /search</a></div>';
+    }
+    grepResults.innerHTML = html;
+    grepResults.classList.add("show");
+  }
+
+  document.addEventListener("click", function(e) {
+    if (grepResults && e.target.closest("#grep-results") === null) {
+      grepResults.classList.remove("show");
+    }
+  });
+
   input.addEventListener("keydown", function(e) {
     if (e.key === "Tab") {
       e.preventDefault();
-      var val = input.value.trim();
-      var parts = val.split(/\s+/);
-      if (parts.length <= 1) {
-        var matches = commands_list.filter(function(c) { return c.startsWith(val); });
-        if (matches.length === 1) {
-          hideSuggestions();
-          input.value = matches[0] + " ";
-        } else if (matches.length > 1) {
-          if (tabMatches.length === matches.length && tabMatches.every(function(v, i) { return v === matches[i]; })) {
-            tabIndex = (tabIndex + 1) % matches.length;
-          } else {
-            tabMatches = matches;
-            tabIndex = 0;
-          }
-          input.value = tabMatches[tabIndex] + " ";
-          showSuggestions(matches);
-          highlightSug(tabIndex);
+      var val = input.value;
+      var trimmed = val.trim();
+      var parts = trimmed.split(/\s+/);
+      var cmd = parts[0].toLowerCase();
+      var completingCmd = parts.length === 1 && !val.endsWith(" ");
+      var matches;
+      if (completingCmd) {
+        matches = commands_list.filter(function(c) { return c.startsWith(trimmed); });
+      } else {
+        var partial = tabMatches.length ? tabPartial : (parts[parts.length - 1] || "");
+        var candidates = argMap[cmd];
+        matches = candidates ? candidates.filter(function(c) { return c.startsWith(partial); }) : [];
+      }
+      if (matches.length === 1) {
+        hideSuggestions(); tabMatches = []; tabPartial = ""; tabIndex = -1;
+        input.value = completingCmd ? matches[0] + " " : val.replace(/\S+$/, "") + matches[0] + " ";
+      } else if (matches.length > 1) {
+        if (tabMatches.length === matches.length && tabMatches.every(function(v, i) { return v === matches[i]; })) {
+          tabIndex = (tabIndex + 1) % matches.length;
         } else {
-          hideSuggestions();
+          tabMatches = matches;
+          tabPartial = completingCmd ? "" : (parts[parts.length - 1] || "");
+          tabIndex = 0;
         }
+        input.value = completingCmd ? tabMatches[tabIndex] + " " : val.replace(/\S+$/, "") + tabMatches[tabIndex];
+        showSuggestions(matches);
+        highlightSug(tabIndex);
+      } else {
+        hideSuggestions();
       }
     } else if (e.key === "Escape") {
       hideSuggestions();
@@ -401,6 +592,9 @@ const path = Astro.url.pathname;
       hideSuggestions();
       handleCommand(input.value);
       input.value = "";
+    } else {
+      hideSuggestions();
+      if (grepResults) grepResults.classList.remove("show");
     }
   });
 
@@ -410,6 +604,17 @@ const path = Astro.url.pathname;
       input.focus();
     }
   });
+
+  // Back to top
+  const topBtn = document.getElementById("back-to-top");
+  if (topBtn) {
+    window.addEventListener("scroll", function() {
+      topBtn.classList.toggle("show", window.scrollY > 300);
+    });
+    topBtn.addEventListener("click", function() {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
 
   // Theme switcher
   const themeSelect = document.getElementById("theme-select");

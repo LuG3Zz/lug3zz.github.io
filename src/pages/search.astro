@@ -1,0 +1,117 @@
+---
+import { readFileSync } from "fs";
+import { join } from "path";
+import { getCollection } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+
+const posts = await getCollection("blog");
+const index = posts.map((p) => {
+  const filePath = join(process.cwd(), "src/content/blog", p.id);
+  let content = "";
+  try { content = readFileSync(filePath, "utf-8"); } catch (_) {}
+  return {
+    slug: p.slug,
+    title: p.data.title,
+    description: p.data.description ?? "",
+    tags: p.data.tags ?? [],
+    date: p.data.date.toISOString().slice(0, 10),
+    content: content.replace(/---[\s\S]*?---/, "").trim(),
+  };
+});
+---
+
+<Layout title="search">
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@brownlu-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>grep --search</span>
+  </div>
+
+  <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+    <span style="color: var(--yellow);">$</span>
+    <input type="text" id="search-input" class="cmd-input" placeholder="search posts..." autofocus spellcheck="false" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:0.5rem;color:var(--fg);font-family:var(--font-mono);font-size:0.875rem;outline:none;" />
+  </div>
+
+  <div id="search-stats" style="color: var(--dim); font-size: 0.8125rem; margin-bottom: 1rem;"></div>
+
+  <div id="search-results"></div>
+
+  <div style="margin-top: 1rem;">
+    <a href="/blog" class="tag" style="font-size: 0.875rem;">← back to /blog</a>
+  </div>
+</Layout>
+
+<script is:inline id="search-index" type="application/json">{JSON.stringify(index)}</script>
+
+<script>
+(function() {
+  const index = JSON.parse(document.getElementById("search-index").textContent);
+  const input = document.getElementById("search-input");
+  const results = document.getElementById("search-results");
+  const stats = document.getElementById("search-stats");
+
+  function score(post, query) {
+    const q = query.toLowerCase();
+    const title = post.title.toLowerCase();
+    const desc = post.description.toLowerCase();
+    const tags = post.tags.join(" ").toLowerCase();
+    const content = post.content.toLowerCase();
+    let s = 0;
+    if (title === q) s += 100;
+    if (title.includes(q)) s += 50;
+    if (tags.includes(q)) s += 30;
+    if (desc.includes(q)) s += 20;
+    if (content.includes(q)) s += 10;
+    return s;
+  }
+
+  function search(query) {
+    const q = query.trim();
+    if (!q) {
+      results.innerHTML = "";
+      stats.textContent = "";
+      return;
+    }
+    const scored = index
+      .map(function(p) { return { post: p, score: score(p, q) }; })
+      .filter(function(p) { return p.score > 0; })
+      .sort(function(a, b) { return b.score - a.score; });
+
+    stats.textContent = scored.length + " result" + (scored.length !== 1 ? "s" : "") + " for \"" + q + "\"";
+
+    if (scored.length === 0) {
+      results.innerHTML = '<p style="color: var(--dim);">No matches found.</p>';
+      return;
+    }
+
+    var html = '<ul class="post-list">';
+    for (var i = 0; i < scored.length; i++) {
+      var p = scored[i].post;
+      html += '<li class="post-item">' +
+        '<a class="post-title" href="/blog/' + p.slug + '" style="font-size:0.875rem;">' +
+          escHtml(p.title) +
+        '</a>' +
+        '<span class="post-date">' + p.date + '</span>' +
+        (p.description ? '<div style="color:var(--dim);font-size:0.75rem;width:100%;margin-top:0.15rem;">' + escHtml(p.description) + '</div>' : '') +
+      '</li>';
+    }
+    html += "</ul>";
+    results.innerHTML = html;
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  input.addEventListener("input", function() { search(input.value); });
+  input.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") search(input.value);
+  });
+  var params = new URLSearchParams(window.location.search);
+  var q = params.get("q");
+  if (q) { input.value = q; search(q); }
+  input.focus();
+  // Force focus in case layout script overrides it
+  setTimeout(function() { input.focus(); }, 100);
+})();
+</script>

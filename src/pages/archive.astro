@@ -1,0 +1,58 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+
+const posts = (await getCollection("blog"))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const grouped = new Map();
+for (const p of posts) {
+  const year = p.data.date.getFullYear();
+  const month = p.data.date.getMonth() + 1;
+  if (!grouped.has(year)) grouped.set(year, new Map());
+  const months = grouped.get(year);
+  if (!months.has(month)) months.set(month, []);
+  months.get(month).push(p);
+}
+const sortedYears = [...grouped.keys()].sort((a, b) => b - a);
+---
+
+<Layout title="archive">
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@brownlu-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>ls -la /archive</span>
+  </div>
+
+  <p style="margin-bottom: 1rem; color: var(--dim);">total {posts.length} posts</p>
+
+  {sortedYears.map((year) => {
+    const months = grouped.get(year);
+    const sortedMonths = [...months.keys()].sort((a, b) => b - a);
+    return (
+      <div style="margin-bottom: 1.5rem;">
+        <div style="color: var(--yellow); font-size: 1rem; margin-bottom: 0.5rem;">{year}</div>
+        {sortedMonths.map((month) => {
+          const mposts = months.get(month);
+          return (
+            <div style="margin-bottom: 0.5rem; padding-left: 1rem;">
+              <div style="color: var(--dim); font-size: 0.8125rem; margin-bottom: 0.25rem;">
+                <span style="color: var(--green);">├─</span> {String(month).padStart(2, "0")} ({mposts.length})
+              </div>
+              {mposts.map((p) => (
+                <div style="padding-left: 1.5rem; font-size: 0.8125rem; line-height: 1.8;">
+                  <span style="color: var(--dim);">{String(month).padStart(2, "0")}-{String(p.data.date.getDate()).padStart(2, "0")}</span>
+                  <a href={"/blog/" + p.slug} style="color: var(--fg); text-decoration: none; margin-left: 0.5rem;">{p.data.title}</a>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    );
+  })}
+
+  <div style="margin-top: 1rem;">
+    <a href="/activity" class="tag" style="font-size: 0.875rem;">→ activity heatmap (/activity)</a>
+  </div>
+</Layout>

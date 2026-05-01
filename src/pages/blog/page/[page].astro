@@ -1,25 +1,35 @@
 ---
 import { getCollection } from "astro:content";
-import Layout from "../../layouts/Layout.astro";
-import Pagination from "../../components/Pagination.astro";
+import Layout from "../../../layouts/Layout.astro";
+import Pagination from "../../../components/Pagination.astro";
+
+export async function getStaticPaths() {
+  const PAGE_SIZE = 5;
+  const all = await getCollection("blog");
+  const sorted = all
+    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+    .sort((a, b) => (b.data.pinned ? 1 : 0) - (a.data.pinned ? 1 : 0));
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  return Array.from({ length: totalPages - 1 }, (_, i) => ({
+    params: { page: String(i + 2) },
+    props: { pageNum: i + 2, totalPages },
+  }));
+}
 
 const PAGE_SIZE = 5;
-
+const { pageNum, totalPages } = Astro.props;
 const all = await getCollection("blog");
 const sorted = all
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
   .sort((a, b) => (b.data.pinned ? 1 : 0) - (a.data.pinned ? 1 : 0));
-
-const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-const posts = sorted.slice(0, PAGE_SIZE);
-const currentPage = 1;
+const posts = sorted.slice((pageNum - 1) * PAGE_SIZE, pageNum * PAGE_SIZE);
 ---
 
-<Layout title="blog">
+<Layout title={`blog — page ${pageNum}`}>
   <div style="margin-bottom: 0.5rem;">
     <span style="color: var(--green);">[guest@brownlu-blog]</span>
     <span style="color: var(--dim);"> ~ $ </span>
-    <span>ls -la /blog</span>
+    <span>ls -la /blog (page {pageNum}/{totalPages})</span>
   </div>
 
   <p style="margin-bottom: 1rem; color: var(--dim);">total {sorted.length}</p>
@@ -44,13 +54,5 @@ const currentPage = 1;
     })}
   </ul>
 
-  <div style="margin-top: 1rem;">
-    <Pagination currentPage={currentPage} totalPages={totalPages} base="/blog/page" />
-  </div>
-
-  <div style="margin-top: 0.75rem;">
-    <a href="/tags" class="tag" style="font-size: 0.875rem;">→ browse by tags (/tags)</a>
-    <span style="color: var(--dim); margin: 0 0.5rem;">|</span>
-    <a href="/archive" class="tag" style="font-size: 0.875rem;">→ archive (/archive)</a>
-  </div>
+  <Pagination currentPage={pageNum} totalPages={totalPages} base="/blog/page" />
 </Layout>

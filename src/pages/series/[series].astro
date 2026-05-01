@@ -1,0 +1,51 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  const series = new Set<string>();
+  for (const p of posts) {
+    if (p.data.series) series.add(p.data.series);
+  }
+  return [...series].map((s) => ({ params: { series: s } }));
+}
+
+const { series } = Astro.params;
+const posts = (await getCollection("blog"))
+  .filter((p) => p.data.series === series)
+  .sort((a, b) => (a.data.seriesOrder ?? 99) - (b.data.seriesOrder ?? 99));
+---
+
+<Layout title={`series: ${series}`}>
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@brownlu-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>ls /series/{series}</span>
+  </div>
+
+  <p style="margin-bottom: 1rem; color: var(--dim);">
+    <span class="tag" style="font-size: 1rem;">{series}</span>
+    — {posts.length} post{posts.length > 1 ? "s" : ""}
+  </p>
+
+  <ul class="post-list">
+    {posts.map((post, i) => (
+      <li class="post-item">
+        <span style="color: var(--dim); white-space: nowrap;">
+          {String(i + 1).padStart(2, "0")}.
+        </span>
+        <a class="post-title" href={`/blog/${post.slug}`} style="font-size: 0.875rem;">
+          {post.data.seriesOrder ? `Part ${post.data.seriesOrder}: ` : ""}{post.data.title}
+        </a>
+        <span class="post-date" style="margin-left: auto;">
+          {post.data.date.toISOString().slice(0, 10)}
+        </span>
+      </li>
+    ))}
+  </ul>
+
+  <div style="margin-top: 1rem;">
+    <a href="/series" class="tag" style="font-size: 0.875rem;">← back to /series</a>
+  </div>
+</Layout>

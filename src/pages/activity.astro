@@ -1,10 +1,25 @@
 ---
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 const posts = await getCollection("blog");
 const now = new Date();
 const year = now.getFullYear();
+
+// Stats
+const totalPosts = posts.length;
+const totalChars = posts.reduce((sum, p) => {
+  const raw = readFileSync(join(process.cwd(), "src/content/blog", p.id), "utf-8");
+  return sum + raw.replace(/\s/g, "").length;
+}, 0);
+const dates = posts.map(p => p.data.date).sort((a, b) => a.valueOf() - b.valueOf());
+const earliest = dates.length > 0 ? dates[0] : null;
+const latest = dates.length > 0 ? dates[dates.length - 1] : null;
+const allTags = new Set(posts.flatMap(p => p.data.tags ?? []));
+const daySpan = latest && earliest ? Math.ceil((latest.valueOf() - earliest.valueOf()) / 86400000) + 1 : 0;
+const postsPerMonth = daySpan > 0 ? (totalPosts / (daySpan / 30)).toFixed(1) : "-";
 
 const dayPosts = new Map();
 for (const p of posts) {
@@ -106,6 +121,15 @@ tagHtml += "</div>";
     <span style="color: var(--green);">[guest@brownlu-blog]</span>
     <span style="color: var(--dim);"> ~ $ </span>
     <span>heatmap --year {year}</span>
+  </div>
+
+  <div style="border:1px solid var(--border);border-radius:6px;padding:1rem;background:#111;margin-bottom:1rem;font-size:0.8125rem;font-family:var(--font-mono);line-height:1.8;">
+    <div style="color:var(--green);margin-bottom:0.5rem;">$ stats</div>
+    <div><span style="color:var(--dim);display:inline-block;width:10rem;">total posts</span><span>{totalPosts}</span></div>
+    <div><span style="color:var(--dim);display:inline-block;width:10rem;">total chars</span><span>{totalChars.toLocaleString()}</span></div>
+    <div><span style="color:var(--dim);display:inline-block;width:10rem;">tags</span><span>{allTags.size}</span></div>
+    <div><span style="color:var(--dim);display:inline-block;width:10rem;">time span</span><span>{earliest ? earliest.toISOString().slice(0, 10) : "-"} ~ {latest ? latest.toISOString().slice(0, 10) : "-"}</span></div>
+    <div><span style="color:var(--dim);display:inline-block;width:10rem;">posts per month</span><span>{postsPerMonth}</span></div>
   </div>
 
   <div style="border: 1px solid var(--border); border-radius: 6px; padding: 1rem; background: #111; margin-bottom: 1rem; overflow-x: auto;" set:html={html}></div>

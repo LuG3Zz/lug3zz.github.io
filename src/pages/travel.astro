@@ -1,17 +1,17 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { places } from "../data/travel";
-import "leaflet/dist/leaflet.css";
 ---
 
 <Layout title="travel">
+  <link rel="stylesheet" href="/lib/leaflet/leaflet.css" />
   <div style="margin-bottom: 0.5rem;">
     <span style="color: var(--green);">[guest@brownlu-blog]</span>
     <span style="color: var(--dim);"> ~ $ </span>
     <span>cat /travel</span>
   </div>
 
-  <div id="travel-map" style="height: 400px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 1.5rem;"></div>
+  <div id="travel-map" style="height: 400px; border-radius: 6px; margin-bottom: 1.5rem;"></div>
 
   <p style="margin-bottom: 1rem; color: var(--dim);">{places.length} cities visited</p>
 
@@ -44,23 +44,41 @@ import "leaflet/dist/leaflet.css";
   <div id="travel-data" data-places={JSON.stringify(places)} style="display:none"></div>
 </Layout>
 
-<script>
-import L from "leaflet";
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({ iconUrl: "/images/marker-icon.png", iconRetinaUrl: "/images/marker-icon-2x.png", shadowUrl: "/images/marker-shadow.png" });
-var el = document.getElementById("travel-data");
-var data = JSON.parse(el.getAttribute("data-places"));
-var map = L.map("travel-map").setView([35, 110], 5);
-L.tileLayer("https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}", {
-  maxZoom: 18, attribution: "\u9AD8\u5FB7\u5730\u56FE"
-}).addTo(map);
-data.forEach(function(p) {
-  var imgs = p.images || (p.image ? [p.image] : []);
-  var imgHtml = "";
-  for (var i = 0; i < imgs.length; i++) {
-    imgHtml += '<br><img src="' + imgs[i] + '" style="max-width:180px;border-radius:4px;margin-top:4px">';
+<script is:inline src="/lib/leaflet/leaflet.js"></script>
+<script is:inline>
+(function() {
+  var el = document.getElementById("travel-data");
+  if (!el) return;
+  var data;
+  try { data = JSON.parse(el.getAttribute("data-places")); } catch(e) { return; }
+  if (!data || data.length === 0) return;
+
+  var markerIcon = L.divIcon({
+    className: "",
+    html: '<div style="width:24px;height:24px;background:#1978c8;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 1px 4px rgba(0,0,0,0.4);"><div style="width:8px;height:8px;background:#fff;border-radius:50%;position:absolute;top:8px;left:8px;"></div></div>',
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+    popupAnchor: [0, -28],
+  });
+
+  var map = L.map("travel-map").setView([35, 110], 6);
+  L.tileLayer("https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}", {
+    maxZoom: 18, attribution: "高德地图"
+  }).addTo(map);
+
+  var coords = [];
+  for (var i = 0; i < data.length; i++) {
+    var p = data[i];
+    coords.push([p.lat, p.lng]);
+    var imgs = (p.images || []).map(function(src) {
+      return '<img src="' + src + '" style="max-width:200px;border-radius:4px;margin-top:4px;display:block;" loading="lazy" />';
+    }).join("");
+    var popup = "<strong>" + p.city + "</strong>" +
+      (p.date ? "<br><span style='color:#999;font-size:0.85em;'>" + p.date + "</span>" : "") +
+      (p.description ? "<br>" + p.description : "") +
+      imgs;
+    L.marker([p.lat, p.lng], { icon: markerIcon }).addTo(map).bindPopup(popup, { maxWidth: 260 });
   }
-  L.marker([p.lat, p.lng]).addTo(map).bindPopup("<strong>" + p.city + "</strong><br>" + p.date + "<br>" + p.description + imgHtml);
-});
-if (data.length > 0) map.fitBounds(data.map(function(p) { return [p.lat, p.lng]; }), { padding: [50, 50] });
+  if (coords.length > 1) map.fitBounds(coords, { padding: [50, 50] });
+})();
 </script>

@@ -1,0 +1,20 @@
+---
+export interface Props {
+  currentPage: number;
+  totalPages: number;
+  base: string;
+}
+const { currentPage, totalPages, base } = Astro.props;
+---
+
+{totalPages > 1 && (
+  <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.75rem;font-size:0.8125rem;">
+    {currentPage > 1 && <a href={currentPage === 2 ? "/blog" : `${base}/${currentPage - 1}`} style="color:var(--green);">← prev</a>}
+    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+      p === currentPage
+        ? <span style="color:var(--yellow);font-weight:bold;">{p}</span>
+        : <a href={p === 1 ? "/blog" : `${base}/${p}`} style="color:var(--dim);text-decoration:none;">{p}</a>
+    ))}
+    {currentPage < totalPages && <a href={`${base}/${currentPage + 1}`} style="color:var(--green);">next →</a>}
+  </div>
+)}

@@ -1,0 +1,45 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+const posts = await getCollection("blog");
+const seriesMap = new Map<string, typeof posts>();
+for (const p of posts) {
+  const s = p.data.series;
+  if (s) {
+    if (!seriesMap.has(s)) seriesMap.set(s, []);
+    seriesMap.get(s)!.push(p);
+  }
+}
+const sorted = [...seriesMap.entries()].map(([name, ps]) => ({
+  name,
+  posts: ps.sort((a, b) => (a.data.seriesOrder ?? 99) - (b.data.seriesOrder ?? 99)),
+})).sort((a, b) => a.name.localeCompare(b.name));
+---
+
+<Layout title="series">
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">[guest@brownlu-blog]</span>
+    <span style="color: var(--dim);"> ~ $ </span>
+    <span>ls /series</span>
+  </div>
+
+  <p style="margin-bottom: 1rem; color: var(--dim);">total {sorted.length}</p>
+
+  {sorted.length === 0 && <p style="color: var(--dim);">No series yet.</p>}
+
+  <ul class="post-list">
+    {sorted.map((s) => (
+      <li class="post-item">
+        <a class="post-title" href={`/series/${encodeURIComponent(s.name)}`} style="font-size: 0.875rem;">
+          <span class="tag" style="margin-right: 0.5rem;">{s.name}</span>
+        </a>
+        <span class="post-date">{s.posts.length} post{s.posts.length > 1 ? "s" : ""}</span>
+      </li>
+    ))}
+  </ul>
+
+  <div style="margin-top: 1rem;">
+    <a href="/blog" class="tag" style="font-size: 0.875rem;">← back to /blog</a>
+  </div>
+</Layout>

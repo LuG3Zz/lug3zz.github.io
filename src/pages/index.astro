@@ -1,14 +1,16 @@
 ---
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
+import { quotes } from "../data/quotes";
 
 const posts = await getCollection("blog");
-const sorted = posts.sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
-);
+const sorted = posts
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .sort((a, b) => (b.data.pinned ? 1 : 0) - (a.data.pinned ? 1 : 0));
 
 const siteName = "brownlu-blog";
 const tagline = "a terminal-themed blog";
+const fortune = quotes[Math.floor(Math.random() * quotes.length)];
 ---
 
 <Layout title={siteName}>
@@ -17,30 +19,35 @@ const tagline = "a terminal-themed blog";
     <span style="color: var(--dim);"> ~ $ </span>
     <span>./welcome.sh --greet</span>
   </div>
-  <p style="color: var(--yellow); margin-bottom: 1.5rem;">
-    Welcome to <strong>{siteName}</strong> — {tagline}
+  <p style="color: var(--yellow); margin-bottom: 1.5rem; min-height: 2em;">
+    <span id="typewriter"></span><span class="cursor-block" id="tw-cursor" style="display:none;"></span>
   </p>
 
-  <div class="help-section">
-    <div style="margin-bottom: 0.5rem;">
+  <details class="help-section" id="help-section">
+    <summary style="margin-bottom: 0.5rem; cursor: pointer; list-style: none; display: flex; align-items: center; gap: 0.5rem;">
       <span style="color: var(--green);">[guest@brownlu-blog]</span>
       <span style="color: var(--dim);"> ~ $ </span>
       <span>help --show-commands</span>
-    </div>
+      <span id="help-toggle" style="color: var(--dim); font-size: 0.75rem; margin-left: auto;">[+]</span>
+    </summary>
     <div style="font-size: 0.875rem; margin-bottom: 1.5rem; line-height: 1.8;">
     <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  help</span><span style="color: var(--dim);">— show available commands</span></div>
     <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  ls</span><span style="color: var(--dim);">— list blog posts</span></div>
-    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  cat &lt;slug&gt;</span><span style="color: var(--dim);">— read a post</span></div>
-    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  cd &lt;path&gt;</span><span style="color: var(--dim);">— navigate</span></div>
+    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  cat &lt;slug&gt;</span><span style="color: var(--dim);">— read a post (Tab to autocomplete)</span></div>
+    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  cd &lt;path&gt;</span><span style="color: var(--dim);">— navigate directories</span></div>
+    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  grep &lt;query&gt;</span><span style="color: var(--dim);">— search posts inline</span></div>
+    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  tag &lt;name&gt;</span><span style="color: var(--dim);">— browse by tag</span></div>
+    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  series</span><span style="color: var(--dim);">— browse series</span></div>
+    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  get &lt;script&gt;</span><span style="color: var(--dim);">— fetch a script</span></div>
+    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  activity</span><span style="color: var(--dim);">— stats & heatmap</span></div>
+    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  archive</span><span style="color: var(--dim);">— posts by year/month</span></div>
+    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  travel</span><span style="color: var(--dim);">— view travel map</span></div>
+    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  fortune</span><span style="color: var(--dim);">— random quote</span></div>
+    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  zen</span><span style="color: var(--dim);">— distraction-free reading</span></div>
     <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  whoami</span><span style="color: var(--dim);">— about me</span></div>
     <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  date</span><span style="color: var(--dim);">— current time</span></div>
-    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  activity</span><span style="color: var(--dim);">— post frequency heatmap</span></div>
-    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  travel</span><span style="color: var(--dim);">— view travel map</span></div>
-    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  downloads</span><span style="color: var(--dim);">— browse downloads</span></div>
-    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  get &lt;script&gt;</span><span style="color: var(--dim);">— fetch a script</span></div>
-    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  scripts</span><span style="color: var(--dim);">— list available scripts</span></div>
-    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  tag &lt;name&gt;</span><span style="color: var(--dim);">— browse by tag</span></div>
-  </div></div>
+    <div><span style="color: var(--yellow); min-width: 12rem; display: inline-block;">  clear</span><span style="color: var(--dim);">— refresh page</span></div>
+  </div></details>
 
   <div style="margin-bottom: 0.5rem;">
     <span style="color: var(--green);">[guest@brownlu-blog]</span>
@@ -55,9 +62,14 @@ const tagline = "a terminal-themed blog";
   <ul class="post-list">
     {sorted.slice(0, 5).map((post) => (
       <li class="post-item">
+        {post.data.image
+          ? <img src={post.data.image} alt="" style="width:36px;height:36px;border-radius:4px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);" />
+          : <span style="width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">📄</span>
+        }
         <a class="post-title" href={`/blog/${post.slug}`}>
           {post.data.title}
         </a>
+        {post.data.pinned && <span style="color: var(--yellow); font-size: 0.75rem; margin-left: 0.5rem;">[Pinned]</span>}
         <span class="post-date" style="margin-left: auto;">
           {post.data.date.toISOString().slice(0, 10)}
         </span>
@@ -70,4 +82,35 @@ const tagline = "a terminal-themed blog";
     <span style="color: var(--dim); margin: 0 0.5rem;">|</span>
     <a href="/tags" class="tag" style="font-size: 0.875rem;">→ browse by tags (/tags)</a>
   </div>
+
+  <div class="fortune-box" id="fortune-box" style="margin-top: 2rem; padding: 1rem; border: 1px solid var(--border); border-radius: 6px;">
+    <div style="color: var(--dim); font-size: 0.75rem; margin-bottom: 0.25rem;">$ fortune</div>
+    <div style="color: var(--green); font-size: 0.875rem; font-style: italic;">
+      "{fortune.text}"{fortune.author ? <span style="color: var(--dim);"> — {fortune.author}</span> : ""}
+    </div>
+  </div>
 </Layout>
+
+<script define:vars={{ siteName, tagline }}>
+const text = "Welcome to " + siteName + " — " + tagline;
+const el = document.getElementById("typewriter");
+const cursor = document.getElementById("tw-cursor");
+let i = 0;
+cursor.style.display = "inline-block";
+function type() {
+  if (i < text.length) {
+    el.textContent += text[i];
+    i++;
+    setTimeout(type, 40 + Math.random() * 30);
+  }
+}
+type();
+
+const helpSection = document.getElementById("help-section");
+const helpToggle = document.getElementById("help-toggle");
+if (helpSection) {
+  helpSection.addEventListener("toggle", function() {
+    helpToggle.textContent = helpSection.open ? "[-]" : "[+]";
+  });
+}
+</script>
