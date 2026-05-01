@@ -2,8 +2,7 @@
 import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import Pagination from "../../components/Pagination.astro";
-import { statSync } from "fs";
-import { join } from "path";
+import BlogPostItem from "../../components/BlogPostItem.astro";
 
 const PAGE_SIZE = 5;
 
@@ -16,12 +15,6 @@ const sorted = visible
 const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
 const posts = sorted.slice(0, PAGE_SIZE);
 const currentPage = 1;
-
-function fmtSize(bytes: number): string {
-  if (bytes < 1024) return bytes + "B";
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + "K";
-  return (bytes / (1024 * 1024)).toFixed(1) + "M";
-}
 ---
 
 <Layout title="blog">
@@ -34,26 +27,7 @@ function fmtSize(bytes: number): string {
   <p style="margin-bottom: 1rem; color: var(--dim);">total {sorted.length}</p>
 
   <ul class="post-list">
-    {posts.map((post) => {
-      const date = post.data.date.toISOString().slice(0, 10);
-      let sz = "1.2K";
-      try { sz = fmtSize(statSync(join(process.cwd(), "src/content/blog", post.id)).size); } catch (_) {}
-      const isPin = post.data.pinned;
-      return (
-        <li class="post-item">
-          {post.data.image
-            ? <img src={post.data.image} alt="" style="width:36px;height:36px;border-radius:4px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);" />
-            : <span style="width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">{post.data.password ? "🔒" : "📄"}</span>
-          }
-          <span style={isPin ? "color:var(--yellow);font-size:0.65rem;white-space:nowrap;" : "color:var(--dim);font-size:0.65rem;white-space:nowrap;"}>{isPin ? "drwxr-xr-x" : "-rw-r--r--"} 1 guest guest {sz.padStart(7)}</span>
-          <a class="post-title" href={`/blog/${post.slug}`} style={isPin ? "color:var(--yellow);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" : "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"}>
-            {post.data.title}
-          </a>
-          {isPin && <span style="color: var(--yellow); font-size: 0.75rem; flex-shrink:0;">[Pinned]</span>}
-          <span class="post-date" style="margin-left: auto;flex-shrink:0;">{date}</span>
-        </li>
-      );
-    })}
+    {posts.map((post) => <BlogPostItem {post} />)}
   </ul>
 
   <div style="margin-top: 1rem;">

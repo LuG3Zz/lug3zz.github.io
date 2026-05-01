@@ -1,5 +1,6 @@
 ---
 import "../styles/terminal.css";
+import { ViewTransitions } from "astro:transitions";
 import { getCollection } from "astro:content";
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
@@ -46,18 +47,12 @@ const searchIndex = allPosts.map((p) => {
       }
     })();
   </script>
-  <style>
-    :root { --bg:#0d0d0d;--fg:#c0c0c0;--fg-bright:#fff;--green:#33ff33;--yellow:#ffff33;--red:#ff3333;--blue:#33aaff;--cyan:#33ffff;--dim:#666;--border:#333;--cursor:#33ff33;--selection:rgba(255,255,255,0.15);--font-mono:"JetBrains Mono","Fira Code","Cascadia Code","Consolas","Noto Sans SC","PingFang SC","Microsoft YaHei","WenQuanYi Micro Hei",monospace; }
-    [data-theme="catppuccin"]{--bg:#1e1e2e;--fg:#cdd6f4;--fg-bright:#fff;--green:#a6e3a1;--yellow:#f9e2af;--red:#f38ba8;--blue:#89b4fa;--cyan:#89dceb;--dim:#6c7086;--border:#45475a;--cursor:#b4befe;--selection:rgba(180,190,254,0.2)}
-    [data-theme="matrix"]{--bg:#000;--fg:#00cc00;--fg-bright:#00ff00;--green:#00ff00;--yellow:#00cc00;--red:#009900;--blue:#006600;--cyan:#00cc66;--dim:#004400;--border:#003300;--cursor:#00ff00;--selection:rgba(0,255,0,0.3)}
-    [data-theme="nord"]{--bg:#2e3440;--fg:#d8dee9;--fg-bright:#eceff4;--green:#a3be8c;--yellow:#ebcb8b;--red:#bf616a;--blue:#81a1c1;--cyan:#88c0d0;--dim:#4c566a;--border:#434c5e;--cursor:#d8dee9;--selection:rgba(216,222,233,0.15)}
-    [data-theme="gruvbox"]{--bg:#282828;--fg:#ebdbb2;--fg-bright:#d5c4a1;--green:#b8bb26;--yellow:#fabd2f;--red:#fb4934;--blue:#83a598;--cyan:#8ec07c;--dim:#928374;--border:#3c3836;--cursor:#ebdbb2;--selection:rgba(235,219,178,0.2)}
-  </style>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title} — brownlu-blog</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💻</text></svg>" />
-</head>
+  <ViewTransitions />
+  </head>
 <body>
   <div class="container">
     <header class="terminal-header">
@@ -68,7 +63,7 @@ const searchIndex = allPosts.map((p) => {
  | |_) | | | (_) \ V  V /| | | | | |_| |
  |_.__/|_|  \___/ \_/\_/ |_| |_|_|\__,_|</div>
         {path === "/" && (
-          <div class="weather-box">
+          <div class="weather-box" data-astro-transition-persist>
             <div class="weather-title">$ curl wttr.in</div>
             <div class="weather-body" id="weather-body"><span class="weather-loading">fetching...</span></div>
           </div>
@@ -76,7 +71,7 @@ const searchIndex = allPosts.map((p) => {
       </div>
 
       <div class="terminal-line">
-        <form id="cmd-form" style="display:contents;" onsubmit="return false;">
+        <form id="cmd-form" style="display:contents;" onsubmit="return false;" data-astro-transition-persist>
         <span class="prompt">
           <span class="prompt-user">guest</span>
           <span class="prompt-at">@</span>
@@ -85,19 +80,23 @@ const searchIndex = allPosts.map((p) => {
         <span class="prompt-sep"> ~ </span>
         <span class="prompt-dir">/{path === "/" ? "" : path.replace(/\/$/, "").replace(/^\//, "") || "~"}</span>
         <span class="prompt-end"> $</span>
-        <input type="text" id="cmd-input" class="cmd-input" spellcheck="false" autocomplete="off" />
-        <select id="theme-select" class="theme-select" style="margin-left:0.5rem;flex-shrink:0;">
+        <input type="text" id="cmd-input" class="cmd-input" spellcheck="false" autocomplete="off" data-astro-transition-persist />
+        <select id="theme-select" class="theme-select" style="margin-left:0.5rem;flex-shrink:0;" data-astro-transition-persist>
           <option value="terminal">terminal</option>
           <option value="catppuccin">catppuccin</option>
           <option value="matrix">matrix</option>
           <option value="nord">nord</option>
           <option value="gruvbox">gruvbox</option>
+          <option value="dracula">dracula</option>
+          <option value="tokyo-night">tokyo-night</option>
+          <option value="one-dark">one-dark</option>
         </select>
         </form>
       </div>
 
       <div id="cmd-suggestions" class="cmd-suggestions"></div>
       <div id="grep-results" class="grep-results"></div>
+      <div id="pomodoro-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;"></div>
 
       <nav class="nav">
         <a href="/" class={path === "/" ? "active" : ""}>home</a>
@@ -434,7 +433,7 @@ const searchIndex = allPosts.map((p) => {
       }
     } else if (name === "theme") {
       var tname = parts.slice(1).join(" ");
-      var themes = ["terminal","catppuccin","matrix","nord","gruvbox"];
+      var themes = ["terminal","catppuccin","matrix","nord","gruvbox","dracula","tokyo-night","one-dark"];
       if (!tname) {
         showToast("theme: " + (localStorage.getItem("theme") || "terminal") + " (" + themes.join("/") + ")");
       } else if (themes.indexOf(tname) !== -1) {
@@ -601,6 +600,35 @@ const searchIndex = allPosts.map((p) => {
     } else if (name === "rand") {
       var slugs = JSON.parse(document.getElementById("completion-data").textContent).slugs;
       if (slugs.length > 0) window.location.href = "/blog/" + slugs[Math.floor(Math.random() * slugs.length)];
+    } else if (name === "pomodoro" || name === "pomo") {
+      var min = parseInt(parts[1]) || 25;
+      if (min < 1 || min > 120) { showToast("pomodoro: 1-120 minutes"); return; }
+      var display = document.getElementById("pomodoro-display");
+      if (!display) return;
+      var end = Date.now() + min * 60 * 1000;
+      localStorage.setItem("pomodoro-end", String(end));
+      localStorage.setItem("pomodoro-dur", String(min));
+      clearInterval(window._pomoInterval);
+      window._pomoInterval = setInterval(function() {
+        var remaining = Math.max(0, Math.floor((end - Date.now()) / 1000));
+        if (remaining <= 0) {
+          display.style.display = "block";
+          display.innerHTML = '<span style="color:var(--yellow);">⏰ Time\'s up! (' + min + ' min)</span>';
+          display.style.borderColor = "var(--yellow)";
+          clearInterval(window._pomoInterval);
+          localStorage.removeItem("pomodoro-end");
+          showToast("⏰ Pomodoro done! Take a break.");
+          return;
+        }
+        var m = Math.floor(remaining / 60);
+        var s = remaining % 60;
+        var pct = 1 - remaining / (min * 60);
+        var bar = "█".repeat(Math.round(pct * 20)) + "░".repeat(Math.round((1 - pct) * 20));
+        display.style.display = "block";
+        display.style.borderColor = "var(--border)";
+        display.innerHTML = '<span style="color:var(--green);">🍅 ' + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + '</span> <span style="color:var(--dim);font-size:0.7rem;">' + min + "min " + bar + "</span>";
+      }, 1000);
+      showToast("🍅 pomodoro " + min + " min");
     } else if (name === "matrix") {
       if (window.matrixRain) {
         window.matrixRain.toggle();
@@ -627,7 +655,7 @@ const searchIndex = allPosts.map((p) => {
     }
   }
 
-  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","archive","home","zen","fortune","series","grep","weather","theme","uptime","tip","matrix","save","night","focus","rand"];
+  var commands_list = ["cat","ls","cd","whoami","date","clear","help","tag","get","scripts","downloads","travel","activity","archive","home","zen","fortune","series","grep","weather","theme","uptime","tip","matrix","save","night","focus","rand","pomodoro","pomo"];
   var suggestions = document.getElementById("cmd-suggestions");
 
   var tabMatches = [];
@@ -777,6 +805,7 @@ const searchIndex = allPosts.map((p) => {
     } else if (e.key === "Escape") {
       hideSuggestions();
     } else if (e.key === "Enter") {
+      e.preventDefault();
       hideSuggestions();
       handleCommand(input.value);
       input.value = "";
@@ -819,10 +848,53 @@ const searchIndex = allPosts.map((p) => {
 
   // Theme switcher
   const themeSelect = document.getElementById("theme-select");
-  themeSelect.value = localStorage.getItem("theme") || "terminal";
-  themeSelect.addEventListener("change", () => {
-    const theme = themeSelect.value;
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
+  if (themeSelect) {
+    themeSelect.value = localStorage.getItem("theme") || "terminal";
+    themeSelect.addEventListener("change", () => {
+      const theme = themeSelect.value;
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("theme", theme);
+    });
+  }
+
+  // Re-apply theme after ViewTransition
+  document.addEventListener("astro:page-load", function() {
+    var t = localStorage.getItem("theme") || "terminal";
+    document.documentElement.setAttribute("data-theme", t);
+    var sel = document.getElementById("theme-select");
+    if (sel) sel.value = t;
+    // Restore pomodoro timer
+    var end = localStorage.getItem("pomodoro-end");
+    var dur = localStorage.getItem("pomodoro-dur");
+    if (end && dur) {
+      var remaining = Math.max(0, Math.floor((parseInt(end) - Date.now()) / 1000));
+      if (remaining > 0) {
+        var display = document.getElementById("pomodoro-display");
+        if (display) {
+          clearInterval(window._pomoInterval);
+          var end2 = parseInt(end), min2 = parseInt(dur), display2 = display;
+          window._pomoInterval = setInterval(function() {
+            var r = Math.max(0, Math.floor((end2 - Date.now()) / 1000));
+            if (r <= 0) {
+              display2.innerHTML = '<span style="color:var(--yellow);">⏰ Time\'s up!</span>';
+              display2.style.borderColor = "var(--yellow)";
+              display2.style.display = "block";
+              clearInterval(window._pomoInterval);
+              localStorage.removeItem("pomodoro-end");
+              showToast("⏰ Pomodoro done!");
+              return;
+            }
+            var m = Math.floor(r / 60), s = r % 60;
+            var pct = 1 - r / (min2 * 60);
+            var bar = "█".repeat(Math.round(pct * 20)) + "░".repeat(Math.round((1 - pct) * 20));
+            display2.style.display = "block";
+            display2.style.borderColor = "var(--border)";
+            display2.innerHTML = '<span style="color:var(--green);">🍅 ' + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + '</span> <span style="color:var(--dim);font-size:0.7rem;">' + min2 + "min " + bar + "</span>";
+          }, 1000);
+        }
+      } else {
+        localStorage.removeItem("pomodoro-end");
+      }
+    }
   });
 </script>
