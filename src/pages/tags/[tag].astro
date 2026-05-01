@@ -14,7 +14,8 @@ export async function getStaticPaths() {
 }
 
 const { tag } = Astro.params;
-const posts = (await getCollection("blog"))
+const all = (await getCollection("blog")).filter(p => !p.data.password);
+const posts = all
   .filter((p) => p.data.tags?.includes(tag as string))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---

@@ -8,7 +8,8 @@ import { join } from "path";
 const PAGE_SIZE = 5;
 
 const all = await getCollection("blog");
-const sorted = all
+const visible = all.filter(p => !p.data.password);
+const sorted = visible
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
   .sort((a, b) => (b.data.pinned ? 1 : 0) - (a.data.pinned ? 1 : 0));
 

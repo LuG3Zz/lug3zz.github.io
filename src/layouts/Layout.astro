@@ -612,14 +612,15 @@ const searchIndex = allPosts.map((p) => {
       var dl = document.querySelector("a[download]");
       if (dl) { dl.click(); showToast("saved"); }
       else {
-        var text = document.title + "\n" + "-".repeat(document.title.length) + "\nURL: " + window.location.href + "\n\n" + (document.body.textContent || "").slice(0, 5000);
+        var title = document.title || "page";
+        var text = "URL: " + window.location.href + "\n\n" + (document.body.innerText || "").slice(0, 10000);
         var blob = new Blob([text], { type: "text/plain" });
         var a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "page.txt";
+        a.download = title.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, "_") + ".txt";
         a.click();
         URL.revokeObjectURL(a.href);
-        showToast("page saved");
+        showToast("page saved as .txt");
       }
     } else {
       showToast(`command not found: ${name}. Type 'help'`);

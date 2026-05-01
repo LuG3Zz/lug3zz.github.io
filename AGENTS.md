@@ -49,6 +49,7 @@
 - `series` and `seriesOrder` optional fields for organizing posts into series
 - `pinned` optional boolean for pinning posts to top of listings
 - `image` optional string for cover image path
+- `password` optional string for password-protecting articles (hidden from listings, unlocked via password form)
 - Dynamic listing via `getCollection("blog")` — new `.md` file auto-appears
 - Dynamic route `src/pages/blog/[slug].astro` renders each post with Layout.astro
 

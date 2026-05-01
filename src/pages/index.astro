@@ -4,7 +4,8 @@ import Layout from "../layouts/Layout.astro";
 import { quotes } from "../data/quotes";
 
 const posts = await getCollection("blog");
-const sorted = posts
+const visible = posts.filter(p => !p.data.password);
+const sorted = visible
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
   .sort((a, b) => (b.data.pinned ? 1 : 0) - (a.data.pinned ? 1 : 0));
 

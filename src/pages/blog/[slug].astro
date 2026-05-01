@@ -145,7 +145,7 @@ for (const l of rawMd.split("\n")) {
     <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
       <a href="/blog" style="color: var(--green);">← back to /blog</a>
       <span style="color: var(--dim);">|</span>
-      <a href={downloadUri} download={post.slug + ".md"} style="color: var(--yellow); font-size: 0.8125rem;">↓ download .md</a>
+      <a id="dl-link" href={downloadUri} download={post.slug + ".md"} style={post.data.password ? "display:none;color: var(--yellow); font-size: 0.8125rem;" : "color: var(--yellow); font-size: 0.8125rem;"}>↓ download .md</a>
     </div>
   </div>
 </Layout>
@@ -323,11 +323,15 @@ document.querySelectorAll(".article-content pre").forEach(function(pre) {
   if (sessionStorage.getItem("unlocked-" + window.location.pathname) === "1") {
     pwdForm.style.display = "none";
     lockedContent.style.display = "block";
+    var dl = document.getElementById("dl-link");
+    if (dl) dl.style.display = "";
   }
   function tryUnlock() {
     if (pwdInput.value === correctPwd) {
       pwdForm.style.display = "none";
       lockedContent.style.display = "block";
+      var dl = document.getElementById("dl-link");
+      if (dl) dl.style.display = "";
       sessionStorage.setItem("unlocked-" + window.location.pathname, "1");
     } else {
       pwdError.style.display = "block";

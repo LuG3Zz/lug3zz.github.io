@@ -14,7 +14,8 @@ function fmtSize(bytes) {
 export async function getStaticPaths() {
   const PAGE_SIZE = 5;
   const all = await getCollection("blog");
-  const sorted = all
+  const visible = all.filter(p => !p.data.password);
+  const sorted = visible
     .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
     .sort((a, b) => (b.data.pinned ? 1 : 0) - (a.data.pinned ? 1 : 0));
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
@@ -27,7 +28,8 @@ export async function getStaticPaths() {
 const PAGE_SIZE = 5;
 const { pageNum, totalPages } = Astro.props;
 const all = await getCollection("blog");
-const sorted = all
+const visible = all.filter(p => !p.data.password);
+const sorted = visible
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
   .sort((a, b) => (b.data.pinned ? 1 : 0) - (a.data.pinned ? 1 : 0));
 const posts = sorted.slice((pageNum - 1) * PAGE_SIZE, pageNum * PAGE_SIZE);
