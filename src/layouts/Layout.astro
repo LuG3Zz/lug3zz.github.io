@@ -462,9 +462,19 @@ const searchIndex = allPosts.map((p) => {
   function loadGist(gid) {
     if (!gid) gid = localStorage.getItem("gist-id");
     if (!gid) return Promise.resolve(null);
-    return fetchGistJson(gid).then(function(data) {
-      if (data) gistData = data;
-      return data;
+    var key = localStorage.getItem("gist-key");
+    return fetchGistJson(gid).then(function(payload) {
+      if (!payload) return null;
+      if (payload.v === 1 && payload.d && payload.h) {
+        if (!key) return null;
+        try {
+          var data = JSON.parse(xorDecrypt(payload.d, key));
+          if (data) gistData = data;
+          return data;
+        } catch(e) { return null; }
+      }
+      if (payload) gistData = payload;
+      return payload;
     });
   }
 
@@ -484,12 +494,15 @@ const searchIndex = allPosts.map((p) => {
   function saveGist(data) {
     var pat = localStorage.getItem("gist-pat");
     var gid = localStorage.getItem("gist-id");
+    var key = localStorage.getItem("gist-key") || (data && data.passwordHash);
     gistData = data;
+    var payload = data;
+    if (key) payload = { v: 1, h: key, d: xorEncrypt(JSON.stringify(data), key) };
     if (pat && gid) {
       return fetch("https://api.github.com/gists/" + gid, {
         method: "PATCH",
         headers: { "Authorization": "token " + pat, "Content-Type": "application/json" },
-        body: JSON.stringify({ files: { "data.json": { content: JSON.stringify(data) } } })
+        body: JSON.stringify({ files: { "data.json": { content: JSON.stringify(payload) } } })
       }).then(function(res) { return res.ok; }).catch(function() { saveLocal(data); return false; });
     } else { saveLocal(data); return Promise.resolve(true); }
   }
@@ -899,6 +912,7 @@ const searchIndex = allPosts.map((p) => {
         var setupData = defaultGistData();
         setupData.passwordHash = hash;
         setupData.encryptedPat = xorEncrypt(gpat, hash);
+        localStorage.setItem("gist-key", hash);
         saveGist(setupData).then(function(ok) {
           if (ok) { gistData = setupData; localStorage.setItem("logged-in", "true"); updatePrompt(); showToast("gist setup done, logged in"); }
           else showToast("gist-setup: failed");
@@ -938,24 +952,32 @@ const searchIndex = allPosts.map((p) => {
       findGistByUser(username).then(function(result) {
         if (!result) { showToast("login: no gist found for " + username); return; }
         localStorage.setItem("gist-id", result.id);
-        loadGist(result.id).then(function(data) {
-          if (!data || !data.passwordHash) { showToast("login: no password set"); return; }
-          sha256(password).then(function(hash) {
-            if (hash === data.passwordHash) {
+        sha256(password).then(function(hash) {
+          fetchGistJson(result.id).then(function(payload) {
+            if (!payload) { showToast("login: failed to fetch gist"); return; }
+            if (payload.v === 1 && payload.h) {
+              if (hash !== payload.h) { showToast("login: incorrect password"); return; }
+              var data = payload.d ? JSON.parse(xorDecrypt(payload.d, hash)) : null;
+              if (!data) { showToast("login: failed to decrypt data"); return; }
+              localStorage.setItem("gist-key", hash);
               gistData = data;
-              localStorage.setItem("logged-in", "true");
-              if (data.encryptedPat) {
-                var decPat = xorDecrypt(data.encryptedPat, hash);
-                localStorage.setItem("gist-pat", decPat);
-              }
-              updatePrompt(); renderTodos();
-              showToast("login: welcome, " + username);
-            } else { showToast("login: incorrect password"); }
+            } else {
+              if (hash !== payload.passwordHash) { showToast("login: incorrect password"); return; }
+              gistData = payload;
+            }
+            localStorage.setItem("logged-in", "true");
+            if (gistData.encryptedPat) {
+              var decPat = xorDecrypt(gistData.encryptedPat, hash);
+              localStorage.setItem("gist-pat", decPat);
+            }
+            updatePrompt(); renderTodos();
+            showToast("login: welcome, " + username);
           });
         });
       });
     } else if (name === "logout") {
       localStorage.removeItem("logged-in");
+      localStorage.removeItem("gist-key");
       updatePrompt();
       var el = document.getElementById("todo-display");
       if (el) el.style.display = "none";
