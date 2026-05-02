@@ -409,7 +409,7 @@ const searchIndex = allPosts.map((p) => {
   function localKey() { return "brownlu-data"; }
 
   function defaultGistData() {
-    return { todos: [], habits: [], moods: {}, posts: [], pomodoros: {}, passwordHash: null, encryptedPat: null };
+    return { todos: [], habits: {}, moods: {}, posts: [], pomodoros: {}, passwordHash: null, encryptedPat: null };
   }
 
   function loadLocal() {
@@ -1045,7 +1045,7 @@ const searchIndex = allPosts.map((p) => {
     } else if (name === "habit") {
       if (!gistData) { ensureData(); }
       if (localStorage.getItem("logged-in") !== "true") { showToast("habit: login first"); return; }
-      if (!gistData.habits) gistData.habits = {};
+      if (!gistData.habits || Array.isArray(gistData.habits)) gistData.habits = {};
       var hsub = (parts[1] || "").toLowerCase(), hrest = parts.slice(2).join(" ").trim();
       if (!hsub || hsub === "list") {
         var hkeys = Object.keys(gistData.habits);
