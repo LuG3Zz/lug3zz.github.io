@@ -1063,22 +1063,42 @@ const searchIndex = allPosts.map((p) => {
         delete gistData.habits[hrest];
         saveGist(gistData).then(function(ok) { if (ok) showToast("removed: " + hrest); else showToast("habit rm: failed"); });
       } else if (hsub === "calendar") {
-        var hname = parts[2], calYear = new Date().getFullYear(), calMon = new Date().getMonth();
+        var hname = parts[2];
         if (!hname) { showToast("Usage: habit calendar <name>"); return; }
         if (!gistData.habits[hname]) { showToast("habit not found: " + hname); return; }
-        var monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-        var daysIn = new Date(calYear, calMon + 1, 0).getDate();
-        var first = (new Date(calYear, calMon, 1).getDay() + 6) % 7;
-        var lines = []; lines.push("      " + monthNames[calMon] + " " + calYear + "  " + hname);
-        lines.push(" Mo Tu We Th Fr Sa Su");
-        var wk = ""; for (var i = 0; i < first; i++) wk += "   ";
-        for (var d = 1; d <= daysIn; d++) {
-          var dk = calYear + "-" + String(calMon + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
-          var done = gistData.habits[hname][dk] ? "✓" : " ";
-          wk += (d < 10 ? " " : "") + d + done;
-          if ((first + d) % 7 === 0 || d === daysIn) { lines.push(wk); wk = ""; }
+        var hel = document.getElementById("todo-display");
+        if (!hel) return;
+        var now = new Date(), year = now.getFullYear();
+        var jan1 = new Date(year, 0, 1), dec31 = new Date(year + 1, 0, 0);
+        var total = Math.floor((dec31 - jan1) / 864e5) + 1;
+        var startDow = (jan1.getDay() + 6) % 7;
+        var weeks = Math.ceil((total + startDow) / 7);
+        var html = '<div style="display:flex;gap:2px;padding-left:28px;font-size:0.6rem;color:var(--dim);margin-bottom:2px;">';
+        var lastCol = -1;
+        for (var m = 0; m < 12; m++) {
+          var first = new Date(year, m, 1);
+          var doy = Math.floor((first - jan1) / 864e5);
+          var col = Math.floor((doy + startDow) / 7);
+          if (col > lastCol) { html += '<span style="width:' + (col - lastCol) * 12 + 'px;">' + ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m] + '</span>'; lastCol = col; }
         }
-        var hel = document.getElementById("todo-display"); if (hel) { hel.textContent = wrapBox(lines, "habit").join("\n"); hel.style.display = "block"; }
+        html += '</div>';
+        var days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+        for (var d = 0; d < 7; d++) {
+          html += '<div style="display:flex;gap:2px;align-items:center;">';
+          html += '<span style="width:24px;font-size:0.6rem;color:var(--dim);text-align:right;padding-right:4px;">' + days[d] + '</span>';
+          for (var w = 0; w < weeks; w++) {
+            var dn = w * 7 + d - startDow + 1;
+            if (dn >= 1 && dn <= total) {
+              var dt = new Date(year, 0, dn);
+              var dk = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
+              var done = gistData.habits[hname][dk];
+              html += '<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:' + (done ? "var(--green)" : "var(--border)") + ';" title="' + dk + '"></span>';
+            } else html += '<span style="display:inline-block;width:10px;height:10px;"></span>';
+          }
+          html += '</div>';
+        }
+        html += '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;font-size:0.65rem;color:var(--dim);">' + hname + ' <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--border);"></span> <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--green);"></span></div>';
+        hel.innerHTML = html; hel.style.display = "block";
       } else {
         if (gistData.habits[hsub]) {
           var today = new Date().toISOString().slice(0, 10);
