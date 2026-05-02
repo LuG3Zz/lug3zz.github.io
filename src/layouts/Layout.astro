@@ -1114,7 +1114,7 @@ const searchIndex = allPosts.map((p) => {
         } else { showToast("habit: unknown \"" + hsub + "\" (add|list|rm|<name>)"); }
       }
     } else if (name === "mood") {
-      if (!gistData) { showToast("mood: connect Gist first (gist-init)"); return; }
+      if (!gistData) { ensureData(); }
       if (localStorage.getItem("logged-in") !== "true") { showToast("mood: login first"); return; }
       if (!gistData.moods) gistData.moods = {};
       var val = parseInt(parts[1]);
@@ -1132,7 +1132,7 @@ const searchIndex = allPosts.map((p) => {
     } else if (name === "dashboard") {
       window.location.href = "/dashboard";
     } else if (name === "post") {
-      if (!gistData) { showToast("post: connect Gist first (gist-init)"); return; }
+      if (!gistData) { ensureData(); }
       if (localStorage.getItem("logged-in") !== "true") { showToast("post: login first"); return; }
       if (!gistData.posts) gistData.posts = [];
       var sub = (parts[1] || "").toLowerCase();
