@@ -1063,8 +1063,9 @@ const searchIndex = allPosts.map((p) => {
         delete gistData.habits[hrest];
         saveGist(gistData).then(function(ok) { if (ok) showToast("removed: " + hrest); else showToast("habit rm: failed"); });
       } else if (hsub === "calendar") {
-        var hname = parts[2], calYear = parseInt(parts[3]) || new Date().getFullYear(), calMon = parts[3] && parts[4] ? parseInt(parts[4]) - 1 : new Date().getMonth();
-        if (!hname || !gistData.habits[hname]) { showToast("Usage: habit calendar <name> [year] [month]"); return; }
+        var hname = parts[2], calYear = new Date().getFullYear(), calMon = new Date().getMonth();
+        if (!hname) { showToast("Usage: habit calendar <name>"); return; }
+        if (!gistData.habits[hname]) { showToast("habit not found: " + hname); return; }
         var monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
         var daysIn = new Date(calYear, calMon + 1, 0).getDate();
         var first = (new Date(calYear, calMon, 1).getDay() + 6) % 7;
