@@ -1163,7 +1163,7 @@ const searchIndex = allPosts.map((p) => {
         var removed = gistData.posts.splice(idx, 1)[0];
         saveGist(gistData).then(function(ok) { if (ok) showToast("removed post: " + removed.text.slice(0, 30)); else showToast("post rm: failed"); });
       } else {
-        var text = parts.slice(1).join(" ").trim();
+        var text = (sub === "add" ? rest : parts.slice(1).join(" ").trim());
         if (!text) { showToast("Usage: post <text> or post list"); return; }
         var maxId = gistData.posts.reduce(function(m, p) { return Math.max(m, p.id || 0); }, 0);
         gistData.posts.push({ id: maxId + 1, text: text, createdAt: Date.now() });
