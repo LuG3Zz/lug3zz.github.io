@@ -1062,6 +1062,22 @@ const searchIndex = allPosts.map((p) => {
         if (!hrest || !gistData.habits[hrest]) { showToast("Usage: habit rm <name>"); return; }
         delete gistData.habits[hrest];
         saveGist(gistData).then(function(ok) { if (ok) showToast("removed: " + hrest); else showToast("habit rm: failed"); });
+      } else if (hsub === "calendar") {
+        var hname = parts[2], calYear = parseInt(parts[3]) || new Date().getFullYear(), calMon = parts[3] && parts[4] ? parseInt(parts[4]) - 1 : new Date().getMonth();
+        if (!hname || !gistData.habits[hname]) { showToast("Usage: habit calendar <name> [year] [month]"); return; }
+        var monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        var daysIn = new Date(calYear, calMon + 1, 0).getDate();
+        var first = (new Date(calYear, calMon, 1).getDay() + 6) % 7;
+        var lines = []; lines.push("      " + monthNames[calMon] + " " + calYear + "  " + hname);
+        lines.push(" Mo Tu We Th Fr Sa Su");
+        var wk = ""; for (var i = 0; i < first; i++) wk += "   ";
+        for (var d = 1; d <= daysIn; d++) {
+          var dk = calYear + "-" + String(calMon + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+          var done = gistData.habits[hname][dk] ? "✓" : " ";
+          wk += (d < 10 ? " " : "") + d + done;
+          if ((first + d) % 7 === 0 || d === daysIn) { lines.push(wk); wk = ""; }
+        }
+        var hel = document.getElementById("todo-display"); if (hel) { hel.textContent = wrapBox(lines, "habit").join("\n"); hel.style.display = "block"; }
       } else {
         if (gistData.habits[hsub]) {
           var today = new Date().toISOString().slice(0, 10);
@@ -1161,7 +1177,7 @@ const searchIndex = allPosts.map((p) => {
     cat: compData.slugs, tag: compData.tags, series: compData.series,
     get: compData.scripts, cd: ["blog","tags","travel","activity","archive","dashboard","now","search","scripts","downloads","about","home"],
     todo: ["add","edit","search","stats","week","move","archive","done","undo","rm","clear","calendar","list"],
-    habit: ["add","rm","list"],
+    habit: ["add","rm","list","calendar"],
     mood: ["1","2","3","4","5","calendar"],
     post: ["list","rm"],
     grep: null,
