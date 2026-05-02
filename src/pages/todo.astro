@@ -1,0 +1,60 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="todo">
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">┌──(</span><span style="color: var(--yellow);">guest</span><span style="color: var(--dim);">@</span><span style="color: var(--blue);">brownlu-blog</span><span style="color: var(--green);">)</span>
+    <span style="color: var(--dim);"> ~$ </span>
+    <span style="color: var(--fg-bright);">todo list</span>
+  </div>
+
+  <div id="todo-login-msg" style="color: var(--dim); font-size: 0.875rem; margin-bottom: 0.75rem; display: none;">
+    login first: <span style="color: var(--green);">login &lt;password&gt;</span>
+  </div>
+
+  <div id="stats-bar" style="font-size: 0.8125rem; color: var(--dim); margin-bottom: 0.5rem; display: none;"></div>
+
+  <div style="font-size: 0.8125rem; margin-bottom: 1.5rem; line-height: 2;">
+    <span style="color: var(--dim);">commands:</span>
+    <span style="color: var(--green);">add</span><span style="color: var(--dim);">|</span><span style="color: var(--green);">done</span><span style="color: var(--dim);">|</span><span style="color: var(--green);">undo</span><span style="color: var(--dim);">|</span><span style="color: var(--green);">edit</span><span style="color: var(--dim);">|</span><span style="color: var(--green);">rm</span><span style="color: var(--dim);">|</span><span style="color: var(--green);">clear</span><span style="color: var(--dim);">|</span><span style="color: var(--green);">archive</span><span style="color: var(--dim);">|</span><span style="color: var(--green);">search</span><span style="color: var(--dim);">|</span><span style="color: var(--green);">stats</span><span style="color: var(--dim);">|</span><span style="color: var(--green);">week</span><span style="color: var(--dim);">|</span><span style="color: var(--green);">calendar</span><span style="color: var(--dim);">|</span><span style="color: var(--green);">move</span>
+    <span style="color: var(--dim); margin-left: 0.5rem;">e.g.</span>
+    <span style="color: var(--yellow);">todo add --high #work 写周报 --due 2026-06-01</span>
+  </div>
+
+  <div style="margin-top: 1.5rem;">
+    <a href="/" class="tag" style="font-size: 0.8125rem;">← back to home</a>
+    <a href="/dashboard" class="tag" style="font-size: 0.8125rem; margin-left: 1rem;">dashboard →</a>
+  </div>
+</Layout>
+
+<script>
+(function() {
+  var msg = document.getElementById("todo-login-msg");
+  if (localStorage.getItem("logged-in") !== "true" && msg) {
+    msg.style.display = "block";
+  }
+  // Show stats after Gist loads
+  function showStats() {
+    var data = window.gistData;
+    if (!data || !data.todos) { setTimeout(showStats, 500); return; }
+    var bar = document.getElementById("stats-bar");
+    if (!bar) return;
+    var total = data.todos.length;
+    var done = data.todos.filter(function(t) { return t.done; }).length;
+    var pending = total - done;
+    var archived = (data.archived || []).length;
+    var high = data.todos.filter(function(t) { return !t.done && t.priority === "high"; }).length;
+    var today = new Date().toISOString().slice(0, 10);
+    var pomo = data.pomodoros && data.pomodoros[today] || 0;
+    bar.innerHTML = "<span style='color:var(--green);'>pending: " + pending + "</span>" +
+      " <span style='color:var(--dim);'>|</span> done: " + done +
+      " <span style='color:var(--dim);'>|</span> archived: " + archived +
+      " <span style='color:var(--dim);'>|</span> <span style='color:var(--red);'>[H]</span>" + high +
+      " <span style='color:var(--dim);'>|</span> 🍅" + pomo +
+      " <span style='color:var(--dim);'>|</span> rate: " + (total > 0 ? Math.round(done / (total + archived) * 100) : 0) + "%";
+    bar.style.display = "block";
+  }
+  if (localStorage.getItem("logged-in") === "true") setTimeout(showStats, 1000);
+})();
+</script>

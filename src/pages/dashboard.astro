@@ -1,0 +1,114 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="dashboard">
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">┌──(</span><span style="color: var(--yellow);">guest</span><span style="color: var(--dim);">@</span><span style="color: var(--blue);">brownlu-blog</span><span style="color: var(--green);">)</span>
+    <span style="color: var(--dim);"> ~$ </span>
+    <span style="color: var(--fg-bright);">./dashboard.sh</span>
+  </div>
+
+  <div id="dash-login-msg" style="color: var(--dim); font-size: 0.875rem; margin-bottom: 0.75rem; display: none;">
+    login first: <span style="color: var(--green);">login &lt;password&gt;</span>
+  </div>
+
+  <div id="dash-content" style="display: none;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+      <div class="dash-card">
+        <div style="color: var(--yellow); font-size: 0.75rem; margin-bottom: 0.25rem;">🍅 pomodoro today</div>
+        <div id="dash-pomo" style="color: var(--green); font-size: 1.5rem;">--</div>
+      </div>
+      <div class="dash-card">
+        <div style="color: var(--yellow); font-size: 0.75rem; margin-bottom: 0.25rem;">📋 todos pending</div>
+        <div id="dash-todos" style="color: var(--fg-bright); font-size: 1.5rem;">--</div>
+      </div>
+      <div class="dash-card">
+        <div style="color: var(--yellow); font-size: 0.75rem; margin-bottom: 0.25rem;">✅ habits today</div>
+        <div id="dash-habits" style="color: var(--cyan); font-size: 1.5rem;">--</div>
+      </div>
+      <div class="dash-card">
+        <div style="color: var(--yellow); font-size: 0.75rem; margin-bottom: 0.25rem;">😊 mood today</div>
+        <div id="dash-mood" style="color: var(--fg-bright); font-size: 1.5rem;">--</div>
+      </div>
+    </div>
+
+    <div style="color: var(--yellow); font-size: 0.875rem; margin-bottom: 0.5rem;">this week</div>
+    <div id="dash-week" style="font-size: 0.8125rem; line-height: 1.8;"></div>
+  </div>
+
+  <div style="margin-top: 1rem;">
+    <a href="/" class="tag" style="font-size: 0.875rem;">← back to home</a>
+    <a href="/todo" class="tag" style="font-size: 0.875rem; margin-left: 1rem;">todo →</a>
+  </div>
+</Layout>
+
+<style>
+  .dash-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    background: var(--bg);
+  }
+</style>
+
+<script>
+(function() {
+  var msg = document.getElementById("dash-login-msg");
+  var content = document.getElementById("dash-content");
+  if (localStorage.getItem("logged-in") !== "true") {
+    if (msg) msg.style.display = "block";
+    return;
+  }
+  content.style.display = "block";
+
+  var dashPomo = document.getElementById("dash-pomo");
+  var dashTodos = document.getElementById("dash-todos");
+  var dashHabits = document.getElementById("dash-habits");
+  var dashMood = document.getElementById("dash-mood");
+  var dashWeek = document.getElementById("dash-week");
+
+  // Read from localStorage directly (cached after login)
+  var pomoCount = parseInt(localStorage.getItem("pomo-count") || "0");
+  if (dashPomo) dashPomo.textContent = "🍅×" + pomoCount;
+
+  // These are only available after Gist loads — poll and retry
+  function refresh() {
+    if (window.gistData) {
+      var todos = (window.gistData.todos || []).filter(function(t) { return !t.done; });
+      if (dashTodos) dashTodos.textContent = todos.length;
+
+      var habits = window.gistData.habits || {};
+      var today = new Date().toISOString().slice(0, 10);
+      var doneHabits = 0, totalHabits = 0;
+      for (var k in habits) { totalHabits++; if (habits[k] && habits[k][today]) doneHabits++; }
+      if (dashHabits) dashHabits.textContent = doneHabits + "/" + totalHabits;
+
+      var mood = window.gistData.moods && window.gistData.moods[today];
+      if (dashMood) dashMood.textContent = mood ? "😞😐🙂😊😄".slice((mood - 1) * 2, mood * 2) : "—";
+
+      // Week summary
+      var dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      var lines = [];
+      var now = new Date();
+      for (var wi = 6; wi >= 0; wi--) {
+        var d = new Date(now);
+        d.setDate(d.getDate() - wi);
+        var dateKey = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+        var wTodo = (window.gistData.todos || []).filter(function(t) { return t.createdAt && new Date(t.createdAt).toISOString().slice(0, 10) === dateKey; }).length;
+        var wPomo = (window.gistData.pomodoros && window.gistData.pomodoros[dateKey]) || 0;
+        var wMood = window.gistData.moods && window.gistData.moods[dateKey];
+        var wHabit = 0;
+        for (var k in habits) { if (habits[k] && habits[k][dateKey]) wHabit++; }
+        var m = wi === 0 ? "→" : " ";
+        var moodCh = wMood ? "😞😐🙂😊😄".slice((wMood - 1) * 2, wMood * 2) : "·";
+        lines.push(m + " " + dayNames[d.getDay()] + " " + String(d.getDate()).padStart(2, " ") + "  todo:" + wTodo + " pomo:" + wPomo + " habit:" + wHabit + " mood:" + moodCh);
+      }
+      if (dashWeek) dashWeek.textContent = lines.join("\n");
+    } else {
+      setTimeout(refresh, 500);
+    }
+  }
+  setTimeout(refresh, 1000);
+})();
+</script>

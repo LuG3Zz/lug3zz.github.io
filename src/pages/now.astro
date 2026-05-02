@@ -1,0 +1,109 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="now">
+  <div style="margin-bottom: 0.5rem;">
+    <span style="color: var(--green);">┌──(</span><span style="color: var(--yellow);">guest</span><span style="color: var(--dim);">@</span><span style="color: var(--blue);">brownlu-blog</span><span style="color: var(--green);">)</span>
+    <span style="color: var(--dim);"> ~$ </span>
+    <span style="color: var(--fg-bright);">post list</span>
+  </div>
+
+  <div id="now-login-msg" style="color: var(--dim); font-size: 0.875rem; margin-bottom: 0.75rem; display: none;">
+    login first: <span style="color: var(--green);">login &lt;password&gt;</span>
+  </div>
+
+  <div id="now-posts" style="display: none;">
+    <div id="now-list"></div>
+    <div style="margin-top: 1rem; font-size: 0.8125rem; color: var(--dim);">
+      type <span style="color: var(--green);">post &lt;text&gt;</span> to add ·
+      <span style="color: var(--green);">post rm &lt;n&gt;</span> to delete
+    </div>
+  </div>
+
+  <div style="margin-top: 1.5rem;">
+    <a href="/" class="tag" style="font-size: 0.8125rem;">← back to home</a>
+    <a href="/dashboard" class="tag" style="font-size: 0.8125rem; margin-left: 1rem;">dashboard →</a>
+  </div>
+</Layout>
+
+<script>
+(function() {
+  var msg = document.getElementById("now-login-msg");
+  if (localStorage.getItem("logged-in") !== "true" && msg) {
+    msg.style.display = "block";
+    return;
+  }
+  var container = document.getElementById("now-posts");
+  if (container) container.style.display = "block";
+
+  function escHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function formatDate(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") +
+      " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+
+  function loadPosts() {
+    var data = window.gistData;
+    if (!data || !data.posts) { setTimeout(loadPosts, 500); return; }
+    var el = document.getElementById("now-list");
+    if (!el) return;
+    var posts = data.posts;
+    if (posts.length === 0) {
+      el.innerHTML = '<div style="color:var(--dim);padding:0.5rem 0;animation:fadeIn 0.3s ease-out;">no posts yet. type: post &lt;text&gt;</div>';
+      return;
+    }
+    // Group posts by date
+    var groups = {};
+    for (var i = 0; i < posts.length; i++) {
+      var p = posts[i];
+      var d = new Date(p.createdAt);
+      var dateKey = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      if (!groups[dateKey]) groups[dateKey] = [];
+      groups[dateKey].push({ post: p, date: d, num: i + 1 });
+    }
+
+    var dateKeys = Object.keys(groups).sort().reverse();
+
+    function buildGroupHTML(dk) {
+      var items = groups[dk];
+      items.sort(function(a, b) { return b.date - a.date; });
+      var html = '<div style="display:flex;gap:0.75rem;animation:fadeIn 0.3s ease-out;">';
+      html += '<div style="display:flex;flex-direction:column;align-items:center;min-width:1.5rem;">';
+      html += '<div style="width:2px;flex:1;background:var(--border);"></div>';
+      html += '<div style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;margin:0.25rem 0;"></div>';
+      html += '<div style="width:2px;flex:1;background:var(--border);"></div>';
+      html += '</div>';
+      html += '<div style="flex:1;min-width:0;padding-bottom:1.5rem;">';
+      html += '<div style="color:var(--yellow);font-size:0.75rem;margin-bottom:0.5rem;">$ cat ' + dk + '</div>';
+      for (var ji = 0; ji < items.length; ji++) {
+        var item = items[ji];
+        var timeStr = String(item.date.getHours()).padStart(2, "0") + ":" + String(item.date.getMinutes()).padStart(2, "0");
+        html += '<div style="margin-bottom:0.5rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);">' +
+          '<div style="color:var(--dim);font-size:0.7rem;margin-bottom:0.25rem;">$ echo "#' + item.num + ' ' + timeStr + '"</div>' +
+          '<div style="font-size:0.875rem;">> ' + escHtml(item.post.text) + '</div>' +
+          '</div>';
+      }
+      html += '</div>';
+      html += '</div>';
+      return html;
+    }
+
+    // Animate: output one date group at a time
+    el.innerHTML = "";
+    var idx = 0;
+    function nextGroup() {
+      if (idx >= dateKeys.length) return;
+      el.insertAdjacentHTML("beforeend", buildGroupHTML(dateKeys[idx]));
+      idx++;
+      setTimeout(nextGroup, 250);
+    }
+    nextGroup();
+  }
+
+  setTimeout(loadPosts, 1000);
+})();
+</script>

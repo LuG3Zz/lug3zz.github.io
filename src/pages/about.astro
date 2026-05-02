@@ -56,6 +56,11 @@ import Layout from "../layouts/Layout.astro";
     taking photos, or thinking about the next thing to build.
   </p>
 
+  <div id="gh-activity" style="margin-top: 1.5rem; padding: 1rem; border: 1px solid var(--border); border-radius: 6px;">
+    <div style="color: var(--yellow); margin-bottom: 0.5rem;">$ curl -s "https://api.github.com/users/LuG3Zz/events?per_page=5"</div>
+    <div style="color: var(--dim); font-size: 0.8125rem;">loading...</div>
+  </div>
+
   <div style="margin-top: 1.5rem; padding: 1rem; border: 1px solid var(--border); border-radius: 6px;">
     <div style="color: var(--yellow); margin-bottom: 0.5rem;">$ cat contact.txt</div>
     <div><span class="tag">github</span> <a href="https://github.com/LuG3Zz">LuG3Zz</a></div>
@@ -64,3 +69,38 @@ import Layout from "../layouts/Layout.astro";
     <div><span class="tag">site</span> <a href="https://lug3zz.github.io">lug3zz.github.io</a></div>
   </div>
 </Layout>
+
+<script>
+(function() {
+  var el = document.getElementById("gh-activity");
+  if (!el) return;
+  fetch("https://api.github.com/users/LuG3Zz/events?per_page=5")
+    .then(function(r) { return r.json(); })
+    .then(function(events) {
+      if (!events || events.length === 0) { el.innerHTML = '<div style="color:var(--yellow);margin-bottom:0.5rem;">$ curl -s "https://api.github.com/users/LuG3Zz/events?per_page=5"</div><div style="color:var(--dim);font-size:0.8125rem;">no recent activity</div>'; return; }
+      var typeIcons = { PushEvent: "📤", CreateEvent: "📦", IssuesEvent: "🐛", PullRequestEvent: "🔀", WatchEvent: "⭐", ForkEvent: "🍴", IssueCommentEvent: "💬", DeleteEvent: "🗑️" };
+      var html = '<div style="color:var(--yellow);margin-bottom:0.5rem;">$ curl -s "https://api.github.com/users/LuG3Zz/events?per_page=5"</div>';
+      for (var i = 0; i < Math.min(events.length, 5); i++) {
+        var e = events[i];
+        var icon = typeIcons[e.type] || "⚡";
+        var repo = e.repo.name;
+        var desc = "";
+        if (e.type === "PushEvent") desc = (e.payload.commits || []).map(function(c) { return c.message.split("\n")[0]; }).join("; ");
+        else if (e.type === "CreateEvent") desc = "created " + e.payload.ref_type + " " + (e.payload.ref || "");
+        else if (e.type === "IssuesEvent") desc = e.payload.action + " issue: " + (e.payload.issue && e.payload.issue.title);
+        else if (e.type === "PullRequestEvent") desc = e.payload.action + " PR: " + (e.payload.pull_request && e.payload.pull_request.title);
+        else if (e.type === "WatchEvent") desc = "starred";
+        else if (e.type === "ForkEvent") desc = "forked";
+        var ago = Math.floor((Date.now() - new Date(e.created_at).getTime()) / 3600000);
+        var timeStr = ago < 1 ? "just now" : ago < 24 ? ago + "h ago" : Math.floor(ago / 24) + "d ago";
+        html += '<div style="margin-bottom:0.4rem;font-size:0.8125rem;">' +
+          '<span style="color:var(--dim);">' + icon + ' ' + repo.split("/")[1] + '</span> ' +
+          '<span style="color:var(--fg);">' + (desc ? desc.slice(0, 60) : "") + '</span>' +
+          ' <span style="color:var(--dim);font-size:0.7rem;">' + timeStr + '</span>' +
+          '</div>';
+      }
+      el.innerHTML = html;
+    })
+    .catch(function() { el.innerHTML = '<div style="color:var(--yellow);margin-bottom:0.5rem;">$ curl -s "https://api.github.com/users/LuG3Zz/events?per_page=5"</div><div style="color:var(--dim);font-size:0.8125rem;">failed to fetch activity</div>'; });
+})();
+</script>
