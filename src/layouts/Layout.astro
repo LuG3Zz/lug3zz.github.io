@@ -918,34 +918,6 @@ const searchIndex = allPosts.map((p) => {
           else showToast("gist-setup: failed");
         });
       });
-    } else if (name === "gist-init") {
-      var pat = parts[1];
-      var gid = parts[2];
-      if (!pat || !gid) { showToast("Usage: gist-init <pat> <gistId>"); return; }
-      localStorage.setItem("gist-pat", pat);
-      localStorage.setItem("gist-id", gid);
-      loadGist().then(function(res) {
-        if (res === null) {
-          saveGist(defaultGistData()).then(function(ok) {
-            if (ok) { showToast("gist initialized"); loadGist(); }
-            else showToast("gist-init: failed — check PAT and Gist ID");
-          });
-        } else {
-          showToast("gist connected");
-        }
-      });
-    } else if (name === "register") {
-      var pw = parts[1];
-      if (!pw) { showToast("Usage: register <password>"); return; }
-      if (!hasGist()) { showToast("register: run 'gist-init' first"); return; }
-      sha256(pw).then(function(hash) {
-        var data = gistData || defaultGistData();
-        data.passwordHash = hash;
-        saveGist(data).then(function(ok) {
-          if (ok) { gistData = data; localStorage.setItem("logged-in", "true"); updatePrompt(); showToast("password registered, logged in"); }
-          else showToast("register: failed");
-        });
-      });
     } else if (name === "login") {
       if (parts.length < 3) { showToast("Usage: login <username> <password>"); return; }
       var username = parts[1], password = parts.slice(2).join(" ");
@@ -998,7 +970,7 @@ const searchIndex = allPosts.map((p) => {
       } else if (sub === "edit") {
         var n = parseInt(parts[2]), newText = parts.slice(3).join(" ").trim();
         if (isNaN(n) || n < 1 || !gistData.todos || n > gistData.todos.length || !newText) { showToast("Usage: todo edit <number> <new text>"); return; }
-        var oldText = gistData.todos[n - 1].text; gistData.todos[n - 1].text = newText;
+        gistData.todos[n - 1].text = newText;
         saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("edited"); } else showToast("todo edit: failed"); });
       } else if (sub === "search") {
         if (!rest) { showToast("Usage: todo search <query>"); return; }
@@ -1158,7 +1130,7 @@ const searchIndex = allPosts.map((p) => {
     }
   }
 
-  var commands_list = ["activity","archive","cat","cd","clear","dashboard","date","downloads","focus","fortune","get","gist-setup","grep","habit","help","home","login","logout","ls","matrix","mood","night","pomodoro","pomo","post","rand","save","scripts","series","tag","theme","tip","todo","travel","uptime","weather","whoami","zen"];
+  var commands_list = ["activity","archive","cat","cd","clear","dashboard","date","downloads","focus","fortune","get","gist-setup","grep","habit","help","login","logout","ls","matrix","mood","night","pomodoro","pomo","post","rand","save","scripts","series","tag","theme","tip","todo","travel","uptime","weather","whoami","zen"];
   var suggestions = document.getElementById("cmd-suggestions");
 
   var tabMatches = [];
@@ -1346,7 +1318,7 @@ const searchIndex = allPosts.map((p) => {
     var d = Math.floor(diff / 86400);
     var h = Math.floor((diff % 86400) / 3600);
     var m = Math.floor((diff % 3600) / 60);
-    footerUptime.textContent = d + " days, " + h + " hours";
+    footerUptime.textContent = d + "d " + h + "h " + m + "m";
   }
   updateUptime();
   setInterval(updateUptime, 60000);
