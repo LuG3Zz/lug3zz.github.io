@@ -439,15 +439,22 @@ const searchIndex = allPosts.map((p) => {
     } catch(e) { return Promise.resolve(str); }
   }
 
-  function xorHex(text, keyHex) {
+  function xorEncrypt(text, keyHex) {
     var key = [];
     for (var i = 0; i < keyHex.length; i += 2) key.push(parseInt(keyHex.substring(i, i + 2), 16));
+    var bytes = new TextEncoder().encode(text);
     var r = "";
-    for (var i = 0; i < text.length; i++) r += String.fromCharCode(text.charCodeAt(i) ^ key[i % key.length]);
-    return r;
+    for (var i = 0; i < bytes.length; i++) r += String.fromCharCode(bytes[i] ^ key[i % key.length]);
+    return btoa(r);
   }
-  function xorEncrypt(text, keyHex) { return btoa(xorHex(text, keyHex)); }
-  function xorDecrypt(cipher, keyHex) { return xorHex(atob(cipher), keyHex); }
+  function xorDecrypt(cipher, keyHex) {
+    var key = [];
+    for (var i = 0; i < keyHex.length; i += 2) key.push(parseInt(keyHex.substring(i, i + 2), 16));
+    var raw = atob(cipher);
+    var bytes = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ key[i % key.length];
+    return new TextDecoder().decode(bytes);
+  }
 
   function fetchGistJson(gid) {
     return fetch("https://api.github.com/gists/" + gid).then(function(res) {
