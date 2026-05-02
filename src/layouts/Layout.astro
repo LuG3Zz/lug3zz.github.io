@@ -38,7 +38,7 @@ const searchIndex = allPosts.map((p) => {
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <script is:inline>
+<script>
     (function(){
       document.documentElement.setAttribute("data-theme",localStorage.getItem("theme")||"terminal");
       if (localStorage.getItem("zen") === "true") document.documentElement.setAttribute("data-zen","true");
@@ -75,7 +75,7 @@ const searchIndex = allPosts.map((p) => {
       <div class="terminal-line">
         <form id="cmd-form" style="display:contents;" onsubmit="return false;">
         <span class="prompt">
-          <span class="prompt-user">guest</span>
+          <span class="prompt-user" id="prompt-user">guest</span>
           <span class="prompt-at">@</span>
           <span class="prompt-host">brownlu-blog</span>
         </span>
@@ -99,6 +99,7 @@ const searchIndex = allPosts.map((p) => {
       <div id="cmd-suggestions" class="cmd-suggestions"></div>
       <div id="grep-results" class="grep-results"></div>
       <div id="pomodoro-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;"></div>
+      <div id="todo-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;white-space:pre-wrap;"></div>
 
       <nav class="nav">
         <a href="/" class={path === "/" ? "active" : ""}>home</a>
@@ -326,7 +327,7 @@ const searchIndex = allPosts.map((p) => {
   }
 </style>
 
-<script>
+<script is:inline>
   const input = document.getElementById("cmd-input");
   const toast = document.getElementById("cmd-toast");
   const toastMsg = document.getElementById("toast-msg");
@@ -401,7 +402,82 @@ const searchIndex = allPosts.map((p) => {
     }
   }
 
-  function handleCommand(cmd) {
+  // ─── Gist cloud sync ──────────────────────────
+  var gistData = null;
+
+  function updatePrompt() {
+    var el = document.getElementById("prompt-user");
+    if (!el) return;
+    el.textContent = localStorage.getItem("logged-in") === "true" ? "root" : "guest";
+  }
+
+  function sha256(str) {
+    return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf) {
+      return Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, "0"); }).join("");
+    });
+  }
+
+  function hasGist() {
+    return localStorage.getItem("gist-pat") && localStorage.getItem("gist-id");
+  }
+
+  async function loadGist() {
+    var pat = localStorage.getItem("gist-pat");
+    var gid = localStorage.getItem("gist-id");
+    if (!pat || !gid) return null;
+    try {
+      var res = await fetch("https://api.github.com/gists/" + gid, {
+        headers: { "Authorization": "token " + pat }
+      });
+      var json = await res.json();
+      if (!json.files || !json.files["data.json"]) return null;
+      gistData = JSON.parse(json.files["data.json"].content);
+      return gistData;
+    } catch (e) { return null; }
+  }
+
+  async function saveGist(data) {
+    var pat = localStorage.getItem("gist-pat");
+    var gid = localStorage.getItem("gist-id");
+    if (!pat || !gid) return false;
+    try {
+      await fetch("https://api.github.com/gists/" + gid, {
+        method: "PATCH",
+        headers: {
+          "Authorization": "token " + pat,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          files: { "data.json": { content: JSON.stringify(data) } }
+        })
+      });
+      gistData = data;
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function defaultGistData() {
+    return { passwordHash: "", pomodoros: {}, todos: [] };
+  }
+
+  function renderTodos() {
+    var el = document.getElementById("todo-display");
+    if (!el) return;
+    if (!gistData || !gistData.todos || gistData.todos.length === 0) {
+      el.style.display = "none";
+      return;
+    }
+    var lines = [];
+    for (var i = 0; i < gistData.todos.length; i++) {
+      var t = gistData.todos[i];
+      var mark = t.done ? "[x]" : "[ ]";
+      lines.push((i + 1) + ". " + mark + " " + t.text);
+    }
+    el.textContent = lines.join("\n");
+    el.style.display = "block";
+  }
+
+  async function handleCommand(cmd) {
     // Clear grep results when running any command
     if (grepResults) grepResults.classList.remove("show");
     const parts = cmd.trim().split(/\s+/);
@@ -464,7 +540,7 @@ const searchIndex = allPosts.map((p) => {
         window.location.href = `/scripts/${script}`;
       }
     } else if (name === "help") {
-      showToast("cat <slug> | cd <path> | tag <name> | grep <query> | series | activity | archive | fortune | clear");
+      showToast("cat|cd|tag|grep|series|activity|archive|fortune|clear | gist-init|login|register|todo|pomo");
     } else if (name === "clear") {
       hideSuggestions();
       if (grepResults) grepResults.classList.remove("show");
@@ -609,31 +685,10 @@ const searchIndex = allPosts.map((p) => {
     } else if (name === "pomodoro" || name === "pomo") {
       var min = parseInt(parts[1]) || 25;
       if (min < 1 || min > 120) { showToast("pomodoro: 1-120 minutes"); return; }
-      var display = document.getElementById("pomodoro-display");
-      if (!display) return;
       var end = Date.now() + min * 60 * 1000;
       localStorage.setItem("pomodoro-end", String(end));
       localStorage.setItem("pomodoro-dur", String(min));
-      clearInterval(window._pomoInterval);
-      window._pomoInterval = setInterval(function() {
-        var remaining = Math.max(0, Math.floor((end - Date.now()) / 1000));
-        if (remaining <= 0) {
-          display.style.display = "block";
-          display.innerHTML = '<span style="color:var(--yellow);">⏰ Time\'s up! (' + min + ' min)</span>';
-          display.style.borderColor = "var(--yellow)";
-          clearInterval(window._pomoInterval);
-          localStorage.removeItem("pomodoro-end");
-          showToast("⏰ Pomodoro done! Take a break.");
-          return;
-        }
-        var m = Math.floor(remaining / 60);
-        var s = remaining % 60;
-        var pct = 1 - remaining / (min * 60);
-        var bar = "█".repeat(Math.round(pct * 20)) + "░".repeat(Math.round((1 - pct) * 20));
-        display.style.display = "block";
-        display.style.borderColor = "var(--border)";
-        display.innerHTML = '<span style="color:var(--green);">🍅 ' + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + '</span> <span style="color:var(--dim);font-size:0.7rem;">' + min + "min " + bar + "</span>";
-      }, 1000);
+      startPomodoro(end, min);
       showToast("🍅 pomodoro " + min + " min");
     } else if (name === "matrix") {
       if (window.matrixRain) {
@@ -661,7 +716,7 @@ const searchIndex = allPosts.map((p) => {
     }
   }
 
-  var commands_list = ["activity","archive","cat","cd","clear","date","downloads","focus","fortune","get","grep","help","home","ls","matrix","night","pomodoro","pomo","rand","save","scripts","series","tag","theme","tip","travel","uptime","weather","whoami","zen"];
+  var commands_list = ["activity","archive","cat","cd","clear","date","downloads","focus","fortune","get","gist-init","gist-status","grep","help","home","login","logout","ls","matrix","night","pomodoro","pomo","rand","register","save","scripts","series","tag","theme","tip","todo","travel","uptime","weather","whoami","zen"];
   var suggestions = document.getElementById("cmd-suggestions");
 
   var tabMatches = [];
@@ -697,6 +752,7 @@ const searchIndex = allPosts.map((p) => {
   var argMap = {
     cat: compData.slugs, tag: compData.tags, series: compData.series,
     get: compData.scripts,     cd: ["blog","tags","travel","activity","archive","search","scripts","downloads","about","home"],
+    todo: ["add","done","undo","rm","clear","list"],
     grep: null,
   };
 
@@ -796,7 +852,100 @@ const searchIndex = allPosts.map((p) => {
       } else if (matches.length > 1) {
         if (tabMatches.length === matches.length && tabMatches.every(function(v, i) { return v === matches[i]; })) {
           tabIndex = (tabIndex + 1) % matches.length;
-        } else {
+    } else if (name === "gist-init") {
+      var pat = parts[1];
+      var gid = parts[2];
+      if (!pat || !gid) { showToast("Usage: gist-init <pat> <gistId>"); return; }
+      localStorage.setItem("gist-pat", pat);
+      localStorage.setItem("gist-id", gid);
+      var res = await loadGist();
+      if (res === null) {
+        var ok = await saveGist(defaultGistData());
+        if (ok) { showToast("gist initialized"); loadGist(); }
+        else showToast("gist-init: failed — check PAT and Gist ID");
+      } else {
+        showToast("gist connected");
+      }
+    } else if (name === "gist-status") {
+      var pat = localStorage.getItem("gist-pat");
+      var gid = localStorage.getItem("gist-id");
+      var logged = localStorage.getItem("logged-in") === "true";
+      showToast("PAT: " + (pat ? pat.slice(0, 8) + "..." : "not set") + " | Gist: " + (gid || "not set") + " | login: " + (logged ? "yes" : "no"));
+    } else if (name === "register") {
+      var pw = parts[1];
+      if (!pw) { showToast("Usage: register <password>"); return; }
+      if (!hasGist()) { showToast("register: run 'gist-init' first"); return; }
+      var hash = await sha256(pw);
+      var data = gistData || defaultGistData();
+      data.passwordHash = hash;
+      var ok = await saveGist(data);
+      showToast(ok ? "password registered" : "register: failed");
+    } else if (name === "login") {
+      var pw = parts.slice(1).join(" ");
+      if (!pw) { showToast("Usage: login <password>"); return; }
+      if (!hasGist()) { showToast("login: run 'gist-init' first"); return; }
+      if (!gistData) await loadGist();
+      if (!gistData || !gistData.passwordHash) { showToast("login: no password set, run 'register' first"); return; }
+      var hash = await sha256(pw);
+      if (hash === gistData.passwordHash) {
+        localStorage.setItem("logged-in", "true");
+        updatePrompt();
+        renderTodos();
+        showToast("login: welcome, root");
+      } else {
+        showToast("login: incorrect password");
+      }
+    } else if (name === "logout") {
+      localStorage.removeItem("logged-in");
+      updatePrompt();
+      var el = document.getElementById("todo-display");
+      if (el) el.style.display = "none";
+      showToast("logged out");
+    } else if (name === "todo") {
+      if (!gistData) { showToast("todo: connect Gist first (gist-init)"); return; }
+      if (localStorage.getItem("logged-in") !== "true") { showToast("todo: login first"); return; }
+      var sub = (parts[1] || "").toLowerCase();
+      var rest = parts.slice(2).join(" ").trim();
+      if (!sub || sub === "list") {
+        renderTodos();
+        if (!gistData.todos || gistData.todos.length === 0) showToast("no todos");
+      } else if (sub === "add") {
+        if (!rest) { showToast("Usage: todo add <text>"); return; }
+        if (!gistData.todos) gistData.todos = [];
+        var maxId = gistData.todos.reduce(function(m, t) { return Math.max(m, t.id || 0); }, 0);
+        gistData.todos.push({ id: maxId + 1, text: rest, done: false });
+        var ok = await saveGist(gistData);
+        if (ok) { renderTodos(); showToast("todo added: " + rest); }
+        else showToast("todo add: failed to save");
+      } else if (sub === "done" || sub === "undo") {
+        var n = parseInt(rest);
+        if (isNaN(n) || n < 1 || !gistData.todos || n > gistData.todos.length) {
+          showToast("Usage: todo " + sub + " <number>"); return;
+        }
+        var idx = n - 1;
+        gistData.todos[idx].done = sub === "done";
+        var ok = await saveGist(gistData);
+        if (ok) { renderTodos(); showToast("todo " + n + " " + (sub === "done" ? "done" : "undone")); }
+        else showToast("todo: failed to save");
+      } else if (sub === "rm") {
+        var n = parseInt(rest);
+        if (isNaN(n) || n < 1 || !gistData.todos || n > gistData.todos.length) {
+          showToast("Usage: todo rm <number>"); return;
+        }
+        var removed = gistData.todos.splice(n - 1, 1)[0];
+        var ok = await saveGist(gistData);
+        if (ok) { renderTodos(); showToast("removed: " + removed.text); }
+        else showToast("todo rm: failed to save");
+      } else if (sub === "clear") {
+        if (!gistData.todos) { showToast("no todos to clear"); return; }
+        gistData.todos = gistData.todos.filter(function(t) { return !t.done; });
+        var ok = await saveGist(gistData);
+        if (ok) { renderTodos(); showToast("cleared done todos"); }
+        else showToast("todo clear: failed to save");
+      } else {
+        showToast("todo: add | done <n> | undo <n> | rm <n> | clear | list");
+      }
+    } else {
           tabMatches = matches;
           tabPartial = completingCmd ? trimmed : (parts[parts.length - 1] || "");
           tabIndex = 0;
@@ -849,6 +998,81 @@ const searchIndex = allPosts.map((p) => {
     });
     topBtn.addEventListener("click", function() {
       window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
+  // Pomodoro timer
+  function getToday() { return new Date().toISOString().slice(0, 10); }
+
+  function getDailyPomo() {
+    var day = localStorage.getItem("pomo-day");
+    var count = parseInt(localStorage.getItem("pomo-count") || "0");
+    return day === getToday() ? count : 0;
+  }
+
+  function addDailyPomo() {
+    var day = getToday();
+    var count = getDailyPomo() + 1;
+    localStorage.setItem("pomo-day", day);
+    localStorage.setItem("pomo-count", String(count));
+    return count;
+  }
+
+  function startPomodoro(end, min) {
+    clearInterval(window._pomoInterval);
+    var display = document.getElementById("pomodoro-display");
+    if (!display) return;
+    window._pomoInterval = setInterval(function() {
+      var remaining = Math.max(0, Math.floor((end - Date.now()) / 1000));
+      var daily = getDailyPomo();
+      if (remaining <= 0) {
+        var total = addDailyPomo();
+        display.style.display = "block";
+        display.innerHTML = '<span style="color:var(--yellow);">⏰ Time\'s up! (' + min + ' min)</span><span style="color:var(--dim);font-size:0.7rem;margin-left:1rem;">today: 🍅×' + total + '</span>';
+        display.style.borderColor = "var(--yellow)";
+        clearInterval(window._pomoInterval);
+        localStorage.removeItem("pomodoro-end");
+        showToast("⏰ Pomodoro done! 🍅×" + total + " today");
+        // Sync to Gist if logged in
+        if (gistData && localStorage.getItem("logged-in") === "true") {
+          var today = new Date().toISOString().slice(0, 10);
+          if (!gistData.pomodoros) gistData.pomodoros = {};
+          gistData.pomodoros[today] = total;
+          saveGist(gistData);
+        }
+        return;
+      }
+      var m = Math.floor(remaining / 60);
+      var s = remaining % 60;
+      var pct = 1 - remaining / (min * 60);
+      var bar = "█".repeat(Math.round(pct * 20)) + "░".repeat(Math.round((1 - pct) * 20));
+      display.style.display = "block";
+      display.style.borderColor = "var(--border)";
+      display.innerHTML = '<span style="color:var(--green);">🍅 ' + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + '</span> <span style="color:var(--dim);font-size:0.7rem;">' + min + "min " + bar + (daily > 0 ? '</span><span style="color:var(--dim);font-size:0.7rem;margin-left:0.5rem;">today: 🍅×' + daily + '</span>' : '</span>');
+    }, 1000);
+  }
+  var savedEnd = localStorage.getItem("pomodoro-end");
+  var savedDur = localStorage.getItem("pomodoro-dur");
+  if (savedEnd && savedDur) {
+    var end = parseInt(savedEnd);
+    var min = parseInt(savedDur);
+    if (end > Date.now()) startPomodoro(end, min);
+    else localStorage.removeItem("pomodoro-end");
+  }
+
+  // Startup — restore session and sync Gist
+  updatePrompt();
+  if (hasGist() && localStorage.getItem("logged-in") === "true") {
+    loadGist().then(function(data) {
+      if (data && data.todos && data.todos.length > 0) renderTodos();
+      // Merge cloud pomodoro count if today exists
+      if (data && data.pomodoros) {
+        var today = new Date().toISOString().slice(0, 10);
+        if (data.pomodoros[today] && data.pomodoros[today] > getDailyPomo()) {
+          localStorage.setItem("pomo-day", today);
+          localStorage.setItem("pomo-count", String(data.pomodoros[today]));
+        }
+      }
     });
   }
 
