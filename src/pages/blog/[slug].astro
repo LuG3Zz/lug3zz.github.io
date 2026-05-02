@@ -317,8 +317,7 @@ document.querySelectorAll(".article-content pre").forEach(function(pre) {
   var pwdInput = document.getElementById("pwd-input");
   var pwdBtn = document.getElementById("pwd-btn");
   var pwdError = document.getElementById("pwd-error");
-  var correctPwd = pwdForm.getAttribute("data-password");
-  if (!pwdForm || !correctPwd) return;
+  if (!pwdForm || !pwdForm.getAttribute("data-password")) return;
   // Check sessionStorage
   if (sessionStorage.getItem("unlocked-" + window.location.pathname) === "1") {
     pwdForm.style.display = "none";
@@ -327,7 +326,7 @@ document.querySelectorAll(".article-content pre").forEach(function(pre) {
     if (dl) dl.style.display = "";
   }
   function tryUnlock() {
-    if (pwdInput.value === correctPwd) {
+    if (pwdInput.value === pwdForm.getAttribute("data-password")) {
       pwdForm.style.display = "none";
       lockedContent.style.display = "block";
       var dl = document.getElementById("dl-link");
