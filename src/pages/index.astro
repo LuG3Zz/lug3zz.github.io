@@ -89,7 +89,11 @@ var cow = "  \\   ^__^\n" +
   "          ||----w |\n" +
   "          ||     ||";
 
-var msg = "Hello, guest! Welcome to " + siteName + ".";
+var hr = new Date().getHours();
+var greet = hr < 12 ? "Good morning" : hr < 18 ? "Good afternoon" : "Good evening";
+var user = localStorage.getItem("logged-in") === "true" ? "root" : "guest";
+var today = new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric", weekday: "long" });
+var msg = greet + ", " + user + "! Today is " + today + ".";
 var border = "+" + "-".repeat(msg.length + 2) + "+";
 var bubble = border + "\n| " + msg + " |\n" + border;
 
