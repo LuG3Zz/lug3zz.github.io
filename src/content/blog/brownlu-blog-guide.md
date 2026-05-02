@@ -147,7 +147,7 @@ Neovim 配合本系统的推荐工作流：
 
 可选：在 `~/.config/nvim/snippets/` 或 `~/.config/nvim/UltiSnips/` 中添加 markdown 文章模板片段：
 
-```snippet
+```text
 snippet frontmatter "Blog post frontmatter"
 ---
 title: "${1:文章标题}"
