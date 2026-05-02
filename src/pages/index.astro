@@ -17,7 +17,7 @@ const fortune = quotes[Math.floor(Math.random() * quotes.length)];
 
 <Layout title={siteName}>
   <div style="margin-bottom: 0.5rem;">
-    <span style="color: var(--green);">┌──(</span><span style="color: var(--yellow);">guest</span><span style="color: var(--dim);">@</span><span style="color: var(--blue);">brownlu-blog</span><span style="color: var(--green);">)</span>
+    <span style="color: var(--green);">┌──(</span><span class="prompt-user-display" style="color: var(--yellow);">guest</span><span style="color: var(--dim);">@</span><span style="color: var(--blue);">brownlu-blog</span><span style="color: var(--green);">)</span>
     <span style="color: var(--dim);"> ~$ </span>
     <span style="color: var(--fg-bright);">./welcome.sh --greet</span>
   </div>
@@ -25,7 +25,7 @@ const fortune = quotes[Math.floor(Math.random() * quotes.length)];
 
   <details class="help-section" id="help-section">
     <summary style="margin-bottom: 0.5rem; cursor: pointer; list-style: none; display: flex; align-items: center; gap: 0.5rem;">
-      <span style="color: var(--green);">┌──(</span><span style="color: var(--yellow);">guest</span><span style="color: var(--dim);">@</span><span style="color: var(--blue);">brownlu-blog</span><span style="color: var(--green);">)</span>
+      <span style="color: var(--green);">┌──(</span><span class="prompt-user-display" style="color: var(--yellow);">guest</span><span style="color: var(--dim);">@</span><span style="color: var(--blue);">brownlu-blog</span><span style="color: var(--green);">)</span>
       <span style="color: var(--dim);"> ~$ </span>
       <span style="color: var(--fg-bright);">help --show-commands</span>
       <span id="help-toggle" style="color: var(--dim); font-size: 0.75rem; margin-left: auto;">[+]</span>
@@ -50,7 +50,7 @@ const fortune = quotes[Math.floor(Math.random() * quotes.length)];
   </div></details>
 
   <div style="margin-bottom: 0.5rem;">
-    <span style="color: var(--green);">┌──(</span><span style="color: var(--yellow);">guest</span><span style="color: var(--dim);">@</span><span style="color: var(--blue);">brownlu-blog</span><span style="color: var(--green);">)</span>
+    <span style="color: var(--green);">┌──(</span><span class="prompt-user-display" style="color: var(--yellow);">guest</span><span style="color: var(--dim);">@</span><span style="color: var(--blue);">brownlu-blog</span><span style="color: var(--green);">)</span>
     <span style="color: var(--dim);"> ~$ </span>
     <span style="color: var(--fg-bright);">ls --latest --posts 5</span>
   </div>
@@ -80,6 +80,8 @@ const fortune = quotes[Math.floor(Math.random() * quotes.length)];
 <canvas id="matrix-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;pointer-events:none;display:none;"></canvas>
 
 <script define:vars={{ siteName, tagline }}>
+var user = localStorage.getItem("logged-in") === "true" ? "root" : "guest";
+document.querySelectorAll(".prompt-user-display").forEach(function(el) { el.textContent = user; });
 var el = document.getElementById("welcome-output");
 var cursor = '<span class="cursor-block" style="display:inline-block;"></span>';
 
