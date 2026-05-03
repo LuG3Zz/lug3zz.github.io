@@ -685,20 +685,511 @@ const searchIndex = allPosts.map((p) => {
     el.style.display = "block";
   }
 
-  async function handleCommand(cmd) {
-    // Clear grep results when running any command
+  // ─── Command definitions ──────────────────────────
+  var commands = {};
+
+  commands.cat = function(parts) {
+    var slug = parts.slice(1).join(" ");
+    if (!slug) { showToast("Usage: cat <slug>"); return; }
+    if (slug.includes("/")) { showToast("cat: " + slug + ": No such file"); return; }
+    window.location.href = "/blog/" + slug;
+  };
+
+  commands.activity = function(parts) { window.location.href = "/activity"; };
+  commands.archive = function(parts) { window.location.href = "/archive"; };
+  commands.travel = function(parts) { window.location.href = "/travel"; };
+  commands.downloads = function(parts) { window.location.href = "/downloads"; };
+  commands.scripts = function(parts) { window.location.href = "/scripts"; };
+  commands.ls = function(parts) { window.location.href = "/blog"; };
+  commands.whoami = function(parts) { window.location.href = "/about"; };
+  commands.dashboard = function(parts) { window.location.href = "/dashboard"; };
+
+  commands.weather = function(parts) {
+    var city = parts.slice(1).join(" ");
+    if (!city) {
+      var cur = localStorage.getItem("weather-city");
+      showToast(cur ? "weather: " + cur + " (type 'weather <city>' to change)" : "weather: auto (type 'weather <city>' to set)");
+      return;
+    }
+    localStorage.setItem("weather-city", city);
+    fetchWeather("https://wttr.in/" + encodeURIComponent(city) + "?format=j1&lang=zh");
+    showToast("weather set to: " + city);
+  };
+
+  commands.theme = function(parts) {
+    var tname = parts.slice(1).join(" ");
+    if (!tname) {
+      showToast("theme: " + (localStorage.getItem("theme") || "terminal") + " (" + THEMES.join("/") + ")");
+    } else if (THEMES.indexOf(tname) !== -1) {
+      applyTheme(tname);
+      showToast("theme set to " + tname);
+    } else {
+      showToast("theme: unknown theme \"" + tname + "\" (" + THEMES.join("/") + ")");
+    }
+  };
+
+  commands.get = function(parts) {
+    var script = parts.slice(1).join(" ");
+    if (!script) { window.location.href = "/scripts"; return; }
+    window.location.href = "/scripts/" + script;
+  };
+
+  commands.help = function(parts) { showToast("cat | cd | tag | grep | series | theme | login | todo | pomo | clear"); };
+
+  commands.clear = function(parts) {
+    hideSuggestions();
     if (grepResults) grepResults.classList.remove("show");
-    const parts = cmd.trim().split(/\s+/);
-    const name = parts[0].toLowerCase();
+    document.getElementById("pomodoro-display").style.display = "none";
+    input.value = "";
+    input.focus();
+  };
 
-    if (!name) return;
+  commands.date = function(parts) {
+    showToast(new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" }));
+  };
 
-    if (name === "cat") {
-      const slug = parts.slice(1).join(" ");
-      if (!slug) {
-        showToast("Usage: cat <slug>");
-        return;
+  commands.series = function(parts) {
+    var series = parts.slice(1).join(" ");
+    if (!series) { window.location.href = "/series"; return; }
+    window.location.href = "/series/" + series;
+  };
+
+  commands.tag = function(parts) {
+    var tag = parts.slice(1).join(" ");
+    if (!tag) { window.location.href = "/tags"; return; }
+    window.location.href = "/tags/" + tag;
+  };
+
+  commands.cd = function(parts) {
+    var knownPaths = ["/", "/home", "/blog", "/tags", "/todo", "/now", "/dashboard", "/travel", "/activity", "/archive", "/search", "/scripts", "/downloads", "/about"];
+    var knownPrefixes = ["/tags/", "/blog/", "/scripts/"];
+    var target = parts.slice(1).join(" ");
+    var path;
+    if (!target || target === "/" || target === "~" || target === "home") {
+      path = "/";
+    } else if (target === "..") {
+      var current = window.location.pathname.replace(/\/$/, "");
+      path = current.substring(0, current.lastIndexOf("/")) || "/";
+    } else {
+      path = target.startsWith("/") ? target : "/" + target;
+    }
+    path = path.replace(/\/$/, "") || "/";
+    var valid = knownPaths.indexOf(path) !== -1 || knownPrefixes.some(function(p) { return path.startsWith(p); });
+    if (valid) { window.location.href = path; }
+    else { showToast("cd: " + path + ": No such directory"); }
+  };
+
+  commands.grep = function(parts) {
+    var q = parts.slice(1).join(" ");
+    if (!q) { showToast("Usage: grep <query>"); return; }
+    showGrepResults(q);
+  };
+
+  commands.fortune = function(parts) {
+    var qs = JSON.parse(document.getElementById("fortune-data").textContent);
+    var q = qs[Math.floor(Math.random() * qs.length)];
+    showToast('"' + q.text + '"' + (q.author ? " \u2014 " + q.author : ""));
+  };
+
+  commands.zen = function(parts) { toggleMode("data-zen", "zen mode on", "zen mode off"); };
+  commands.night = function(parts) { toggleMode("data-night", "night mode on", "night mode off"); };
+  commands.focus = function(parts) { toggleMode("data-focus", "focus mode on (hover to reveal)", "focus mode off"); };
+
+  commands.uptime = function(parts) {
+    var start = new Date(document.getElementById("uptime-data").getAttribute("data-start"));
+    var now = new Date();
+    var diff = Math.floor((now.getTime() - start.getTime()) / 1000);
+    var days = Math.floor(diff / 86400);
+    var hours = Math.floor((diff % 86400) / 3600);
+    var mins = Math.floor((diff % 3600) / 60);
+    showToast("uptime: " + days + " days, " + hours + " hours, " + mins + " mins");
+  };
+
+  commands.tip = function(parts) {
+    var tips = [
+        "Use '!!' to re-run the last command: sudo !!",
+        "Press Ctrl+R to search command history",
+        "Use 'cd -' to go back to the previous directory",
+        "'cat file | less' — scroll through long output",
+        "Use 'du -sh *' to see disk usage per item",
+        "Wildcard tip: 'rm -rf *' won't delete hidden files (.xxx)",
+        "Use 'history | grep foo' to find past commands",
+        "Kill a process by name: pkill firefox",
+        "'watch -n 1 command' — run command every second",
+        "Use 'tree' to visualize directory structure",
+        "'df -h' shows disk usage in human-readable format",
+        "'free -h' shows memory usage",
+        "Add '&' at end of command to run in background",
+        "Use 'ncdu' for interactive disk usage analysis",
+        "'Ctrl+Z' suspends a process, 'bg' sends it to background",
+        "'!!:0' gets just the command name of last command",
+        "'ssh-copy-id user@host' copies your SSH key",
+        "Use 'tar -xvf file.tar.gz' to extract tarballs",
+        "'curl ifconfig.me' shows your public IP",
+        "'echo $?' shows exit code of last command (0 = success)",
+        "Use 'which command' to find where a program is installed",
+        "'chmod +x file' makes a file executable",
+        "Use 'file filename' to check what type of file it is",
+        "'head -n 20 file' shows first 20 lines, 'tail -n 20' last 20",
+        "Use 'diff file1 file2' to compare two files",
+        "'sort file | uniq -c' counts unique lines",
+        "Use 'grep -r pattern .' to recursively search all files",
+        "Combine commands with '&&': cmd1 && cmd2 (run if prev succeeds)",
+        "'cmd1 | tee file' shows output AND saves to file",
+        "Use 'alias ll=\"ls -la\"' to create shortcuts",
+        "'Ctrl+W' deletes the word before cursor in terminal",
+        "'Ctrl+U' clears the entire current line",
+        "'Ctrl+A' jumps to start of line, 'Ctrl+E' to end",
+        "Use 'ls -laS' to sort files by size",
+        "'ls -latr' lists files by date (oldest last)",
+        "Use 'find . -name \"*.txt\"' to find all txt files",
+        "'grep -c pattern file' counts matches instead of displaying",
+        "Use 'scp file user@host:/path/' to copy files over SSH",
+        "'rsync -av source/ dest/' syncs directories efficiently",
+        "Use 'journalctl -xe' to check system logs",
+        "'systemctl status service' checks if a service is running",
+        "Use 'htop' for interactive process management",
+        "'lsof -i :8080' shows what's listening on port 8080",
+        "Use 'ping -c 4 host' to send exactly 4 pings",
+        "'nslookup domain.com' or 'dig domain.com' for DNS lookup",
+        "Use 'cal' to display a calendar in terminal",
+        "'date +%Y-%m-%d' outputs date in YYYY-MM-DD format",
+        "Use 'time command' to measure how long a command takes",
+        "'mkpasswd -m sha-512' generates a secure password hash",
+        "Use 'openssl rand -base64 32' to generate a random key",
+        "'Ctrl+L' clears the screen (same as 'clear')",
+        "Use 'last' to see recent login history",
+        "'w' or 'who' shows who's logged in",
+        "Use 'id' to see your user and group IDs",
+        "'uname -a' shows all system info",
+        "Use 'lsblk' to list all block devices",
+        "'blkid' shows UUID of disk partitions",
+        "Use 'mtr host' combines ping + traceroute",
+        "'ss -tuln' shows listening ports",
+        "Use 'ip a' to see network interfaces (replaces ifconfig)",
+      ];
+    showToast(tips[Math.floor(Math.random() * tips.length)]);
+  };
+
+  commands.rand = function(parts) {
+    var slugs = JSON.parse(document.getElementById("completion-data").textContent).slugs;
+    if (slugs.length > 0) window.location.href = "/blog/" + slugs[Math.floor(Math.random() * slugs.length)];
+  };
+
+  commands.pomodoro = commands.pomo = function(parts) {
+    var min = parseInt(parts[1]) || 25;
+    if (min < 1 || min > 120) { showToast("pomodoro: 1-120 minutes"); return; }
+    var end = Date.now() + min * 60 * 1000;
+    localStorage.setItem("pomodoro-end", String(end));
+    localStorage.setItem("pomodoro-dur", String(min));
+    startPomodoro(end, min);
+    showToast("\ud83c\udf4d pomodoro " + min + " min");
+  };
+
+  commands.matrix = function(parts) {
+    if (window.matrixRain) {
+      window.matrixRain.toggle();
+      showToast(window.matrixRain.isOn() ? "matrix rain on" : "matrix rain off");
+    } else {
+      window.location.href = "/";
+    }
+  };
+
+  commands.save = function(parts) {
+    var dl = document.querySelector("a[download]");
+    if (dl) { dl.click(); showToast("saved"); return; }
+    var title = document.title || "page";
+    var text = "URL: " + window.location.href + "\n\n" + (document.body.innerText || "").slice(0, 10000);
+    var blob = new Blob([text], { type: "text/plain" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = title.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, "_") + ".txt";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast("page saved as .txt");
+  };
+
+  commands["gist-setup"] = function(parts) {
+    var gpat = parts[1], ggid = parts[2], gpw = parts[3];
+    if (!gpat || !ggid || !gpw) { showToast("Usage: gist-setup <pat> <gistId> <password>"); return; }
+    localStorage.setItem("gist-pat", gpat);
+    localStorage.setItem("gist-id", ggid);
+    sha256(gpw).then(function(hash) {
+      var setupData = defaultGistData();
+      setupData.passwordHash = hash;
+      setupData.encryptedPat = xorEncrypt(gpat, hash);
+      localStorage.setItem("gist-key", hash);
+      saveGist(setupData).then(function(ok) {
+        if (ok) { gistData = setupData; localStorage.setItem("logged-in", "true"); updatePrompt(); showToast("gist setup done, logged in"); }
+        else showToast("gist-setup: failed");
+      });
+    });
+  };
+
+  commands.login = function(parts) {
+    if (parts.length < 3) { showToast("Usage: login <username> <password>"); return; }
+    var username = parts[1], password = parts.slice(2).join(" ");
+    findGistByUser(username).then(function(result) {
+      if (!result) { showToast("login: no gist found for " + username); return; }
+      localStorage.setItem("gist-id", result.id);
+      sha256(password).then(function(hash) {
+        fetchGistJson(result.id).then(function(payload) {
+          if (!payload) { showToast("login: failed to fetch gist"); return; }
+          if (payload.v === 1 && payload.h) {
+            if (hash !== payload.h) { showToast("login: incorrect password"); return; }
+            var data = payload.d ? JSON.parse(xorDecrypt(payload.d, hash)) : null;
+            if (!data) { showToast("login: failed to decrypt data"); return; }
+            localStorage.setItem("gist-key", hash);
+            gistData = data;
+          } else {
+            if (hash !== payload.passwordHash) { showToast("login: incorrect password"); return; }
+            gistData = payload;
+          }
+          localStorage.setItem("logged-in", "true");
+          if (gistData.encryptedPat) {
+            var decPat = xorDecrypt(gistData.encryptedPat, hash);
+            localStorage.setItem("gist-pat", decPat);
+          }
+          updatePrompt(); renderTodos();
+          showToast("login: welcome, " + username);
+        });
+      });
+    });
+  };
+
+  commands.logout = function(parts) {
+    localStorage.removeItem("logged-in");
+    localStorage.removeItem("gist-key");
+    updatePrompt();
+    var el = document.getElementById("todo-display");
+    if (el) el.style.display = "none";
+    showToast("logged out");
+  };
+
+  commands.todo = function(parts) {
+    if (!gistData) { ensureData(); }
+    if (localStorage.getItem("logged-in") !== "true") { showToast("todo: login first"); return; }
+    if (!gistData.todos) gistData.todos = [];
+    var sub = (parts[1] || "").toLowerCase();
+    var rest = parts.slice(2).join(" ").trim();
+    if (!sub || sub === "list") { renderTodos(); if (!gistData.todos || gistData.todos.length === 0) showToast("no todos");
+    } else if (sub === "add") {
+      if (!rest) { showToast("Usage: todo add [--high|--low] [#tag] [--due YYYY-MM-DD] <text>"); return; }
+      var parsed = parseTodoArgs(rest); if (!parsed.text) { showToast("todo add: text required"); return; }
+      var maxId = gistData.todos.reduce(function(m, t) { return Math.max(m, t.id || 0); }, 0);
+      gistData.todos.push({ id: maxId + 1, text: parsed.text, done: false, createdAt: Date.now(), priority: parsed.priority, tags: parsed.tags, dueDate: parsed.dueDate });
+      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("todo added: " + parsed.text); } else showToast("todo add: failed to save"); });
+    } else if (sub === "edit") {
+      var n = parseInt(parts[2]), newText = parts.slice(3).join(" ").trim();
+      if (isNaN(n) || n < 1 || !gistData.todos || n > gistData.todos.length || !newText) { showToast("Usage: todo edit <number> <new text>"); return; }
+      gistData.todos[n - 1].text = newText;
+      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("edited"); } else showToast("todo edit: failed"); });
+    } else if (sub === "search") {
+      if (!rest) { showToast("Usage: todo search <query>"); return; }
+      var q = rest.toLowerCase(), results = (gistData.todos || []).filter(function(t) { return t.text.toLowerCase().includes(q); });
+      if (results.length === 0) { showToast("no matches"); return; }
+      var slines = [];
+      for (var si = 0; si < results.length; si++) slines.push(todoLine(gistData.todos.indexOf(results[si]) + 1, results[si]));
+      var sel = document.getElementById("todo-display"); if (sel) { sel.textContent = slines.join("\n"); sel.style.display = "block"; }
+      showToast(results.length + " match" + (results.length > 1 ? "es" : ""));
+    } else if (sub === "stats") {
+      var todos = gistData.todos || [], archived = gistData.archived || [];
+      var allDone = todos.filter(function(t) { return t.done; }).length + archived.length;
+      var total = todos.length + archived.length, pending = todos.filter(function(t) { return !t.done; });
+      var byPrio = { high: 0, medium: 0, low: 0 }; pending.forEach(function(t) { byPrio[t.priority || "medium"]++; });
+      var byTag = {}; todos.forEach(function(t) { (t.tags || []).forEach(function(tag) { byTag[tag] = (byTag[tag] || 0) + 1; }); });
+      var maxPrio = Math.max(byPrio.high, byPrio.medium, byPrio.low, 1), slines2 = [];
+      slines2.push(" total: " + total + "  done: " + allDone + "  pending: " + pending.length + "  rate: " + (total > 0 ? Math.round(allDone / total * 100) : 0) + "%");
+      slines2.push(renderBar("[H]", byPrio.high, maxPrio, pending.length));
+      slines2.push(renderBar("[M]", byPrio.medium, maxPrio, pending.length));
+      slines2.push(renderBar("[L]", byPrio.low, maxPrio, pending.length));
+      var tagKeys = Object.keys(byTag);
+      if (tagKeys.length > 0) { var maxTag = Math.max.apply(null, tagKeys.map(function(k) { return byTag[k]; })); slines2.push(""); for (var ti = 0; ti < Math.min(tagKeys.length, 5); ti++) slines2.push(renderBar("#" + tagKeys[ti], byTag[tagKeys[ti]], maxTag)); }
+      slines2.push(""); slines2.push(" archived: " + archived.length);
+      var sel2 = document.getElementById("todo-display"); if (sel2) { sel2.textContent = wrapBox(slines2, "stats").join("\n"); sel2.style.display = "block"; }
+    } else if (sub === "week") {
+      var today = new Date(), dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], wlines = [];
+      for (var wi = 6; wi >= 0; wi--) {
+        var d = new Date(today); d.setDate(d.getDate() - wi);
+        var dateKey = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+        var tCount = 0; if (gistData.todos) for (var tj = 0; tj < gistData.todos.length; tj++) { var t = gistData.todos[tj]; if (t.createdAt) { var cd = new Date(t.createdAt); if (cd.getFullYear() === d.getFullYear() && cd.getMonth() === d.getMonth() && cd.getDate() === d.getDate()) tCount++; } }
+        var pCount = (gistData.pomodoros && gistData.pomodoros[dateKey]) || 0;
+        wlines.push(" " + (wi === 0 ? "\u2192" : " ") + " " + dayNames[d.getDay()] + " " + String(d.getDate()).padStart(2, " ") + "    todo:" + (tCount || "-") + "  pomo:" + (pCount || "-"));
       }
+      var wel = document.getElementById("todo-display"); if (wel) { wel.textContent = wrapBox(wlines, "week").join("\n"); wel.style.display = "block"; }
+    } else if (sub === "move") {
+      var from = parseInt(parts[2]), to = parseInt(parts[3]);
+      if (isNaN(from) || isNaN(to) || from < 1 || to < 1 || !gistData.todos || from > gistData.todos.length || to > gistData.todos.length) { showToast("Usage: todo move <from> <to>"); return; }
+      var item = gistData.todos.splice(from - 1, 1)[0]; gistData.todos.splice(to - 1, 0, item);
+      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("moved " + from + " \u2192 " + to); } else showToast("todo move: failed"); });
+    } else if (sub === "archive") {
+      var doneTodos = (gistData.todos || []).filter(function(t) { return t.done; });
+      if (doneTodos.length === 0) { showToast("no done todos to archive"); return; }
+      if (!gistData.archived) gistData.archived = [];
+      doneTodos.forEach(function(t) { t.completedAt = t.completedAt || Date.now(); });
+      gistData.archived = gistData.archived.concat(doneTodos); gistData.todos = gistData.todos.filter(function(t) { return !t.done; });
+      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("archived " + doneTodos.length + " todos"); } else showToast("archive: failed"); });
+    } else if (sub === "done") {
+      if (rest === "all") { (gistData.todos || []).forEach(function(t) { t.done = true; }); saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("all done"); } else showToast("todo: failed to save"); }); return; }
+      var n = parseInt(rest);
+      if (isNaN(n) || n < 1 || !gistData.todos || n > gistData.todos.length) { showToast("Usage: todo done <number|all>"); return; }
+      gistData.todos[n - 1].done = true; gistData.todos[n - 1].completedAt = Date.now();
+      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("done: " + n); } else showToast("todo: failed to save"); });
+    } else if (sub === "undo") {
+      var n = parseInt(rest);
+      if (isNaN(n) || n < 1 || !gistData.todos || n > gistData.todos.length) { showToast("Usage: todo undo <number>"); return; }
+      gistData.todos[n - 1].done = false; delete gistData.todos[n - 1].completedAt;
+      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("undone: " + n); } else showToast("todo: failed to save"); });
+    } else if (sub === "rm") {
+      var n = parseInt(rest);
+      if (isNaN(n) || n < 1 || !gistData.todos || n > gistData.todos.length) { showToast("Usage: todo rm <number>"); return; }
+      var removed = gistData.todos.splice(n - 1, 1)[0];
+      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("removed: " + removed.text); } else showToast("todo rm: failed to save"); });
+    } else if (sub === "clear") {
+      if (!gistData.todos) { showToast("no todos to clear"); return; }
+      gistData.todos = gistData.todos.filter(function(t) { return !t.done; });
+      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("cleared done"); } else showToast("todo clear: failed to save"); });
+    } else if (sub === "calendar") {
+      var calYear = parseInt(parts[2]) || new Date().getFullYear();
+      var calMonth = parts[2] && parts[3] ? parseInt(parts[3]) - 1 : new Date().getMonth();
+      renderTodoCalendar(calYear, calMonth);
+    } else { showToast("todo: add|edit|search|stats|week|move|archive|done|undo|rm|clear|calendar|list"); }
+  };
+
+  commands.habit = function(parts) {
+    if (!gistData) { ensureData(); }
+    if (localStorage.getItem("logged-in") !== "true") { showToast("habit: login first"); return; }
+    if (!gistData.habits || Array.isArray(gistData.habits)) gistData.habits = {};
+    var hsub = (parts[1] || "").toLowerCase(), hrest = parts.slice(2).join(" ").trim();
+    if (!hsub || hsub === "list") {
+      var hkeys = Object.keys(gistData.habits);
+      if (hkeys.length === 0) { showToast("no habits. type: habit add <name>"); return; }
+      var today = new Date().toISOString().slice(0, 10), hlines = [];
+      for (var hi = 0; hi < hkeys.length; hi++) hlines.push((hi + 1) + ". " + (gistData.habits[hkeys[hi]][today] ? "[x]" : "[ ]") + " " + hkeys[hi]);
+      var hel = document.getElementById("todo-display"); if (hel) { hel.textContent = hlines.join("\n"); hel.style.display = "block"; }
+    } else if (hsub === "add") {
+      if (!hrest) { showToast("Usage: habit add <name>"); return; }
+      if (gistData.habits[hrest]) { showToast("habit exists: " + hrest); return; }
+      gistData.habits[hrest] = {};
+      saveGist(gistData).then(function(ok) { if (ok) showToast("habit added: " + hrest); else showToast("habit add: failed"); });
+    } else if (hsub === "rm") {
+      if (!hrest || !gistData.habits[hrest]) { showToast("Usage: habit rm <name>"); return; }
+      delete gistData.habits[hrest];
+      saveGist(gistData).then(function(ok) { if (ok) showToast("removed: " + hrest); else showToast("habit rm: failed"); });
+    } else if (hsub === "calendar") {
+      var hname = parts[2];
+      if (!hname) { showToast("Usage: habit calendar <name>"); return; }
+      if (!gistData.habits[hname]) { showToast("habit not found: " + hname); return; }
+      var hel = document.getElementById("todo-display");
+      if (!hel) return;
+      var now = new Date(), year = now.getFullYear();
+      var jan1 = new Date(year, 0, 1), dec31 = new Date(year + 1, 0, 0);
+      var total = Math.floor((dec31 - jan1) / 864e5) + 1;
+      var startDow = (jan1.getDay() + 6) % 7;
+      var weeks = Math.ceil((total + startDow) / 7);
+      var html = '<div style="display:flex;gap:2px;padding-left:28px;font-size:0.6rem;color:var(--dim);margin-bottom:2px;">';
+      var lastCol = -1;
+      for (var m = 0; m < 12; m++) {
+        var first = new Date(year, m, 1);
+        var doy = Math.floor((first - jan1) / 864e5);
+        var col = Math.floor((doy + startDow) / 7);
+        if (col > lastCol) { html += '<span style="width:' + (col - lastCol) * 12 + 'px;">' + ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m] + '</span>'; lastCol = col; }
+      }
+      html += '</div>';
+      var days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+      for (var d = 0; d < 7; d++) {
+        html += '<div style="display:flex;gap:2px;align-items:center;">';
+        html += '<span style="width:24px;font-size:0.6rem;color:var(--dim);text-align:right;padding-right:4px;">' + days[d] + '</span>';
+        for (var w = 0; w < weeks; w++) {
+          var dn = w * 7 + d - startDow + 1;
+          if (dn >= 1 && dn <= total) {
+            var dt = new Date(year, 0, dn);
+            var dk = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
+            var done = gistData.habits[hname][dk];
+            html += '<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:' + (done ? "var(--green)" : "var(--border)") + ';" title="' + dk + '"></span>';
+          } else html += '<span style="display:inline-block;width:10px;height:10px;"></span>';
+        }
+        html += '</div>';
+      }
+      html += '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;font-size:0.65rem;color:var(--dim);">' + hname + ' <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--border);"></span> <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--green);"></span></div>';
+      hel.innerHTML = html; hel.style.display = "block";
+    } else {
+      if (gistData.habits[hsub]) {
+        var today = new Date().toISOString().slice(0, 10);
+        gistData.habits[hsub][today] = !gistData.habits[hsub][today];
+        saveGist(gistData).then(function(ok) {
+          if (ok) {
+            showToast(gistData.habits[hsub][today] ? "\u2705 " + hsub : "  " + hsub);
+            var hkeys = Object.keys(gistData.habits), hlines = [];
+            for (var hi = 0; hi < hkeys.length; hi++) hlines.push((hi + 1) + ". " + (gistData.habits[hkeys[hi]][today] ? "[x]" : "[ ]") + " " + hkeys[hi]);
+            var hel = document.getElementById("todo-display"); if (hel) { hel.textContent = hlines.join("\n"); hel.style.display = "block"; }
+          } else showToast("habit: failed");
+        });
+      } else { showToast("habit: unknown \"" + hsub + "\" (add|list|rm|<name>)"); }
+    }
+  };
+
+  commands.mood = function(parts) {
+    if (!gistData) { ensureData(); }
+    if (localStorage.getItem("logged-in") !== "true") { showToast("mood: login first"); return; }
+    if (!gistData.moods) gistData.moods = {};
+    var val = parseInt(parts[1]);
+    if (parts[1] === "calendar") { renderMoodCalendar(); }
+    else if (!isNaN(val) && val >= 1 && val <= 5) {
+      var today = new Date().toISOString().slice(0, 10);
+      gistData.moods[today] = val;
+      saveGist(gistData).then(function(ok) { if (ok) showToast("mood: " + "\ud83d\ude1e\ud83d\ude10\ud83d\ude42\ud83d\ude0a\ud83d\ude04".slice((val - 1) * 2, val * 2)); else showToast("mood: failed"); });
+    } else {
+      var today = new Date().toISOString().slice(0, 10);
+      var m = gistData.moods[today];
+      if (m) showToast("today: " + "\ud83d\ude1e\ud83d\ude10\ud83d\ude42\ud83d\ude0a\ud83d\ude04".slice((m - 1) * 2, m * 2) + " (" + m + "/5)");
+      else showToast("no mood today. usage: mood <1-5>");
+    }
+  };
+
+  commands.post = function(parts) {
+    if (!gistData) { ensureData(); }
+    if (localStorage.getItem("logged-in") !== "true") { showToast("post: login first"); return; }
+    if (!gistData.posts) gistData.posts = [];
+    var sub = (parts[1] || "").toLowerCase();
+    var rest = parts.slice(2).join(" ").trim();
+    if (sub === "list" || !sub) {
+      if (gistData.posts.length === 0) { showToast("no posts yet. type: post <text>"); return; }
+      var lines = [];
+      for (var pi = 0; pi < Math.min(gistData.posts.length, 10); pi++) {
+        var idx = gistData.posts.length - 1 - pi;
+        var p = gistData.posts[idx];
+        var d = new Date(p.createdAt);
+        lines.push((pi + 1) + ". [" + d.toISOString().slice(0, 10) + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + "] " + p.text);
+      }
+      var el = document.getElementById("todo-display");
+      if (el) { el.textContent = lines.join("\n"); el.style.display = "block"; }
+      showToast("showing " + Math.min(gistData.posts.length, 10) + "/" + gistData.posts.length + " posts");
+    } else if (sub === "rm") {
+      var n = parseInt(rest);
+      if (isNaN(n) || n < 1 || n > gistData.posts.length) { showToast("Usage: post rm <number>"); return; }
+      var idx = gistData.posts.length - n;
+      var removed = gistData.posts.splice(idx, 1)[0];
+      saveGist(gistData).then(function(ok) { if (ok) showToast("removed post: " + removed.text.slice(0, 30)); else showToast("post rm: failed"); });
+    } else {
+      var text = (sub === "add" ? rest : parts.slice(1).join(" ").trim());
+      if (!text) { showToast("Usage: post <text> or post list"); return; }
+      var maxId = gistData.posts.reduce(function(m, p) { return Math.max(m, p.id || 0); }, 0);
+      gistData.posts.push({ id: maxId + 1, text: text, createdAt: Date.now() });
+      saveGist(gistData).then(function(ok) { if (ok) showToast("post added"); else showToast("post: failed"); });
+    }
+  };
+
+  function handleCommand(cmd) {
+    if (grepResults) grepResults.classList.remove("show");
+    var parts = cmd.trim().split(/\s+/);
+    var name = parts[0].toLowerCase();
+    if (!name) return;
+    if (commands[name]) commands[name](parts);
+    else showToast("command not found: " + name + ". Type 'help'");
+  }
+
+
       if (slug.includes("/")) {
         showToast("cat: " + slug + ": No such file");
         return;
