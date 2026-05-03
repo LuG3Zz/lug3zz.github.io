@@ -755,14 +755,19 @@ const searchIndex = allPosts.map((p) => {
     if (canvas) { var ctx = canvas.getContext("2d"); ctx.clearRect(0, 0, canvas.width, canvas.height); }
   }
 
-  function musicSearch(keyword, source, callback) {
+  function musicSearch(keyword, source, callback, retried) {
     fetch("https://music-api.gdstudio.xyz/api.php?types=search&source=" + (source || "netease") + "&name=" + encodeURIComponent(keyword))
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        if (!data || !data.length) { showToast("music: no results"); return; }
-        musicData.playlist = data;
+        var list = Array.isArray(data) ? data : (data && (data.data || data.result || data.songs));
+        if (!list || !list.length) {
+          if (!retried) { setTimeout(function() { musicSearch(keyword, source, callback, true); }, 800); return; }
+          showToast("music: no results");
+          return;
+        }
+        musicData.playlist = list;
         musicData.currentIndex = -1;
-        callback(data);
+        callback(list);
       })
       .catch(function() { showToast("music: search failed"); });
   }
