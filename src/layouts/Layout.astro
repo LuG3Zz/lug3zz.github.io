@@ -583,9 +583,12 @@ const searchIndex = allPosts.map((p) => {
   function renderTodos() {
     var el = document.getElementById("todo-display");
     if (!el || !gistData || !gistData.todos) return;
-    var lines = [];
-    for (var i = 0; i < gistData.todos.length; i++) lines.push(todoLine(i + 1, gistData.todos[i]));
-    el.textContent = lines.join("\n");
+    var html = "";
+    for (var i = 0; i < gistData.todos.length; i++) {
+      html += escHtml(todoLine(i + 1, gistData.todos[i]));
+      if (i < gistData.todos.length - 1) html += "\n";
+    }
+    el.innerHTML = html;
     el.style.display = "block";
   }
 
