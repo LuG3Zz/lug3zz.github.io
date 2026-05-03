@@ -477,19 +477,20 @@ const searchIndex = allPosts.map((p) => {
 
   function loadGist(gid) {
     if (!gid) gid = localStorage.getItem("gist-id");
-    if (!gid) { gistData = loadLocal() || defaultGistData(); return Promise.resolve(); }
+    if (!gid) { gistData = loadLocal() || defaultGistData(); return Promise.resolve(gistData); }
     return fetchGistJson(gid).then(function(payload) {
-      if (!payload) { gistData = loadLocal() || defaultGistData(); return; }
+      if (!payload) { gistData = loadLocal() || defaultGistData(); return gistData; }
       var key = localStorage.getItem("gist-key");
       if (payload.v === 1 && payload.h) {
-        if (!key) { gistData = loadLocal() || defaultGistData(); return; }
-        if (key !== payload.h) { gistData = loadLocal() || defaultGistData(); return; }
+        if (!key) { gistData = loadLocal() || defaultGistData(); return gistData; }
+        if (key !== payload.h) { gistData = loadLocal() || defaultGistData(); return gistData; }
         gistData = payload.d ? JSON.parse(xorDecrypt(payload.d, key)) : defaultGistData();
       } else {
-        if (key && payload.passwordHash && key !== payload.passwordHash) { gistData = loadLocal() || defaultGistData(); return; }
+        if (key && payload.passwordHash && key !== payload.passwordHash) { gistData = loadLocal() || defaultGistData(); return gistData; }
         gistData = payload;
       }
       saveLocal(gistData);
+      return gistData;
     });
   }
 
