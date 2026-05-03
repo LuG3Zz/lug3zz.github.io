@@ -511,7 +511,6 @@ const searchIndex = allPosts.map((p) => {
     var key = localStorage.getItem("gist-key");
     var payload;
     if (key) {
-      var encrypted = btoa(JSON.stringify(data)); // old format kept for compatibility
       payload = { v: 1, h: key, d: xorEncrypt(JSON.stringify(data), key) };
     } else {
       payload = data;
