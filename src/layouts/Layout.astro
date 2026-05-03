@@ -476,6 +476,8 @@ const searchIndex = allPosts.map((p) => {
   }
 
   function loadGist(gid) {
+    if (!gid) gid = localStorage.getItem("gist-id");
+    if (!gid) { gistData = loadLocal() || defaultGistData(); return Promise.resolve(); }
     return fetchGistJson(gid).then(function(payload) {
       if (!payload) { gistData = loadLocal() || defaultGistData(); return; }
       var key = localStorage.getItem("gist-key");
