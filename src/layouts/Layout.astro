@@ -95,7 +95,7 @@ const searchIndex = allPosts.map((p) => {
       <div id="grep-results" class="grep-results"></div>
       <div id="pomodoro-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;"></div>
       <div id="todo-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;white-space:pre-wrap;"></div>
-      <div id="music-island" style="position:fixed;top:0.5rem;left:50%;transform:translateX(-50%);z-index:9999;background:var(--bg);border:1px solid var(--green);border-radius:20px;padding:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.75rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 0 12px rgba(51,255,51,0.15);opacity:0;pointer-events:none;transition:opacity 0.3s;">
+      <div id="music-island" style="position:fixed;top:0.5rem;left:50%;transform:translateX(-50%);z-index:9999;background:var(--bg);border:1px solid var(--green);border-radius:20px;padding:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.75rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 0 12px rgba(51,255,51,0.15);opacity:0;pointer-events:none;transition:opacity 0.3s;cursor:pointer;">
         <span id="music-island-info" style="color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;"></span>
         <canvas id="music-spectrum" width="64" height="20" style="border-radius:4px;display:block;"></canvas>
         <span id="music-island-close" style="color:var(--dim);cursor:pointer;font-size:0.7rem;line-height:1;">✕</span>
@@ -1654,8 +1654,13 @@ const searchIndex = allPosts.map((p) => {
   }
 
   // Music island close
-  document.getElementById("music-island-close").addEventListener("click", function() {
+  document.getElementById("music-island-close").addEventListener("click", function(e) {
+    e.stopPropagation();
     musicStop();
+  });
+  document.getElementById("music-island").addEventListener("click", function(e) {
+    if (e.target.id === "music-island-close") return;
+    musicToggle();
   });
 
   // Theme switcher
