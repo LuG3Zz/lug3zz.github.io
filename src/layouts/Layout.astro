@@ -531,7 +531,9 @@ const searchIndex = allPosts.map((p) => {
     var w = 0;
     for (var i = 0; i < s.length; i++) {
       var c = s.charCodeAt(i);
-      w += (c >= 0x4e00 && c <= 0x9fff) || (c >= 0x3000 && c <= 0x303f) || (c >= 0xff00 && c <= 0xffef) || (c > 0xffff) ? 2 : 1;
+      if ((c & 0xfc00) === 0xd800) { w += 2; i++; }
+      else if ((c >= 0x4e00 && c <= 0x9fff) || (c >= 0x3000 && c <= 0x303f) || (c >= 0xff00 && c <= 0xffef) || (c >= 0x2600 && c <= 0x27bf) || c === 0x23f0 || c === 0x23f3) { w += 2; }
+      else { w += 1; }
     }
     return w;
   }
