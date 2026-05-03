@@ -407,6 +407,13 @@ const searchIndex = allPosts.map((p) => {
     return { todos: [], habits: {}, moods: {}, posts: [], pomodoros: {}, passwordHash: null, encryptedPat: null };
   }
 
+  function toggleMode(attr, onMsg, offMsg) {
+    var on = document.documentElement.getAttribute(attr) !== "true";
+    document.documentElement.setAttribute(attr, on ? "true" : "false");
+    localStorage.setItem(attr.replace("data-", ""), on ? "true" : "false");
+    showToast(on ? onMsg : offMsg);
+  }
+
   function applyTheme(name) {
     document.documentElement.setAttribute("data-theme", name);
     localStorage.setItem("theme", name);
@@ -791,10 +798,7 @@ const searchIndex = allPosts.map((p) => {
       const q = qs[Math.floor(Math.random() * qs.length)];
       showToast('"' + q.text + '"' + (q.author ? " — " + q.author : ""));
     } else if (name === "zen") {
-      var on = document.documentElement.getAttribute("data-zen") !== "true";
-      document.documentElement.setAttribute("data-zen", on ? "true" : "false");
-      localStorage.setItem("zen", on ? "true" : "false");
-      showToast(on ? "zen mode on" : "zen mode off");
+      toggleMode("data-zen", "zen mode on", "zen mode off");
     } else if (name === "uptime") {
       var start = new Date(document.getElementById("uptime-data").getAttribute("data-start"));
       var now = new Date();
@@ -868,15 +872,9 @@ const searchIndex = allPosts.map((p) => {
       ];
       showToast(tips[Math.floor(Math.random() * tips.length)]);
     } else if (name === "night") {
-      var on = document.documentElement.getAttribute("data-night") !== "true";
-      document.documentElement.setAttribute("data-night", on ? "true" : "false");
-      localStorage.setItem("night", on ? "true" : "false");
-      showToast(on ? "night mode on" : "night mode off");
+      toggleMode("data-night", "night mode on", "night mode off");
     } else if (name === "focus") {
-      var on = document.documentElement.getAttribute("data-focus") !== "true";
-      document.documentElement.setAttribute("data-focus", on ? "true" : "false");
-      localStorage.setItem("focus", on ? "true" : "false");
-      showToast(on ? "focus mode on (hover to reveal)" : "focus mode off");
+      toggleMode("data-focus", "focus mode on (hover to reveal)", "focus mode off");
     } else if (name === "rand") {
       var slugs = JSON.parse(document.getElementById("completion-data").textContent).slugs;
       if (slugs.length > 0) window.location.href = "/blog/" + slugs[Math.floor(Math.random() * slugs.length)];
