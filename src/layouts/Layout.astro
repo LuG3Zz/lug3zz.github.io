@@ -1679,9 +1679,6 @@ const searchIndex = allPosts.map((p) => {
       var tocSty = document.createElement("style");
       tocSty.textContent = ".toc-act { color:var(--green) !important; }";
       document.head.appendChild(tocSty);
-      var debugDiv = document.createElement("div");
-      debugDiv.style.cssText = "position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid var(--green);border-radius:4px;padding:4px 12px;font-size:0.7rem;color:var(--fg);z-index:9999;font-family:var(--font-mono);";
-      document.body.appendChild(debugDiv);
       artScrollHead = function() {
         var act = null;
         hdgs.forEach(function(h) {
@@ -1689,7 +1686,6 @@ const searchIndex = allPosts.map((p) => {
           if (t <= 80) act = h;
         });
         hdgs.forEach(function(h) { h.link.classList.toggle("toc-act", h === act); });
-        debugDiv.textContent = "scroll:" + window.scrollY + " tops:" + hdgs.map(function(h) { return Math.round(h.el.getBoundingClientRect().top); }).join(",") + " act:" + (act ? hdgs.indexOf(act) : "-");
         if (act && act.link.closest(".toc")) act.link.scrollIntoView({ block: "nearest", behavior: "auto" });
       };
       window.addEventListener("scroll", artScrollHead);
