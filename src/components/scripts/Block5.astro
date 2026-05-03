@@ -1,0 +1,253 @@
+<script is:inline>
+  // Footer uptime
+  var footerUptime = document.getElementById("footer-uptime");
+  var uptimeStart = new Date(document.getElementById("uptime-data").getAttribute("data-start"));
+  function updateUptime() {
+    var diff = Math.floor((Date.now() - uptimeStart.getTime()) / 1000);
+    var d = Math.floor(diff / 86400);
+    var h = Math.floor((diff % 86400) / 3600);
+    var m = Math.floor((diff % 3600) / 60);
+    footerUptime.textContent = d + "d " + h + "h " + m + "m";
+  }
+  updateUptime();
+  setInterval(updateUptime, 60000);
+
+  // Back to top
+  var topBtn = document.getElementById("back-to-top");
+  if (topBtn) {
+    window.addEventListener("scroll", function() {
+      topBtn.classList.toggle("show", window.scrollY > 300);
+    });
+    topBtn.addEventListener("click", function() {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
+  // Pomodoro timer
+  function getToday() { return new Date().toISOString().slice(0, 10); }
+
+  function getDailyPomo() {
+    var day = localStorage.getItem("pomo-day");
+    var count = parseInt(localStorage.getItem("pomo-count") || "0");
+    return day === getToday() ? count : 0;
+  }
+
+  function addDailyPomo() {
+    var day = getToday();
+    var count = getDailyPomo() + 1;
+    localStorage.setItem("pomo-day", day);
+    localStorage.setItem("pomo-count", String(count));
+    return count;
+  }
+
+  function startPomodoro(end, min) {
+    clearInterval(window._pomoInterval);
+    var display = document.getElementById("pomodoro-display");
+    if (!display) return;
+    window._pomoInterval = setInterval(function() {
+      var remaining = Math.max(0, Math.floor((end - Date.now()) / 1000));
+      var daily = getDailyPomo();
+      if (remaining <= 0) {
+        var total = addDailyPomo();
+        display.style.display = "block";
+        display.innerHTML = '<span style="color:var(--yellow);">⏰ Time\'s up! (' + min + ' min)</span><span style="color:var(--dim);font-size:0.7rem;margin-left:1rem;">today: 🍅×' + total + '</span>';
+        display.style.borderColor = "var(--yellow)";
+        clearInterval(window._pomoInterval);
+        localStorage.removeItem("pomodoro-end");
+        showToast("⏰ Pomodoro done! 🍅×" + total + " today");
+        // Sync to Gist if logged in
+        if (gistData && localStorage.getItem("logged-in") === "true") {
+          var today = new Date().toISOString().slice(0, 10);
+          if (!gistData.pomodoros) gistData.pomodoros = {};
+          gistData.pomodoros[today] = total;
+          saveGist(gistData);
+        }
+        return;
+      }
+      var m = Math.floor(remaining / 60);
+      var s = remaining % 60;
+      var pct = 1 - remaining / (min * 60);
+      var bar = "█".repeat(Math.round(pct * 20)) + "░".repeat(Math.round((1 - pct) * 20));
+      display.style.display = "block";
+      display.style.borderColor = "var(--border)";
+      display.innerHTML = '<span style="color:var(--green);">🍅 ' + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + '</span> <span style="color:var(--dim);font-size:0.7rem;">' + min + "min " + bar + (daily > 0 ? '</span><span style="color:var(--dim);font-size:0.7rem;margin-left:0.5rem;">today: 🍅×' + daily + '</span>' : '</span>');
+    }, 1000);
+  }
+  var savedEnd = localStorage.getItem("pomodoro-end");
+  var savedDur = localStorage.getItem("pomodoro-dur");
+  if (savedEnd && savedDur) {
+    var end = parseInt(savedEnd);
+    var min = parseInt(savedDur);
+    if (end > Date.now()) startPomodoro(end, min);
+    else localStorage.removeItem("pomodoro-end");
+  }
+
+  // Article page setup — TOC, scroll-spy, copy button, password, progress
+  var artScrollHead = null, artProgEl = null;
+
+  function initArticlePage() {
+    var tocB = document.getElementById("toc-toggle");
+    var tocL = document.getElementById("toc-list");
+    var tocI = document.getElementById("toc-indicator");
+    if (tocB && tocL) {
+      tocB.onclick = function() { var e = tocL.style.display !== "none"; tocL.style.display = e ? "none" : "block"; tocI.textContent = e ? "[+]" : "[-]"; };
+    }
+    if (artScrollHead) window.removeEventListener("scroll", artScrollHead);
+    var tLinks = document.querySelectorAll(".toc a, .toc-mobile a");
+    tLinks.forEach(function(a) { a.onclick = function() { if (tocL && window.innerWidth < 1200) { tocL.style.display = "none"; if (tocI) tocI.textContent = "[+]"; } }; });
+    var hdgs = [];
+    tLinks.forEach(function(a) { var id = a.getAttribute("href").slice(1); var e = document.getElementById(id) || document.querySelector("[id='" + id + "']"); if (e) hdgs.push({ el: e, link: a }); });
+    if (hdgs.length) {
+      var hdgsAbs = hdgs.map(function(h) { return h.el.getBoundingClientRect().top + window.scrollY; });
+      setInterval(function() {
+        var act = null;
+        var sy = window.scrollY + 80;
+        for (var i = 0; i < hdgsAbs.length; i++) {
+          if (hdgsAbs[i] <= sy) act = hdgs[i];
+        }
+        hdgs.forEach(function(h) {
+          h.link.style.color = (h === act) ? "#33ff33" : "#666666";
+          h.link.style.fontWeight = (h === act) ? "bold" : "normal";
+        });
+        if (act && act.link.closest(".toc")) act.link.scrollIntoView({ block: "nearest", behavior: "auto" });
+      }, 200);
+    }
+    if (artProgEl) artProgEl.remove();
+    artProgEl = document.createElement("div");
+    artProgEl.style.cssText = "position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);color:var(--dim);font-size:0.75rem;font-family:var(--font-mono);z-index:999;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 8px;";
+    document.body.appendChild(artProgEl);
+    if (document.querySelector(".article-content")) {
+      window.addEventListener("scroll", function progScroll() {
+        var h = document.documentElement.scrollHeight - window.innerHeight;
+        if (h <= 0) { artProgEl.textContent = ""; return; }
+        var p = Math.round((window.scrollY / h) * 100);
+        artProgEl.textContent = "\ud83d\udcd6 " + "\u2588".repeat(Math.round(p / 10)) + "\u2591".repeat(10 - Math.round(p / 10)) + " " + p + "%";
+      });
+    }
+    (function() {
+      var q = sessionStorage.getItem("grep-query");
+      if (!q) return;
+      sessionStorage.removeItem("grep-query");
+      var c = document.querySelector(".article-content");
+      if (!c) return;
+      var ws = q.toLowerCase().split(/\s+/).filter(Boolean);
+      if (!ws.length) return;
+      (function w(el) {
+        if (el.tagName === "SCRIPT" || el.tagName === "STYLE" || el.tagName === "PRE" || el.tagName === "CODE") return;
+        if (el.nodeType === 3) {
+          var t = el.nodeValue, lw = t.toLowerCase();
+          if (!ws.some(function(w) { return lw.includes(w); })) return;
+          var pts = [], la = 0;
+          ws.forEach(function(w) {
+            var idx = lw.indexOf(w, la);
+            if (idx === -1) return;
+            if (idx > la) pts.push(document.createTextNode(t.slice(la, idx)));
+            var s = document.createElement("span");
+            s.style.cssText = "background:rgba(255,255,51,0.3);color:var(--fg-bright);border-radius:2px;padding:0 2px;";
+            s.textContent = t.slice(idx, idx + w.length);
+            pts.push(s);
+            la = idx + w.length;
+          });
+          if (la < t.length) pts.push(document.createTextNode(t.slice(la)));
+          if (pts.length) { var p = el.parentNode; pts.forEach(function(n) { p.insertBefore(n, el); }); p.removeChild(el); }
+        } else if (el.nodeType === 1 && el.childNodes) {
+          for (var c = el.childNodes.length - 1; c >= 0; c--) w(el.childNodes[c]);
+        }
+      })(c);
+    })();
+    document.querySelectorAll(".article-content pre").forEach(function(pre) {
+      var btn = document.createElement("button");
+      btn.textContent = "copy";
+      btn.style.cssText = "position:absolute;top:4px;right:4px;background:var(--bg);color:var(--green);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-family:var(--font-mono);font-size:0.75rem;cursor:pointer;opacity:0;transition:opacity 0.15s;";
+      pre.style.position = "relative";
+      pre.appendChild(btn);
+      pre.addEventListener("mouseenter", function() { btn.style.opacity = "1"; });
+      pre.addEventListener("mouseleave", function() { btn.style.opacity = "0"; });
+      btn.addEventListener("click", function() {
+        var cd = pre.querySelector("code");
+        navigator.clipboard.writeText(cd ? cd.textContent : pre.textContent).then(function() { btn.textContent = "done!"; setTimeout(function() { btn.textContent = "copy"; }, 1500); });
+      });
+    });
+    (function() {
+      var pf = document.getElementById("password-form"), lc = document.getElementById("locked-content"), pi = document.getElementById("pwd-input"), pb = document.getElementById("pwd-btn"), pe = document.getElementById("pwd-error");
+      if (!pf || !pf.getAttribute("data-password")) return;
+      if (sessionStorage.getItem("unlocked-" + window.location.pathname) === "1") { pf.style.display = "none"; lc.style.display = "block"; var dl = document.getElementById("dl-link"); if (dl) dl.style.display = ""; }
+      function go() {
+        if (pi.value === pf.getAttribute("data-password")) { pf.style.display = "none"; lc.style.display = "block"; var dl = document.getElementById("dl-link"); if (dl) dl.style.display = ""; sessionStorage.setItem("unlocked-" + window.location.pathname, "1"); }
+        else { pe.style.display = "block"; }
+      }
+      pb.addEventListener("click", go);
+      pi.addEventListener("keydown", function(e) { if (e.key === "Enter") go(); });
+    })();
+  }
+
+  // Startup — restore session
+  updatePrompt();
+  if (hasGist() && localStorage.getItem("logged-in") === "true") {
+    loadGist().then(function(data) {
+      if (data) {
+        gistData = data;
+        if (data.todos && data.todos.length > 0) renderTodos();
+        if (data.pomodoros) {
+          var today = new Date().toISOString().slice(0, 10);
+          if (data.pomodoros[today] && data.pomodoros[today] > getDailyPomo()) {
+            localStorage.setItem("pomo-day", today);
+            localStorage.setItem("pomo-count", String(data.pomodoros[today]));
+          }
+        }
+      }
+    });
+  }
+
+  initArticlePage();
+
+  // Music island close
+  document.getElementById("music-island-close").addEventListener("click", function(e) {
+    e.stopPropagation();
+    musicStop();
+  });
+  document.getElementById("music-island").addEventListener("click", function(e) {
+    if (e.target.id === "music-island-close") return;
+    musicToggle();
+  });
+
+  // Theme switcher
+  var themeSelect = document.getElementById("theme-select");
+  applyTheme(localStorage.getItem("theme") || "terminal");
+  themeSelect.addEventListener("change", function() {
+    applyTheme(themeSelect.value);
+  });
+
+  // SPA navigation — keep audio alive
+  function spaNavigate(url) {
+    history.pushState(null, "", url);
+    fetch(url).then(function(r) { return r.text(); }).then(function(html) {
+      var doc = new DOMParser().parseFromString(html, "text/html");
+      var main = doc.querySelector("main");
+      var title = doc.querySelector("title");
+      var pathEl = document.querySelector(".prompt-dir");
+      if (main) document.querySelector("main").innerHTML = main.innerHTML;
+      if (title) document.title = title.textContent;
+      if (pathEl) pathEl.textContent = "/" + (url === "/" ? "" : url.replace(/^\//, "").replace(/\/$/, ""));
+      document.querySelector(".nav a.active") && document.querySelector(".nav a.active").classList.remove("active");
+      var active = document.querySelector('.nav a[href="' + url + '"]');
+      if (active) active.classList.add("active");
+      initArticlePage();
+    });
+  }
+
+  document.addEventListener("click", function(e) {
+    var a = e.target.closest("a");
+    if (!a || a.hasAttribute("download") || a.getAttribute("target") === "_blank") return;
+    var href = a.getAttribute("href");
+    if (!href || href.startsWith("http") || href.startsWith("#") || href.startsWith("javascript:")) return;
+    if (a.closest("#cmd-form") || a.closest(".weather-box")) return;
+    e.preventDefault();
+    spaNavigate(href);
+  });
+
+  window.addEventListener("popstate", function() {
+    spaNavigate(window.location.pathname);
+  });
+
+</script>

@@ -1,0 +1,146 @@
+<script is:inline>
+  // ─── Music player ──────────────────────────
+  var musicData = null;
+
+  function ensureMusic() {
+    if (!musicData) musicData = { playlist: [], currentIndex: -1, audio: null, ctx: null, analyser: null, animId: null };
+  }
+
+  function musicShowIsland(song) {
+    var el = document.getElementById("music-island");
+    var info = document.getElementById("music-island-info");
+    if (el && info) {
+      info.textContent = "\u25b6 " + song.name + " - " + (song.artist || []).join(", ");
+      el.style.opacity = "1";
+      el.style.pointerEvents = "auto";
+    }
+  }
+
+  function musicHideIsland() {
+    var el = document.getElementById("music-island");
+    if (el) { el.style.opacity = "0"; el.style.pointerEvents = "none"; }
+    musicStopSpectrum();
+  }
+
+  function musicSetupAudio() {
+    if (musicData.ctx || !musicData.audio) return;
+    try {
+      musicData.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      musicData.analyser = musicData.ctx.createAnalyser();
+      musicData.analyser.fftSize = 64;
+      musicData.ctx.createMediaElementSource(musicData.audio).connect(musicData.analyser);
+      musicData.analyser.connect(musicData.ctx.destination);
+    } catch(e) { musicData.analyser = null; }
+  }
+
+  function musicStartSpectrum() {
+    if (musicData.animId) return;
+    var canvas = document.getElementById("music-spectrum");
+    if (!canvas) return;
+    var ctx = canvas.getContext("2d");
+    var w = canvas.width, h = canvas.height, count = 16;
+    var bars = [];
+    for (var i = 0; i < count; i++) bars.push(Math.random() * h);
+    var color = "#33ff33";
+
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      var bw = Math.max(1, Math.floor(w / count * 0.7));
+      var gap = Math.max(1, Math.floor(w / count * 0.3));
+      for (var i = 0; i < count; i++) {
+        bars[i] += (Math.random() - 0.5) * 4;
+        if (bars[i] < 2) bars[i] = 2;
+        if (bars[i] > h) bars[i] = h;
+        var bh = bars[i];
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.4 + 0.6 * (i / count);
+        ctx.fillRect(i * (bw + gap), h - bh, bw, bh);
+      }
+      ctx.globalAlpha = 1;
+      musicData.animId = requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function musicStopSpectrum() {
+    if (musicData.animId) { cancelAnimationFrame(musicData.animId); musicData.animId = null; }
+    var canvas = document.getElementById("music-spectrum");
+    if (canvas) { var ctx = canvas.getContext("2d"); ctx.clearRect(0, 0, canvas.width, canvas.height); }
+  }
+
+  function musicSearch(keyword, source, callback, retried) {
+    fetch("https://music-api.gdstudio.xyz/api.php?types=search&source=" + (source || "netease") + "&name=" + encodeURIComponent(keyword))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var list = Array.isArray(data) ? data : (data && (data.data || data.result || data.songs));
+        if (!list || !list.length) {
+          if (!retried) { setTimeout(function() { musicSearch(keyword, source, callback, true); }, 800); return; }
+          showToast("music: no results");
+          return;
+        }
+        musicData.playlist = list;
+        musicData.currentIndex = -1;
+        callback(list);
+      })
+      .catch(function() { showToast("music: search failed"); });
+  }
+
+  function musicGetUrl(id, source, callback) {
+    fetch("https://music-api.gdstudio.xyz/api.php?types=url&source=" + (source || "netease") + "&id=" + id)
+      .then(function(r) { return r.json(); })
+      .then(callback)
+      .catch(function() { showToast("music: failed to get url"); });
+  }
+
+  function musicPlay(index) {
+    ensureMusic();
+    if (!musicData.playlist.length) { showToast("music: playlist empty"); return; }
+    if (index < 0 || index >= musicData.playlist.length) return;
+    var song = musicData.playlist[index];
+    musicData.currentIndex = index;
+    musicGetUrl(song.id || song.url_id, song.source, function(data) {
+      if (!data || !data.url) { showToast("music: failed to get url"); return; }
+      if (!musicData.audio) {
+        musicData.audio = document.createElement("audio");
+        musicData.audio.crossOrigin = "anonymous";
+        musicData.audio.addEventListener("ended", function() { musicNext(); });
+      }
+      musicData.audio.src = data.url;
+      musicData.audio.play();
+      musicShowIsland(song);
+      musicSetupAudio();
+      musicStartSpectrum();
+      showToast("\u25b6 " + song.name + " - " + (song.artist || []).join(", "));
+    });
+  }
+
+  function musicNext() {
+    ensureMusic();
+    if (musicData.currentIndex < 0) return;
+    var next = (musicData.currentIndex + 1) % musicData.playlist.length;
+    musicPlay(next);
+  }
+
+  function musicToggle() {
+    ensureMusic();
+    if (!musicData.audio) { showToast("music: nothing playing"); return; }
+    if (musicData.audio.paused) {
+      musicData.audio.play();
+      if (musicData.ctx && musicData.ctx.state === "suspended") musicData.ctx.resume();
+      musicStartSpectrum();
+      showToast("\u25b6 resumed");
+    } else {
+      musicData.audio.pause();
+      musicStopSpectrum();
+      showToast("\u23f8 paused");
+    }
+  }
+
+  function musicStop() {
+    ensureMusic();
+    if (musicData.audio) { musicData.audio.pause(); musicData.audio.currentTime = 0; }
+    musicHideIsland();
+    showToast("\u23f9 stopped");
+  }
+
+</script>

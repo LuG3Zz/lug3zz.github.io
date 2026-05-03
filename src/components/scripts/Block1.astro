@@ -1,0 +1,371 @@
+<script is:inline>
+  const input = document.getElementById("cmd-input");
+  const toast = document.getElementById("cmd-toast");
+  const toastMsg = document.getElementById("toast-msg");
+
+  function hideToast() {
+    toast.classList.remove("show");
+  }
+
+  function showToast(msg) {
+    toastMsg.textContent = msg;
+    toast.classList.add("show");
+  }
+
+  toast.addEventListener("click", hideToast);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hideToast();
+  });
+
+  // Weather
+  function windArrow(dir) {
+    const m = { N:"↓", NNE:"↙", NE:"↙", ENE:"←", E:"←", ESE:"↖", SE:"↖", SSE:"↑", S:"↑", SSW:"↗", SW:"↗", WSW:"→", W:"→", WNW:"↘", NW:"↘", NNW:"↓" };
+    return m[dir] || "―";
+  }
+  function weatherEmoji(desc) {
+    const d = desc.toLowerCase();
+    if (d.includes("sunny") || d.includes("clear") || d.includes("晴")) return "☀️";
+    if (d.includes("rain") || d.includes("drizzle") || d.includes("shower") || d.includes("雨") || d.includes("阵雨")) return "🌧️";
+    if (d.includes("snow") || d.includes("sleet") || d.includes("ice") || d.includes("雪") || d.includes("冰")) return "❄️";
+    if (d.includes("thunder") || d.includes("storm") || d.includes("雷") || d.includes("暴")) return "⛈️";
+    if (d.includes("fog") || d.includes("mist") || d.includes("haze") || d.includes("雾") || d.includes("霾")) return "🌫️";
+    if (d.includes("cloud") || d.includes("overcast") || d.includes("云") || d.includes("阴")) return "☁️";
+    return "🌤️";
+  }
+  const weatherEl = document.getElementById("weather-body");
+  if (weatherEl) {
+    function fetchWeather(url) {
+      var ac = new AbortController();
+      setTimeout(function() { ac.abort(); }, 8000);
+      fetch(url, { signal: ac.signal })
+        .then(function(r) { return r.json(); })
+        .then(function(j) {
+          var cc = j.current_condition[0];
+          var city = j.nearest_area?.[0]?.areaName?.[0]?.value || "";
+          var region = j.nearest_area?.[0]?.region?.[0]?.value || "";
+          var loc = city + (city && region && region !== city ? ", " + region : region ? ", " + region : "");
+          var desc = (cc.lang_zh?.[0]?.value) || cc.weatherDesc[0].value;
+          var emoji = weatherEmoji(desc);
+          var wind = windArrow(cc.winddir16Point) + " " + cc.windspeedKmph + " km/h";
+          weatherEl.innerHTML = '<div>' + (loc ? loc + "  " : "") + emoji + " " + desc + '</div>' +
+            '<div>🌡️ ' + cc.temp_C + '°C</div>' +
+            '<div>💧 ' + cc.humidity + '%  ·  🌀 ' + wind + '</div>';
+        })
+        .catch(function() { weatherEl.textContent = "☁️ --.-°C"; });
+    }
+    var savedCity = localStorage.getItem("weather-city");
+    if (savedCity) {
+      fetchWeather("https://wttr.in/" + encodeURIComponent(savedCity) + "?format=j1&lang=zh");
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function(pos) {
+          // Round to 1 decimal (~11km resolution) for city-level only
+          var lat = Math.round(pos.coords.latitude * 10) / 10;
+          var lng = Math.round(pos.coords.longitude * 10) / 10;
+          fetchWeather("https://wttr.in/" + lat + "," + lng + "?format=j1&lang=zh");
+          localStorage.setItem("weather-city", lat + "," + lng);
+        },
+        function() { fetchWeather("https://wttr.in/?format=j1&lang=zh"); },
+        { timeout: 8000, enableHighAccuracy: true }
+      );
+    } else {
+      fetchWeather("https://wttr.in/?format=j1&lang=zh");
+    }
+  }
+
+  // ─── Gist cloud sync ──────────────────────────
+  var gistData = null;
+
+  function localKey() { return "brownlu-data"; }
+
+  function defaultGistData() {
+    return { todos: [], habits: {}, moods: {}, posts: [], pomodoros: {}, passwordHash: null, encryptedPat: null };
+  }
+
+  function toggleMode(attr, onMsg, offMsg) {
+    var on = document.documentElement.getAttribute(attr) !== "true";
+    document.documentElement.setAttribute(attr, on ? "true" : "false");
+    localStorage.setItem(attr.replace("data-", ""), on ? "true" : "false");
+    showToast(on ? onMsg : offMsg);
+  }
+
+  function applyTheme(name) {
+    document.documentElement.setAttribute("data-theme", name);
+    localStorage.setItem("theme", name);
+    var sel = document.getElementById("theme-select");
+    if (sel) sel.value = name;
+  }
+
+  // ─── Data persistence ──────────────────────
+  function loadLocal() {
+    try { return JSON.parse(localStorage.getItem(localKey())) || null; } catch(e) { return null; }
+  }
+
+  function saveLocal(data) {
+    try { localStorage.setItem(localKey(), JSON.stringify(data)); return true; } catch(e) { return false; }
+  }
+
+  function ensureData() {
+    if (!gistData) { gistData = loadLocal() || defaultGistData(); }
+  }
+
+  function updatePrompt() {
+    var el = document.getElementById("prompt-user");
+    if (el) el.textContent = localStorage.getItem("logged-in") === "true" ? "root" : "guest";
+  }
+
+  // ─── Crypto ────────────────────────────────
+  function sha256(str) {
+    return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf) {
+      return Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, "0"); }).join("");
+    });
+  }
+
+  function xorEncrypt(text, keyHex) {
+    var key = [];
+    for (var i = 0; i < keyHex.length; i += 2) key.push(parseInt(keyHex.substring(i, i + 2), 16));
+    var bytes = new TextEncoder().encode(text);
+    var r = "";
+    for (var i = 0; i < bytes.length; i++) r += String.fromCharCode(bytes[i] ^ key[i % key.length]);
+    return btoa(r);
+  }
+
+  function xorDecrypt(cipher, keyHex) {
+    var key = [];
+    for (var i = 0; i < keyHex.length; i += 2) key.push(parseInt(keyHex.substring(i, i + 2), 16));
+    var raw = atob(cipher);
+    var bytes = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ key[i % key.length];
+    return new TextDecoder().decode(bytes);
+  }
+
+  // ─── Gist sync ─────────────────────────────
+  function fetchGistJson(gid) {
+    return fetch("https://api.github.com/gists/" + gid).then(function(res) {
+      if (res.status === 401) return null;
+      return res.json();
+    }).then(function(json) {
+      if (!json || !json.files || !json.files["data.json"]) return null;
+      try { return JSON.parse(json.files["data.json"].content); } catch(e) { return null; }
+    });
+  }
+
+  function loadGist(gid) {
+    if (!gid) gid = localStorage.getItem("gist-id");
+    if (!gid) { gistData = loadLocal() || defaultGistData(); return Promise.resolve(gistData); }
+    return fetchGistJson(gid).then(function(payload) {
+      if (!payload) { gistData = loadLocal() || defaultGistData(); return gistData; }
+      var key = localStorage.getItem("gist-key");
+      if (payload.v === 1 && payload.h) {
+        if (!key) { gistData = loadLocal() || defaultGistData(); return gistData; }
+        if (key !== payload.h) { gistData = loadLocal() || defaultGistData(); return gistData; }
+        gistData = payload.d ? JSON.parse(xorDecrypt(payload.d, key)) : defaultGistData();
+      } else {
+        if (key && payload.passwordHash && key !== payload.passwordHash) { gistData = loadLocal() || defaultGistData(); return gistData; }
+        gistData = payload;
+      }
+      saveLocal(gistData);
+      return gistData;
+    });
+  }
+
+  function findGistByUser(username) {
+    var url = "https://api.github.com/users/" + encodeURIComponent(username) + "/gists?per_page=30";
+    return fetch(url).then(function(r) { return r.json(); }).then(function(gists) {
+      if (!Array.isArray(gists)) return null;
+      for (var i = 0; i < gists.length; i++) {
+        if (gists[i].files["data.json"]) return gists[i];
+      }
+      return null;
+    });
+  }
+
+  function saveGist(data) {
+    var gid = localStorage.getItem("gist-id");
+    var pat = localStorage.getItem("gist-pat");
+    if (!gid || !pat) { saveLocal(data); return Promise.resolve(true); }
+    var key = localStorage.getItem("gist-key");
+    var payload;
+    if (key) {
+      payload = { v: 1, h: key, d: xorEncrypt(JSON.stringify(data), key) };
+    } else {
+      payload = data;
+    }
+    var body = JSON.stringify({ files: { "data.json": { content: JSON.stringify(payload) } } });
+    return fetch("https://api.github.com/gists/" + gid, {
+      method: "PATCH", headers: { "Authorization": "token " + pat, "Content-Type": "application/json" }, body: body
+    }).then(function(r) { var ok = r.status === 200; if (ok) saveLocal(data); return ok; });
+  }
+
+  function hasGist() {
+    return localStorage.getItem("gist-pat") && localStorage.getItem("gist-id");
+  }
+
+  // ─── Display utilities ─────────────────────
+  function strWidth(s) {
+    var w = 0;
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      if ((c & 0xfc00) === 0xd800) { w += 2; i++; }
+      else if ((c >= 0x4e00 && c <= 0x9fff) || (c >= 0x3000 && c <= 0x303f) || (c >= 0xff00 && c <= 0xffef) || (c >= 0x2600 && c <= 0x27bf) || c === 0x23f0 || c === 0x23f3) { w += 2; }
+      else { w += 1; }
+    }
+    return w;
+  }
+
+  function rep(ch, n) { var r = ""; for (var i = 0; i < n; i++) r += ch; return r; }
+
+  function wrapBox(lines, title) {
+    var w = 2;
+    for (var i = 0; i < lines.length; i++) { var sw = strWidth(lines[i]); if (sw > w) w = sw; }
+    w = Math.min(w, 60);
+    var r = [];
+    r.push("\u250c" + (title ? "\u2500 " + title + " " + rep("\u2500", Math.max(0, w - strWidth(title) - 3)) : rep("\u2500", w)) + "\u2510");
+    for (var i = 0; i < lines.length; i++) r.push("\u2502" + lines[i] + rep(" ", w - strWidth(lines[i])) + "\u2502");
+    r.push("\u2514" + rep("\u2500", w) + "\u2518");
+    return r;
+  }
+
+  function renderBar(label, value, max, total) {
+    var barW = 15;
+    var filled = max > 0 ? Math.round(value / max * barW) : 0;
+    return " " + label + " " + rep("\u2588", filled) + rep("\u2591", barW - filled) + " " + value + (total ? "/" + total : "");
+  }
+
+  // ─── Todo helpers ──────────────────────────
+  function parseTodoArgs(input) {
+    var parts = input.trim().split(/\s+/);
+    var text = [], priority = "medium", tags = [], dueDate = null;
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i] === "--high") priority = "high";
+      else if (parts[i] === "--low") priority = "low";
+      else if (parts[i].startsWith("#")) tags.push(parts[i].slice(1));
+      else if (parts[i] === "--due" && parts[i + 1]) { dueDate = parts[i + 1]; i++; }
+      else text.push(parts[i]);
+    }
+    return { text: text.join(" "), priority: priority, tags: tags, dueDate: dueDate };
+  }
+
+  function todoLine(n, t) {
+    var line = (n < 10 ? " " : "") + n + ". " + (t.done ? "[x]" : "[ ]") + " " + t.text;
+    if (t.priority === "high") line += " \u26a0";
+    if (t.priority === "low") line += " \u2193";
+    if (t.tags && t.tags.length) line += " #" + t.tags.join(" #");
+    if (t.dueDate) line += " (\u23f0 " + t.dueDate + ")";
+    return line;
+  }
+
+  function showInTodo(label, html) {
+    var el = document.getElementById("todo-display");
+    var head = document.getElementById("todo-head");
+    var body = document.getElementById("todo-body");
+    if (!el || !head || !body) return;
+    head.setAttribute("data-label", label);
+    head.textContent = "[-] " + label;
+    head.style.display = "";
+    body.innerHTML = html;
+    el.style.display = "block";
+  }
+
+  function showInTodoText(label, text) {
+    var el = document.getElementById("todo-display");
+    var head = document.getElementById("todo-head");
+    var body = document.getElementById("todo-body");
+    if (!el || !head || !body) return;
+    head.setAttribute("data-label", label);
+    head.textContent = "[-] " + label;
+    head.style.display = "";
+    body.textContent = text;
+    el.style.display = "block";
+  }
+
+  function renderTodos() {
+    if (!gistData || !gistData.todos) return;
+    var html = "";
+    for (var i = 0; i < gistData.todos.length; i++) {
+      html += escHtml(todoLine(i + 1, gistData.todos[i]));
+      if (i < gistData.todos.length - 1) html += "\n";
+    }
+    showInTodo("todos", html);
+  }
+
+  function renderTodoCalendar(year, month) {
+    var el = document.getElementById("todo-display");
+    if (!el) return;
+    var today = new Date();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+    var monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    var lines = [];
+    lines.push("     " + monthNames[month] + " " + year);
+    lines.push(" Mo Tu We Th Fr Sa Su");
+    var week = "";
+    for (var i = 0; i < firstDay; i++) week += "   ";
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dateKey = year + "-" + String(month + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+      var count = 0;
+      if (gistData.todos) for (var tj = 0; tj < gistData.todos.length; tj++) { var t = gistData.todos[tj]; if (t.createdAt) { var cd = new Date(t.createdAt); if (cd.getFullYear() === year && cd.getMonth() === month && cd.getDate() === d) count++; } }
+      var pomos = (gistData.pomodoros && gistData.pomodoros[dateKey]) || 0;
+      var cell = (d < 10 ? " " : "") + d + " ";
+      if (count > 0 || pomos > 0) {
+        var dots = "";
+        if (count > 0) dots += "\u25cf";
+        if (pomos > 0) dots += "\ud83c\udf4d";
+        cell = (d < 10 ? " " : "") + d + dots.slice(0, 2);
+      }
+      week += cell.length > 3 ? cell.slice(0, 3) : cell;
+      if ((firstDay + d) % 7 === 0 || d === daysInMonth) { lines.push(week); week = ""; }
+    }
+    lines.push(" \u25cf=todo \ud83c\udf4d=pomo");
+    lines.push("");
+    // Show recent items
+    var dayItems = {};
+    for (var di = 0; di < (gistData.todos || []).length; di++) {
+      var t = gistData.todos[di];
+      if (t.createdAt) { var cd = new Date(t.createdAt); var key = cd.getMonth() + "-" + cd.getDate(); if (!dayItems[key]) dayItems[key] = []; dayItems[key].push(t); }
+    }
+    var todayKey = today.getMonth() + "-" + today.getDate();
+    var recentKeys = Object.keys(dayItems).filter(function(k) { return k !== todayKey; }).slice(-3);
+    recentKeys.push(todayKey);
+    var listHtml = "";
+    for (var mi = 0; mi < recentKeys.length; mi++) {
+      var parts = recentKeys[mi].split("-");
+      var month = parseInt(parts[0]), dayN = parseInt(parts[1]);
+      var items = dayItems[recentKeys[mi]] || [];
+      listHtml += '<div style="color:var(--yellow);font-size:0.75rem;margin-bottom:0.25rem;">' + monthNames[month] + " " + dayN + '</div>';
+      for (var j = 0; j < items.length; j++) {
+        var t = items[j];
+        listHtml += '<div style="padding-left:0.5rem;font-size:0.75rem;line-height:1.5;">' + (t.done ? "[x]" : "[ ]") + " " + (t.text) + '</div>';
+      }
+    }
+    showInTodo("calendar", (listHtml ? '<div style="display:flex;gap:1.5rem;align-items:flex-start;"><pre style="margin:0;background:none;border:none;padding:0;font-size:0.8125rem;white-space:pre;">' + lines.join("\n") + '</pre><div style="flex:1;min-width:0;">' + listHtml + '</div></div>' : '<pre style="margin:0;background:none;border:none;padding:0;font-size:0.8125rem;white-space:pre;">' + lines.join("\n") + '</pre>'));
+  }
+
+  function renderMoodCalendar() {
+    var el = document.getElementById("todo-display");
+    if (!el || !gistData || !gistData.moods) return;
+    var today = new Date();
+    var year = today.getFullYear(), month = today.getMonth();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    var firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+    var moodCh = ["\ud83d\ude1e","\ud83d\ude10","\ud83d\ude42","\ud83d\ude0a","\ud83d\ude04"];
+    var lines = [];
+    lines.push("      " + monthNames[month] + " " + year);
+    lines.push(" Mo Tu We Th Fr Sa Su");
+    var week = "";
+    for (var i = 0; i < firstDay; i++) week += "   ";
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dateKey = year + "-" + String(month + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+      var m = gistData.moods[dateKey];
+      var cell = (d < 10 ? " " : "") + d + " ";
+      if (m >= 1 && m <= 5) cell = moodCh[m - 1] + " ";
+      else if (d === today.getDate()) cell = " \u25cb ";
+      week += cell;
+      if ((firstDay + d) % 7 === 0 || d === daysInMonth) { lines.push(week); week = ""; }
+    }
+    lines.push(" \ud83d\ude1e \ud83d\ude10 \ud83d\ude42 \ud83d\ude0a \ud83d\ude04  \u25cb today no record");
+    showInTodoText("mood", lines.join("\n"));
+  }
+
+</script>
