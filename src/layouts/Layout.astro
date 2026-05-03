@@ -708,7 +708,7 @@ const searchIndex = allPosts.map((p) => {
       }
       musicData.audio.src = data.url;
       musicData.audio.play();
-      showToast("▶ " + song.name + " - " + (song.artist || "").replace(/<[^>]+>/g, ""));
+      showToast("\u25b6 " + song.name + " - " + (song.artist || []).join(", "));
     });
   }
 
@@ -1231,7 +1231,7 @@ const searchIndex = allPosts.map((p) => {
         var lines = [];
         for (var i = 0; i < Math.min(data.length, 20); i++) {
           var s = data[i];
-          lines.push((i + 1) + ". " + s.name + " - " + (s.artist || "").replace(/<[^>]+>/g, ""));
+          lines.push((i + 1) + ". " + s.name + " - " + (s.artist || []).join(", "));
         }
         var el = document.getElementById("todo-display");
         if (el) { el.textContent = lines.join("\n"); el.style.display = "block"; }
@@ -1254,7 +1254,7 @@ const searchIndex = allPosts.map((p) => {
       var lines = [];
       for (var i = 0; i < musicData.playlist.length; i++) {
         var s = musicData.playlist[i];
-        lines.push((i === musicData.currentIndex ? "→ " : "  ") + (i + 1) + ". " + s.name + " - " + (s.artist || "").replace(/<[^>]+>/g, ""));
+        lines.push((i === musicData.currentIndex ? "\u2192 " : "  ") + (i + 1) + ". " + s.name + " - " + (s.artist || []).join(", "));
       }
       var el = document.getElementById("todo-display");
       if (el) { el.textContent = lines.join("\n"); el.style.display = "block"; }
