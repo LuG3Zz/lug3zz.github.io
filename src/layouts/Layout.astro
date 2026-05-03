@@ -542,7 +542,7 @@ const searchIndex = allPosts.map((p) => {
     for (var i = 0; i < lines.length; i++) { var sw = strWidth(lines[i]); if (sw > w) w = sw; }
     w = Math.min(w, 60);
     var r = [];
-    r.push("\u250c" + (title ? "\u2500 " + title + " " + rep("\u2500", w - strWidth(title) - 1) : rep("\u2500", w)) + "\u2510");
+    r.push("\u250c" + (title ? "\u2500 " + title + " " + rep("\u2500", Math.max(0, w - strWidth(title) - 3)) : rep("\u2500", w)) + "\u2510");
     for (var i = 0; i < lines.length; i++) r.push("\u2502" + lines[i] + rep(" ", w - strWidth(lines[i])) + "\u2502");
     r.push("\u2514" + rep("\u2500", w) + "\u2518");
     return r;
