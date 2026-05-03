@@ -675,7 +675,7 @@ const searchIndex = allPosts.map((p) => {
   }
 
   function musicSearch(keyword, source, callback) {
-    fetch("https://music-api.gdstudio.xyz/api.php?type=search&source=" + (source || "netease") + "&name=" + encodeURIComponent(keyword))
+    fetch("https://music-api.gdstudio.xyz/api.php?types=search&source=" + (source || "netease") + "&name=" + encodeURIComponent(keyword))
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (!data || !data.length) { showToast("music: no results"); return; }
@@ -687,7 +687,7 @@ const searchIndex = allPosts.map((p) => {
   }
 
   function musicGetUrl(id, source, callback) {
-    fetch("https://music-api.gdstudio.xyz/api.php?type=url&source=" + (source || "netease") + "&id=" + id)
+    fetch("https://music-api.gdstudio.xyz/api.php?types=url&source=" + (source || "netease") + "&id=" + id)
       .then(function(r) { return r.json(); })
       .then(callback)
       .catch(function() { showToast("music: failed to get url"); });
