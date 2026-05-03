@@ -686,6 +686,9 @@ const searchIndex = allPosts.map((p) => {
     el.style.display = "block";
   }
 
+</script>
+
+<script is:inline>
   // ─── Music player ──────────────────────────
   var musicData = null;
 
@@ -830,6 +833,9 @@ const searchIndex = allPosts.map((p) => {
     showToast("\u23f9 stopped");
   }
 
+</script>
+
+<script is:inline>
   // ─── Command definitions ──────────────────────────
   var commands = {};
 
@@ -1423,6 +1429,9 @@ const searchIndex = allPosts.map((p) => {
   };
 
   // Inline grep
+</script>
+
+<script is:inline>
   var grepResults = document.getElementById("grep-results");
   var searchIndex = JSON.parse(document.getElementById("search-index").textContent);
 
@@ -1565,6 +1574,9 @@ const searchIndex = allPosts.map((p) => {
     }
   });
 
+</script>
+
+<script is:inline>
   // Footer uptime
   var footerUptime = document.getElementById("footer-uptime");
   var uptimeStart = new Date(document.getElementById("uptime-data").getAttribute("data-start"));
@@ -1810,4 +1822,6 @@ const searchIndex = allPosts.map((p) => {
   window.addEventListener("popstate", function() {
     spaNavigate(window.location.pathname);
   });
+
 </script>
+
