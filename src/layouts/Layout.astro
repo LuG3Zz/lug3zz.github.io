@@ -94,7 +94,7 @@ const searchIndex = allPosts.map((p) => {
       <div id="cmd-suggestions" class="cmd-suggestions"></div>
       <div id="grep-results" class="grep-results"></div>
       <div id="pomodoro-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;"></div>
-      <div id="todo-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;white-space:pre-wrap;"></div>
+      <div id="todo-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;white-space:pre;overflow-x:auto;"></div>
 
       <nav class="nav">
         <a href="/" class={path === "/" ? "active" : ""}>home</a>
