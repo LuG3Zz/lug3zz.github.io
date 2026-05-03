@@ -4,11 +4,11 @@ import { getCollection } from "astro:content";
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { execSync } from "child_process";
-import Block1 from "../components/scripts/Block1.astro";
-import Block2 from "../components/scripts/Block2.astro";
-import Block3 from "../components/scripts/Block3.astro";
-import Block4 from "../components/scripts/Block4.astro";
-import Block5 from "../components/scripts/Block5.astro";
+import CoreScripts from "../components/scripts/CoreScripts.astro";
+import MusicPlayer from "../components/scripts/MusicPlayer.astro";
+import CommandDefs from "../components/scripts/CommandDefs.astro";
+import TabCompletion from "../components/scripts/TabCompletion.astro";
+import InitScripts from "../components/scripts/InitScripts.astro";
 const { title } = Astro.props;
 const path = Astro.url.pathname;
 
@@ -345,13 +345,9 @@ const searchIndex = allPosts.map((p) => {
   @media (min-width:1200px) { :global(.toc-mobile) { display:none; } }
 </style>
 
-<Block1 />
-
-<Block2 />
-
-<Block3 />
-
-<Block4 />
-
-<Block5 />
+<CoreScripts />
+<MusicPlayer />
+<CommandDefs />
+<TabCompletion />
+<InitScripts />
 
