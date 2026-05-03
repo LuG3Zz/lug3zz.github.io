@@ -1681,7 +1681,11 @@ const searchIndex = allPosts.map((p) => {
       document.head.appendChild(tocSty);
       artScrollHead = function() {
         var act = null;
-        hdgs.forEach(function(h) { if (h.el.getBoundingClientRect().top <= 80) act = h; });
+        hdgs.forEach(function(h) {
+          var t = Math.round(h.el.getBoundingClientRect().top);
+          if (t <= 80) act = h;
+          h.link.setAttribute("data-top", t);
+        });
         hdgs.forEach(function(h) { h.link.classList.toggle("toc-act", h === act); });
         if (act && act.link.closest(".toc")) act.link.scrollIntoView({ block: "nearest", behavior: "auto" });
       };
