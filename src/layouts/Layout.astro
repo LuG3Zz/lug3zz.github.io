@@ -1676,12 +1676,13 @@ const searchIndex = allPosts.map((p) => {
     var hdgs = [];
     tLinks.forEach(function(a) { var id = a.getAttribute("href").slice(1); var e = document.getElementById(id) || document.querySelector("[id='" + id + "']"); if (e) hdgs.push({ el: e, link: a }); });
     if (hdgs.length) {
-      var tocGreen = getComputedStyle(document.documentElement).getPropertyValue("--green").trim() || "#33ff33";
-      var tocDim = getComputedStyle(document.documentElement).getPropertyValue("--dim").trim() || "#666666";
+      var s = document.createElement("style");
+      s.textContent = ".toc-active { color: var(--green) !important; }";
+      document.head.appendChild(s);
       artScrollHead = function() {
         var act = null;
         hdgs.forEach(function(h) { if (h.el.getBoundingClientRect().top <= 80) act = h; });
-        hdgs.forEach(function(h) { h.link.style.color = h === act ? tocGreen : tocDim; });
+        hdgs.forEach(function(h) { h.link.classList.toggle("toc-active", h === act); });
         if (act && act.link.closest(".toc")) act.link.scrollIntoView({ block: "nearest", behavior: "auto" });
       };
       window.addEventListener("scroll", artScrollHead);
