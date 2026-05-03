@@ -421,6 +421,251 @@ const searchIndex = allPosts.map((p) => {
     if (sel) sel.value = name;
   }
 
+  // ─── Data persistence ──────────────────────
+  function loadLocal() {
+    try { return JSON.parse(localStorage.getItem(localKey())) || null; } catch(e) { return null; }
+  }
+
+  function saveLocal(data) {
+    try { localStorage.setItem(localKey(), JSON.stringify(data)); return true; } catch(e) { return false; }
+  }
+
+  function ensureData() {
+    if (!gistData) { gistData = loadLocal() || defaultGistData(); }
+  }
+
+  function updatePrompt() {
+    var el = document.getElementById("prompt-user");
+    if (el) el.textContent = localStorage.getItem("logged-in") === "true" ? "root" : "guest";
+  }
+
+  // ─── Crypto ────────────────────────────────
+  function sha256(str) {
+    return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf) {
+      return Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, "0"); }).join("");
+    });
+  }
+
+  function xorEncrypt(text, keyHex) {
+    var key = [];
+    for (var i = 0; i < keyHex.length; i += 2) key.push(parseInt(keyHex.substring(i, i + 2), 16));
+    var bytes = new TextEncoder().encode(text);
+    var r = "";
+    for (var i = 0; i < bytes.length; i++) r += String.fromCharCode(bytes[i] ^ key[i % key.length]);
+    return btoa(r);
+  }
+
+  function xorDecrypt(cipher, keyHex) {
+    var key = [];
+    for (var i = 0; i < keyHex.length; i += 2) key.push(parseInt(keyHex.substring(i, i + 2), 16));
+    var raw = atob(cipher);
+    var bytes = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) ^ key[i % key.length];
+    return new TextDecoder().decode(bytes);
+  }
+
+  // ─── Gist sync ─────────────────────────────
+  function fetchGistJson(gid) {
+    return fetch("https://api.github.com/gists/" + gid).then(function(res) {
+      if (res.status === 401) return null;
+      return res.json();
+    }).then(function(json) {
+      if (!json || !json.files || !json.files["data.json"]) return null;
+      try { return JSON.parse(json.files["data.json"].content); } catch(e) { return null; }
+    });
+  }
+
+  function loadGist(gid) {
+    return fetchGistJson(gid).then(function(payload) {
+      if (!payload) { gistData = loadLocal() || defaultGistData(); return; }
+      var key = localStorage.getItem("gist-key");
+      if (payload.v === 1 && payload.h) {
+        if (!key) { gistData = loadLocal() || defaultGistData(); return; }
+        if (key !== payload.h) { gistData = loadLocal() || defaultGistData(); return; }
+        gistData = payload.d ? JSON.parse(xorDecrypt(payload.d, key)) : defaultGistData();
+      } else {
+        if (key && payload.passwordHash && key !== payload.passwordHash) { gistData = loadLocal() || defaultGistData(); return; }
+        gistData = payload;
+      }
+      saveLocal(gistData);
+    });
+  }
+
+  function findGistByUser(username) {
+    var url = "https://api.github.com/users/" + encodeURIComponent(username) + "/gists?per_page=30";
+    return fetch(url).then(function(r) { return r.json(); }).then(function(gists) {
+      if (!Array.isArray(gists)) return null;
+      for (var i = 0; i < gists.length; i++) {
+        if (gists[i].files["data.json"]) return gists[i];
+      }
+      return null;
+    });
+  }
+
+  function saveGist(data) {
+    var gid = localStorage.getItem("gist-id");
+    var pat = localStorage.getItem("gist-pat");
+    if (!gid || !pat) { saveLocal(data); return Promise.resolve(true); }
+    var key = localStorage.getItem("gist-key");
+    var payload;
+    if (key) {
+      var encrypted = btoa(JSON.stringify(data)); // old format kept for compatibility
+      payload = { v: 1, h: key, d: xorEncrypt(JSON.stringify(data), key) };
+    } else {
+      payload = data;
+    }
+    var body = JSON.stringify({ files: { "data.json": { content: JSON.stringify(payload) } } });
+    return fetch("https://api.github.com/gists/" + gid, {
+      method: "PATCH", headers: { "Authorization": "token " + pat, "Content-Type": "application/json" }, body: body
+    }).then(function(r) { var ok = r.status === 200; if (ok) saveLocal(data); return ok; });
+  }
+
+  function hasGist() {
+    return localStorage.getItem("gist-pat") && localStorage.getItem("gist-id");
+  }
+
+  // ─── Display utilities ─────────────────────
+  function strWidth(s) {
+    var w = 0;
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      w += (c >= 0x4e00 && c <= 0x9fff) || (c >= 0x3000 && c <= 0x303f) || (c >= 0xff00 && c <= 0xffef) || (c > 0xffff) ? 2 : 1;
+    }
+    return w;
+  }
+
+  function rep(ch, n) { var r = ""; for (var i = 0; i < n; i++) r += ch; return r; }
+
+  function wrapBox(lines, title) {
+    var w = 2;
+    for (var i = 0; i < lines.length; i++) { var sw = strWidth(lines[i]); if (sw > w) w = sw; }
+    w = Math.min(w, 60);
+    var r = [];
+    r.push("\u250c" + (title ? "\u2500 " + title + " " + rep("\u2500", w - strWidth(title) - 1) : rep("\u2500", w)) + "\u2510");
+    for (var i = 0; i < lines.length; i++) r.push("\u2502" + lines[i] + rep(" ", w - strWidth(lines[i])) + "\u2502");
+    r.push("\u2514" + rep("\u2500", w) + "\u2518");
+    return r;
+  }
+
+  function renderBar(label, value, max, total) {
+    var barW = 15;
+    var filled = max > 0 ? Math.round(value / max * barW) : 0;
+    return " " + label + " " + rep("\u2588", filled) + rep("\u2591", barW - filled) + " " + value + (total ? "/" + total : "");
+  }
+
+  // ─── Todo helpers ──────────────────────────
+  function parseTodoArgs(input) {
+    var parts = input.trim().split(/\s+/);
+    var text = [], priority = "medium", tags = [], dueDate = null;
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i] === "--high") priority = "high";
+      else if (parts[i] === "--low") priority = "low";
+      else if (parts[i].startsWith("#")) tags.push(parts[i].slice(1));
+      else if (parts[i] === "--due" && parts[i + 1]) { dueDate = parts[i + 1]; i++; }
+      else text.push(parts[i]);
+    }
+    return { text: text.join(" "), priority: priority, tags: tags, dueDate: dueDate };
+  }
+
+  function todoLine(n, t) {
+    var line = (n < 10 ? " " : "") + n + ". " + (t.done ? "[x]" : "[ ]") + " " + t.text;
+    if (t.priority === "high") line += " \u26a0";
+    if (t.priority === "low") line += " \u2193";
+    if (t.tags && t.tags.length) line += " #" + t.tags.join(" #");
+    if (t.dueDate) line += " (\u23f0 " + t.dueDate + ")";
+    return line;
+  }
+
+  function renderTodos() {
+    var el = document.getElementById("todo-display");
+    if (!el || !gistData || !gistData.todos) return;
+    var lines = [];
+    for (var i = 0; i < gistData.todos.length; i++) lines.push(todoLine(i + 1, gistData.todos[i]));
+    el.textContent = wrapBox(lines, "todo").join("\n");
+    el.style.display = "block";
+  }
+
+  function renderTodoCalendar(year, month) {
+    var el = document.getElementById("todo-display");
+    if (!el) return;
+    var today = new Date();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+    var monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    var lines = [];
+    lines.push("     " + monthNames[month] + " " + year);
+    lines.push(" Mo Tu We Th Fr Sa Su");
+    var week = "";
+    for (var i = 0; i < firstDay; i++) week += "   ";
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dateKey = year + "-" + String(month + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+      var count = 0;
+      if (gistData.todos) for (var tj = 0; tj < gistData.todos.length; tj++) { var t = gistData.todos[tj]; if (t.createdAt) { var cd = new Date(t.createdAt); if (cd.getFullYear() === year && cd.getMonth() === month && cd.getDate() === d) count++; } }
+      var pomos = (gistData.pomodoros && gistData.pomodoros[dateKey]) || 0;
+      var cell = (d < 10 ? " " : "") + d + " ";
+      if (count > 0 || pomos > 0) {
+        var dots = "";
+        if (count > 0) dots += "\u25cf";
+        if (pomos > 0) dots += "\ud83c\udf4d";
+        cell = (d < 10 ? " " : "") + d + dots.slice(0, 2);
+      }
+      week += cell.length > 3 ? cell.slice(0, 3) : cell;
+      if ((firstDay + d) % 7 === 0 || d === daysInMonth) { lines.push(week); week = ""; }
+    }
+    lines.push(" \u25cf=todo \ud83c\udf4d=pomo");
+    lines.push("");
+    // Show recent items
+    var dayItems = {};
+    for (var di = 0; di < (gistData.todos || []).length; di++) {
+      var t = gistData.todos[di];
+      if (t.createdAt) { var cd = new Date(t.createdAt); var key = cd.getMonth() + "-" + cd.getDate(); if (!dayItems[key]) dayItems[key] = []; dayItems[key].push(t); }
+    }
+    var todayKey = today.getMonth() + "-" + today.getDate();
+    var recentKeys = Object.keys(dayItems).filter(function(k) { return k !== todayKey; }).slice(-3);
+    recentKeys.push(todayKey);
+    var listHtml = "";
+    for (var mi = 0; mi < recentKeys.length; mi++) {
+      var parts = recentKeys[mi].split("-");
+      var month = parseInt(parts[0]), dayN = parseInt(parts[1]);
+      var items = dayItems[recentKeys[mi]] || [];
+      listHtml += '<div style="color:var(--yellow);font-size:0.75rem;margin-bottom:0.25rem;">' + monthNames[month] + " " + dayN + '</div>';
+      for (var j = 0; j < items.length; j++) {
+        var t = items[j];
+        listHtml += '<div style="padding-left:0.5rem;font-size:0.75rem;line-height:1.5;">' + (t.done ? "[x]" : "[ ]") + " " + (t.text) + '</div>';
+      }
+    }
+    el.innerHTML = (listHtml ? '<div style="display:flex;gap:1.5rem;align-items:flex-start;"><pre style="margin:0;background:none;border:none;padding:0;font-size:0.8125rem;white-space:pre;">' + lines.join("\n") + '</pre><div style="flex:1;min-width:0;">' + listHtml + '</div></div>' : '<pre style="margin:0;background:none;border:none;padding:0;font-size:0.8125rem;white-space:pre;">' + lines.join("\n") + '</pre>');
+    el.style.display = "block";
+  }
+
+  function renderMoodCalendar() {
+    var el = document.getElementById("todo-display");
+    if (!el || !gistData || !gistData.moods) return;
+    var today = new Date();
+    var year = today.getFullYear(), month = today.getMonth();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    var firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+    var moodCh = ["\ud83d\ude1e","\ud83d\ude10","\ud83d\ude42","\ud83d\ude0a","\ud83d\ude04"];
+    var lines = [];
+    lines.push("      " + monthNames[month] + " " + year);
+    lines.push(" Mo Tu We Th Fr Sa Su");
+    var week = "";
+    for (var i = 0; i < firstDay; i++) week += "   ";
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dateKey = year + "-" + String(month + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+      var m = gistData.moods[dateKey];
+      var cell = (d < 10 ? " " : "") + d + " ";
+      if (m >= 1 && m <= 5) cell = moodCh[m - 1] + " ";
+      else if (d === today.getDate()) cell = " \u25cb ";
+      week += cell;
+      if ((firstDay + d) % 7 === 0 || d === daysInMonth) { lines.push(week); week = ""; }
+    }
+    lines.push(" \ud83d\ude1e \ud83d\ude10 \ud83d\ude42 \ud83d\ude0a \ud83d\ude04  \u25cb today no record");
+    el.textContent = lines.join("\n");
+    el.style.display = "block";
+  }
+
   // ─── Music player ──────────────────────────
   var musicData = null;
 
