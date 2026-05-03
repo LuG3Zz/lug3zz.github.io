@@ -95,6 +95,11 @@ const searchIndex = allPosts.map((p) => {
       <div id="grep-results" class="grep-results"></div>
       <div id="pomodoro-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;"></div>
       <div id="todo-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;white-space:pre-wrap;"></div>
+      <div id="music-island" style="position:fixed;top:0.5rem;left:50%;transform:translateX(-50%);z-index:9999;background:var(--bg);border:1px solid var(--green);border-radius:20px;padding:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.75rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 0 12px rgba(51,255,51,0.15);opacity:0;pointer-events:none;transition:opacity 0.3s;">
+        <span id="music-island-info" style="color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;"></span>
+        <canvas id="music-spectrum" width="64" height="20" style="border-radius:4px;display:block;"></canvas>
+        <span id="music-island-close" style="color:var(--dim);cursor:pointer;font-size:0.7rem;line-height:1;">✕</span>
+      </div>
 
       <nav class="nav">
         <a href="/" class={path === "/" ? "active" : ""}>home</a>
@@ -677,7 +682,67 @@ const searchIndex = allPosts.map((p) => {
   var musicData = null;
 
   function ensureMusic() {
-    if (!musicData) musicData = { playlist: [], currentIndex: -1, audio: null };
+    if (!musicData) musicData = { playlist: [], currentIndex: -1, audio: null, ctx: null, analyser: null, animId: null };
+  }
+
+  function musicShowIsland(song) {
+    var el = document.getElementById("music-island");
+    var info = document.getElementById("music-island-info");
+    if (el && info) {
+      info.textContent = "\u25b6 " + song.name + " - " + (song.artist || []).join(", ");
+      el.style.opacity = "1";
+      el.style.pointerEvents = "auto";
+    }
+  }
+
+  function musicHideIsland() {
+    var el = document.getElementById("music-island");
+    if (el) { el.style.opacity = "0"; el.style.pointerEvents = "none"; }
+    musicStopSpectrum();
+  }
+
+  function musicSetupAudio() {
+    if (musicData.ctx || !musicData.audio) return;
+    try {
+      musicData.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      musicData.analyser = musicData.ctx.createAnalyser();
+      musicData.analyser.fftSize = 64;
+      var src = musicData.ctx.createMediaElementSource(musicData.audio);
+      src.connect(musicData.analyser);
+      musicData.analyser.connect(musicData.ctx.destination);
+    } catch(e) {}
+  }
+
+  function musicStartSpectrum() {
+    if (!musicData.analyser) return;
+    if (musicData.ctx && musicData.ctx.state === "suspended") musicData.ctx.resume();
+    if (musicData.animId) return;
+    var canvas = document.getElementById("music-spectrum");
+    if (!canvas) return;
+    var ctx = canvas.getContext("2d");
+    var w = canvas.width, h = canvas.height;
+    var data = new Uint8Array(musicData.analyser.frequencyBinCount);
+    var color = "#33ff33";
+    function draw() {
+      musicData.analyser.getByteFrequencyData(data);
+      ctx.clearRect(0, 0, w, h);
+      var count = data.length;
+      var bw = Math.max(1, Math.floor(w / count * 0.6));
+      var gap = Math.max(0, Math.floor(w / count * 0.4));
+      for (var i = 0; i < count; i++) {
+        var bh = Math.max(1, data[i] / 255 * h);
+        ctx.fillStyle = color;
+        ctx.fillRect(i * (bw + gap), h - bh, bw, bh);
+      }
+      musicData.animId = requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function musicStopSpectrum() {
+    if (musicData.animId) { cancelAnimationFrame(musicData.animId); musicData.animId = null; }
+    var canvas = document.getElementById("music-spectrum");
+    if (canvas) { var ctx = canvas.getContext("2d"); ctx.clearRect(0, 0, canvas.width, canvas.height); }
   }
 
   function musicSearch(keyword, source, callback) {
@@ -713,6 +778,9 @@ const searchIndex = allPosts.map((p) => {
       }
       musicData.audio.src = data.url;
       musicData.audio.play();
+      musicShowIsland(song);
+      musicSetupAudio();
+      musicStartSpectrum();
       showToast("\u25b6 " + song.name + " - " + (song.artist || []).join(", "));
     });
   }
@@ -727,8 +795,23 @@ const searchIndex = allPosts.map((p) => {
   function musicToggle() {
     ensureMusic();
     if (!musicData.audio) { showToast("music: nothing playing"); return; }
-    if (musicData.audio.paused) { musicData.audio.play(); showToast("▶ resumed"); }
-    else { musicData.audio.pause(); showToast("⏸ paused"); }
+    if (musicData.audio.paused) {
+      musicData.audio.play();
+      if (musicData.ctx && musicData.ctx.state === "suspended") musicData.ctx.resume();
+      musicStartSpectrum();
+      showToast("\u25b6 resumed");
+    } else {
+      musicData.audio.pause();
+      musicStopSpectrum();
+      showToast("\u23f8 paused");
+    }
+  }
+
+  function musicStop() {
+    ensureMusic();
+    if (musicData.audio) { musicData.audio.pause(); musicData.audio.currentTime = 0; }
+    musicHideIsland();
+    showToast("\u23f9 stopped");
   }
 
   // ─── Command definitions ──────────────────────────
@@ -1252,7 +1335,9 @@ const searchIndex = allPosts.map((p) => {
         if (musicData.currentIndex < 0) return;
         musicPlay((musicData.currentIndex - 1 + musicData.playlist.length) % musicData.playlist.length);
       }
-    } else if (sub === "stop" || sub === "pause") {
+    } else if (sub === "stop") {
+      musicStop();
+    } else if (sub === "pause") {
       musicToggle();
     } else if (sub === "list") {
       if (!musicData.playlist.length) { showToast("music: playlist empty"); return; }
@@ -1564,6 +1649,11 @@ const searchIndex = allPosts.map((p) => {
       }
     });
   }
+
+  // Music island close
+  document.getElementById("music-island-close").addEventListener("click", function() {
+    musicStop();
+  });
 
   // Theme switcher
   var themeSelect = document.getElementById("theme-select");
