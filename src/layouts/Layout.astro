@@ -1678,6 +1678,8 @@ const searchIndex = allPosts.map((p) => {
     if (hdgs.length) {
       var tocGreen = getComputedStyle(document.documentElement).getPropertyValue("--green").trim() || "#33ff33";
       var tocDim = getComputedStyle(document.documentElement).getPropertyValue("--dim").trim() || "#666666";
+      hdgs[0].link.style.color = tocGreen;
+      hdgs[0].link.style.fontWeight = "bold";
       artScrollHead = function() {
         var act = null;
         hdgs.forEach(function(h) { if (h.el.getBoundingClientRect().top <= 80) act = h; });
