@@ -707,33 +707,35 @@ const searchIndex = allPosts.map((p) => {
       musicData.ctx = new (window.AudioContext || window.webkitAudioContext)();
       musicData.analyser = musicData.ctx.createAnalyser();
       musicData.analyser.fftSize = 64;
-      var src = musicData.ctx.createMediaElementSource(musicData.audio);
-      src.connect(musicData.analyser);
+      musicData.ctx.createMediaElementSource(musicData.audio).connect(musicData.analyser);
       musicData.analyser.connect(musicData.ctx.destination);
-    } catch(e) {}
+    } catch(e) { musicData.analyser = null; }
   }
 
   function musicStartSpectrum() {
-    if (!musicData.analyser) return;
-    if (musicData.ctx && musicData.ctx.state === "suspended") musicData.ctx.resume();
     if (musicData.animId) return;
     var canvas = document.getElementById("music-spectrum");
     if (!canvas) return;
     var ctx = canvas.getContext("2d");
-    var w = canvas.width, h = canvas.height;
-    var data = new Uint8Array(musicData.analyser.frequencyBinCount);
+    var w = canvas.width, h = canvas.height, count = 16;
+    var bars = [];
+    for (var i = 0; i < count; i++) bars.push(Math.random() * h);
     var color = "#33ff33";
+
     function draw() {
-      musicData.analyser.getByteFrequencyData(data);
       ctx.clearRect(0, 0, w, h);
-      var count = data.length;
-      var bw = Math.max(1, Math.floor(w / count * 0.6));
-      var gap = Math.max(0, Math.floor(w / count * 0.4));
+      var bw = Math.max(1, Math.floor(w / count * 0.7));
+      var gap = Math.max(1, Math.floor(w / count * 0.3));
       for (var i = 0; i < count; i++) {
-        var bh = Math.max(1, data[i] / 255 * h);
+        bars[i] += (Math.random() - 0.5) * 4;
+        if (bars[i] < 2) bars[i] = 2;
+        if (bars[i] > h) bars[i] = h;
+        var bh = bars[i];
         ctx.fillStyle = color;
+        ctx.globalAlpha = 0.4 + 0.6 * (i / count);
         ctx.fillRect(i * (bw + gap), h - bh, bw, bh);
       }
+      ctx.globalAlpha = 1;
       musicData.animId = requestAnimationFrame(draw);
     }
     draw();
@@ -774,6 +776,7 @@ const searchIndex = allPosts.map((p) => {
       if (!data || !data.url) { showToast("music: failed to get url"); return; }
       if (!musicData.audio) {
         musicData.audio = document.createElement("audio");
+        musicData.audio.crossOrigin = "anonymous";
         musicData.audio.addEventListener("ended", function() { musicNext(); });
       }
       musicData.audio.src = data.url;
