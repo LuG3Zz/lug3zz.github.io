@@ -94,7 +94,7 @@ const searchIndex = allPosts.map((p) => {
       <div id="cmd-suggestions" class="cmd-suggestions"></div>
       <div id="grep-results" class="grep-results"></div>
       <div id="pomodoro-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;"></div>
-      <div id="todo-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;white-space:pre;"></div>
+      <div id="todo-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;white-space:pre-wrap;"></div>
 
       <nav class="nav">
         <a href="/" class={path === "/" ? "active" : ""}>home</a>
@@ -583,11 +583,9 @@ const searchIndex = allPosts.map((p) => {
   function renderTodos() {
     var el = document.getElementById("todo-display");
     if (!el || !gistData || !gistData.todos) return;
-    var html = "";
-    for (var i = 0; i < gistData.todos.length; i++) {
-      html += escHtml(todoLine(i + 1, gistData.todos[i])) + "\n";
-    }
-    el.innerHTML = '<pre style="margin:0;font-size:inherit;white-space:pre;">' + html + '</pre>';
+    var lines = [];
+    for (var i = 0; i < gistData.todos.length; i++) lines.push(todoLine(i + 1, gistData.todos[i]));
+    el.textContent = lines.join("\n");
     el.style.display = "block";
   }
 
