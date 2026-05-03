@@ -13,6 +13,7 @@ const tags = [...new Set(allPosts.flatMap(p => p.data.tags ?? []))];
 const series = [...new Set(allPosts.map(p => p.data.series).filter(Boolean))];
 const scripts = readdirSync(join(process.cwd(), "public/scripts")).map(f => f.replace(/\.\w+$/, ""));
 const completionJson = JSON.stringify({ slugs, tags, series, scripts });
+const THEMES = ["terminal","catppuccin","matrix","nord","gruvbox","dracula","tokyo-night","one-dark"];
 
 // Get first commit date for uptime
 const firstCommitDate = (function() {
@@ -54,6 +55,7 @@ const searchIndex = allPosts.map((p) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{path === "/" ? "HOME" : title} | brownlu-blog</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💻</text></svg>" />
+  <script id="theme-data" type="application/json" set:html={JSON.stringify(THEMES)}></script>
   </head>
 <body>
   <div class="container">
@@ -84,14 +86,7 @@ const searchIndex = allPosts.map((p) => {
         <span class="prompt-end"> $</span>
         <input type="text" id="cmd-input" class="cmd-input" spellcheck="false" autocomplete="off" />
         <select id="theme-select" class="theme-select" style="margin-left:0.5rem;flex-shrink:0;">
-          <option value="terminal">terminal</option>
-          <option value="catppuccin">catppuccin</option>
-          <option value="matrix">matrix</option>
-          <option value="nord">nord</option>
-          <option value="gruvbox">gruvbox</option>
-          <option value="dracula">dracula</option>
-          <option value="tokyo-night">tokyo-night</option>
-          <option value="one-dark">one-dark</option>
+          {THEMES.map(t => <option value={t}>{t}</option>)}
         </select>
         </form>
       </div>
@@ -412,6 +407,13 @@ const searchIndex = allPosts.map((p) => {
     return { todos: [], habits: {}, moods: {}, posts: [], pomodoros: {}, passwordHash: null, encryptedPat: null };
   }
 
+  function applyTheme(name) {
+    document.documentElement.setAttribute("data-theme", name);
+    localStorage.setItem("theme", name);
+    var sel = document.getElementById("theme-select");
+    if (sel) sel.value = name;
+  }
+
   function loadLocal() {
     try { return JSON.parse(localStorage.getItem(localKey())) || null; } catch(e) { return null; }
   }
@@ -710,16 +712,13 @@ const searchIndex = allPosts.map((p) => {
       }
     } else if (name === "theme") {
       var tname = parts.slice(1).join(" ");
-      var themes = ["terminal","catppuccin","matrix","nord","gruvbox","dracula","tokyo-night","one-dark"];
       if (!tname) {
-        showToast("theme: " + (localStorage.getItem("theme") || "terminal") + " (" + themes.join("/") + ")");
-      } else if (themes.indexOf(tname) !== -1) {
-        document.documentElement.setAttribute("data-theme", tname);
-        localStorage.setItem("theme", tname);
-        themeSelect.value = tname;
+        showToast("theme: " + (localStorage.getItem("theme") || "terminal") + " (" + THEMES.join("/") + ")");
+      } else if (THEMES.indexOf(tname) !== -1) {
+        applyTheme(tname);
         showToast("theme set to " + tname);
       } else {
-        showToast("theme: unknown theme \"" + tname + "\" (" + themes.join("/") + ")");
+        showToast("theme: unknown theme \"" + tname + "\" (" + THEMES.join("/") + ")");
       }
     } else if (name === "travel") {
       window.location.href = "/travel";
@@ -1201,6 +1200,7 @@ const searchIndex = allPosts.map((p) => {
   }
 
   var compData = JSON.parse(document.getElementById("completion-data").textContent);
+  var THEMES = JSON.parse(document.getElementById("theme-data").textContent);
   var argMap = {
     cat: compData.slugs, tag: compData.tags, series: compData.series,
     get: compData.scripts, cd: ["blog","tags","travel","activity","archive","dashboard","now","search","scripts","downloads","about","home"],
@@ -1208,6 +1208,7 @@ const searchIndex = allPosts.map((p) => {
     habit: ["add","rm","list","calendar"],
     mood: ["1","2","3","4","5","calendar"],
     post: ["list","rm"],
+    theme: THEMES,
     grep: null,
   };
 
@@ -1456,11 +1457,9 @@ const searchIndex = allPosts.map((p) => {
   }
 
   // Theme switcher
-  const themeSelect = document.getElementById("theme-select");
-  themeSelect.value = localStorage.getItem("theme") || "terminal";
-  themeSelect.addEventListener("change", () => {
-    const theme = themeSelect.value;
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
+  var themeSelect = document.getElementById("theme-select");
+  applyTheme(localStorage.getItem("theme") || "terminal");
+  themeSelect.addEventListener("change", function() {
+    applyTheme(themeSelect.value);
   });
 </script>
