@@ -1669,4 +1669,35 @@ const searchIndex = allPosts.map((p) => {
   themeSelect.addEventListener("change", function() {
     applyTheme(themeSelect.value);
   });
+
+  // SPA navigation — keep audio alive
+  function spaNavigate(url) {
+    history.pushState(null, "", url);
+    fetch(url).then(function(r) { return r.text(); }).then(function(html) {
+      var doc = new DOMParser().parseFromString(html, "text/html");
+      var main = doc.querySelector("main");
+      var title = doc.querySelector("title");
+      var pathEl = document.querySelector(".prompt-dir");
+      if (main) document.querySelector("main").innerHTML = main.innerHTML;
+      if (title) document.title = title.textContent;
+      if (pathEl) pathEl.textContent = "/" + (url === "/" ? "" : url.replace(/^\//, "").replace(/\/$/, ""));
+      document.querySelector(".nav a.active") && document.querySelector(".nav a.active").classList.remove("active");
+      var active = document.querySelector('.nav a[href="' + url + '"]');
+      if (active) active.classList.add("active");
+    });
+  }
+
+  document.addEventListener("click", function(e) {
+    var a = e.target.closest("a");
+    if (!a || a.hasAttribute("download") || a.getAttribute("target") === "_blank") return;
+    var href = a.getAttribute("href");
+    if (!href || href.startsWith("http") || href.startsWith("#") || href.startsWith("javascript:")) return;
+    if (a.closest("#cmd-form") || a.closest(".weather-box")) return;
+    e.preventDefault();
+    spaNavigate(href);
+  });
+
+  window.addEventListener("popstate", function() {
+    spaNavigate(window.location.pathname);
+  });
 </script>
