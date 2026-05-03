@@ -94,7 +94,10 @@ const searchIndex = allPosts.map((p) => {
       <div id="cmd-suggestions" class="cmd-suggestions"></div>
       <div id="grep-results" class="grep-results"></div>
       <div id="pomodoro-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;"></div>
-      <div id="todo-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;white-space:pre-wrap;"></div>
+      <div id="todo-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;white-space:pre-wrap;">
+        <div id="todo-head" style="display:none;cursor:pointer;color:var(--yellow);font-size:0.75rem;" onclick="var p=this.nextElementSibling;p.style.display=p.style.display=='none'?'block':'none';this.textContent=p.style.display=='none'?'[+] '+this.getAttribute('data-label'):'[-] '+this.getAttribute('data-label');this.parentElement.style.padding=p.style.display=='none'?'0.3rem 0.75rem':'0.5rem 0.75rem';this.style.marginBottom=p.style.display=='none'?'0':'0.25rem'"></div>
+        <div id="todo-body"></div>
+      </div>
       <div id="music-island" style="position:fixed;top:0.5rem;left:50%;transform:translateX(-50%);z-index:9999;background:var(--bg);border:1px solid var(--green);border-radius:20px;padding:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.75rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 0 12px rgba(51,255,51,0.15);opacity:0;pointer-events:none;transition:opacity 0.3s;cursor:pointer;">
         <span id="music-island-info" style="color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;"></span>
         <canvas id="music-spectrum" width="64" height="20" style="border-radius:4px;display:block;"></canvas>
@@ -593,19 +596,38 @@ const searchIndex = allPosts.map((p) => {
     return line;
   }
 
-  function renderTodos() {
+  function showInTodo(label, html) {
     var el = document.getElementById("todo-display");
-    if (!el || !gistData || !gistData.todos) return;
-    var collapsed = el.getAttribute("data-collapsed") === "true";
-    var html = '<div style="cursor:pointer;color:var(--yellow);font-size:0.75rem;margin-bottom:0.25rem;" onclick="var p=this.nextElementSibling;var t=this.parentElement;p.style.display=p.style.display==\'none\'?\'block\':\'none\';t.setAttribute(\'data-collapsed\',p.style.display==\'none\');this.textContent=p.style.display==\'none\'?\'[+] todos\' : \'[-] todos\'">' + (collapsed ? '[+] todos' : '[-] todos') + '</div>';
-    html += '<div' + (collapsed ? ' style="display:none"' : '') + '>';
+    var head = document.getElementById("todo-head");
+    var body = document.getElementById("todo-body");
+    if (!el || !head || !body) return;
+    head.setAttribute("data-label", label);
+    head.textContent = "[-] " + label;
+    head.style.display = "";
+    body.innerHTML = html;
+    el.style.display = "block";
+  }
+
+  function showInTodoText(label, text) {
+    var el = document.getElementById("todo-display");
+    var head = document.getElementById("todo-head");
+    var body = document.getElementById("todo-body");
+    if (!el || !head || !body) return;
+    head.setAttribute("data-label", label);
+    head.textContent = "[-] " + label;
+    head.style.display = "";
+    body.textContent = text;
+    el.style.display = "block";
+  }
+
+  function renderTodos() {
+    if (!gistData || !gistData.todos) return;
+    var html = "";
     for (var i = 0; i < gistData.todos.length; i++) {
       html += escHtml(todoLine(i + 1, gistData.todos[i]));
       if (i < gistData.todos.length - 1) html += "\n";
     }
-    html += '</div>';
-    el.innerHTML = html;
-    el.style.display = "block";
+    showInTodo("todos", html);
   }
 
   function renderTodoCalendar(year, month) {
@@ -657,8 +679,7 @@ const searchIndex = allPosts.map((p) => {
         listHtml += '<div style="padding-left:0.5rem;font-size:0.75rem;line-height:1.5;">' + (t.done ? "[x]" : "[ ]") + " " + (t.text) + '</div>';
       }
     }
-    el.innerHTML = (listHtml ? '<div style="display:flex;gap:1.5rem;align-items:flex-start;"><pre style="margin:0;background:none;border:none;padding:0;font-size:0.8125rem;white-space:pre;">' + lines.join("\n") + '</pre><div style="flex:1;min-width:0;">' + listHtml + '</div></div>' : '<pre style="margin:0;background:none;border:none;padding:0;font-size:0.8125rem;white-space:pre;">' + lines.join("\n") + '</pre>');
-    el.style.display = "block";
+    showInTodo("calendar", (listHtml ? '<div style="display:flex;gap:1.5rem;align-items:flex-start;"><pre style="margin:0;background:none;border:none;padding:0;font-size:0.8125rem;white-space:pre;">' + lines.join("\n") + '</pre><div style="flex:1;min-width:0;">' + listHtml + '</div></div>' : '<pre style="margin:0;background:none;border:none;padding:0;font-size:0.8125rem;white-space:pre;">' + lines.join("\n") + '</pre>'));
   }
 
   function renderMoodCalendar() {
@@ -685,8 +706,7 @@ const searchIndex = allPosts.map((p) => {
       if ((firstDay + d) % 7 === 0 || d === daysInMonth) { lines.push(week); week = ""; }
     }
     lines.push(" \ud83d\ude1e \ud83d\ude10 \ud83d\ude42 \ud83d\ude0a \ud83d\ude04  \u25cb today no record");
-    el.textContent = lines.join("\n");
-    el.style.display = "block";
+    showInTodoText("mood", lines.join("\n"));
   }
 
 </script>
@@ -1144,7 +1164,7 @@ const searchIndex = allPosts.map((p) => {
       if (results.length === 0) { showToast("no matches"); return; }
       var slines = [];
       for (var si = 0; si < results.length; si++) slines.push(todoLine(gistData.todos.indexOf(results[si]) + 1, results[si]));
-      var sel = document.getElementById("todo-display"); if (sel) { sel.textContent = slines.join("\n"); sel.style.display = "block"; }
+      showInTodoText("search", slines.join("\n"));
       showToast(results.length + " match" + (results.length > 1 ? "es" : ""));
     } else if (sub === "stats") {
       var todos = gistData.todos || [], archived = gistData.archived || [];
@@ -1160,7 +1180,7 @@ const searchIndex = allPosts.map((p) => {
       var tagKeys = Object.keys(byTag);
       if (tagKeys.length > 0) { var maxTag = Math.max.apply(null, tagKeys.map(function(k) { return byTag[k]; })); slines2.push(""); for (var ti = 0; ti < Math.min(tagKeys.length, 5); ti++) slines2.push(renderBar("#" + tagKeys[ti], byTag[tagKeys[ti]], maxTag)); }
       slines2.push(""); slines2.push(" archived: " + archived.length);
-      var sel2 = document.getElementById("todo-display"); if (sel2) { sel2.textContent = wrapBox(slines2, "stats").join("\n"); sel2.style.display = "block"; }
+      showInTodoText("stats", wrapBox(slines2, "stats").join("\n"));
     } else if (sub === "week") {
       var today = new Date(), dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], wlines = [];
       for (var wi = 6; wi >= 0; wi--) {
@@ -1170,7 +1190,7 @@ const searchIndex = allPosts.map((p) => {
         var pCount = (gistData.pomodoros && gistData.pomodoros[dateKey]) || 0;
         wlines.push(" " + (wi === 0 ? "\u2192" : " ") + " " + dayNames[d.getDay()] + " " + String(d.getDate()).padStart(2, " ") + "    todo:" + (tCount || "-") + "  pomo:" + (pCount || "-"));
       }
-      var wel = document.getElementById("todo-display"); if (wel) { wel.textContent = wrapBox(wlines, "week").join("\n"); wel.style.display = "block"; }
+      showInTodoText("week", wrapBox(wlines, "week").join("\n"));
     } else if (sub === "move") {
       var from = parseInt(parts[2]), to = parseInt(parts[3]);
       if (isNaN(from) || isNaN(to) || from < 1 || to < 1 || !gistData.todos || from > gistData.todos.length || to > gistData.todos.length) { showToast("Usage: todo move <from> <to>"); return; }
@@ -1220,7 +1240,7 @@ const searchIndex = allPosts.map((p) => {
       if (hkeys.length === 0) { showToast("no habits. type: habit add <name>"); return; }
       var today = new Date().toISOString().slice(0, 10), hlines = [];
       for (var hi = 0; hi < hkeys.length; hi++) hlines.push((hi + 1) + ". " + (gistData.habits[hkeys[hi]][today] ? "[x]" : "[ ]") + " " + hkeys[hi]);
-      var hel = document.getElementById("todo-display"); if (hel) { hel.textContent = hlines.join("\n"); hel.style.display = "block"; }
+            showInTodoText("habits", hlines.join("\n"));
     } else if (hsub === "add") {
       if (!hrest) { showToast("Usage: habit add <name>"); return; }
       if (gistData.habits[hrest]) { showToast("habit exists: " + hrest); return; }
@@ -1266,7 +1286,7 @@ const searchIndex = allPosts.map((p) => {
         html += '</div>';
       }
       html += '<div style="display:flex;align-items:center;gap:4px;margin-top:4px;font-size:0.65rem;color:var(--dim);">' + hname + ' <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--border);"></span> <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--green);"></span></div>';
-      hel.innerHTML = html; hel.style.display = "block";
+      showInTodo("habit calendar: " + hname, html);
     } else {
       if (gistData.habits[hsub]) {
         var today = new Date().toISOString().slice(0, 10);
@@ -1276,7 +1296,7 @@ const searchIndex = allPosts.map((p) => {
             showToast(gistData.habits[hsub][today] ? "\u2705 " + hsub : "  " + hsub);
             var hkeys = Object.keys(gistData.habits), hlines = [];
             for (var hi = 0; hi < hkeys.length; hi++) hlines.push((hi + 1) + ". " + (gistData.habits[hkeys[hi]][today] ? "[x]" : "[ ]") + " " + hkeys[hi]);
-            var hel = document.getElementById("todo-display"); if (hel) { hel.textContent = hlines.join("\n"); hel.style.display = "block"; }
+      showInTodoText("habits", hlines.join("\n"));
           } else showToast("habit: failed");
         });
       } else { showToast("habit: unknown \"" + hsub + "\" (add|list|rm|<name>)"); }
@@ -1346,8 +1366,7 @@ const searchIndex = allPosts.map((p) => {
           var s = data[i];
           lines.push((i + 1) + ". " + s.name + " - " + (s.artist || []).join(", "));
         }
-        var el = document.getElementById("todo-display");
-        if (el) { el.textContent = lines.join("\n"); el.style.display = "block"; }
+        showInTodoText("search results", lines.join("\n"));
         showToast("found " + data.length + " results — music play <n>");
       });
     } else if (sub === "play") {
