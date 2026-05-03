@@ -1676,11 +1676,13 @@ const searchIndex = allPosts.map((p) => {
     var hdgs = [];
     tLinks.forEach(function(a) { var id = a.getAttribute("href").slice(1); var e = document.getElementById(id) || document.querySelector("[id='" + id + "']"); if (e) hdgs.push({ el: e, link: a }); });
     if (hdgs.length) {
+      var hdgsAbs = hdgs.map(function(h) { return h.el.getBoundingClientRect().top + window.scrollY; });
       setInterval(function() {
         var act = null;
-        hdgs.forEach(function(h) {
-          if (h.el.getBoundingClientRect().top <= 80) act = h;
-        });
+        var sy = window.scrollY + 80;
+        for (var i = 0; i < hdgsAbs.length; i++) {
+          if (hdgsAbs[i] <= sy) act = hdgs[i];
+        }
         hdgs.forEach(function(h) {
           h.link.style.color = (h === act) ? "#33ff33" : "#666666";
           h.link.style.fontWeight = (h === act) ? "bold" : "normal";
