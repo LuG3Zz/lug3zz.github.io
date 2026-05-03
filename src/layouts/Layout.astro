@@ -1677,13 +1677,13 @@ const searchIndex = allPosts.map((p) => {
     tLinks.forEach(function(a) { var id = a.getAttribute("href").slice(1); var e = document.getElementById(id) || document.querySelector("[id='" + id + "']"); if (e) hdgs.push({ el: e, link: a }); });
     if (hdgs.length) {
       artScrollHead = function() {
-        var sy = window.scrollY + 80, act = null;
+        var act = null;
         hdgs.forEach(function(h) { if (h.el.getBoundingClientRect().top <= 80) act = h; });
         hdgs.forEach(function(h) { h.link.style.color = h === act ? "var(--green)" : "var(--dim)"; });
         if (act && act.link.closest(".toc")) act.link.scrollIntoView({ block: "nearest", behavior: "auto" });
       };
       window.addEventListener("scroll", artScrollHead);
-      artScrollHead();
+      setTimeout(artScrollHead, 100);
     }
     if (artProgEl) artProgEl.remove();
     artProgEl = document.createElement("div");
