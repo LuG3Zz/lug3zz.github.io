@@ -104,10 +104,14 @@ const searchIndex = allPosts.map((p) => {
         <div id="todo-head" style="display:none;cursor:pointer;color:var(--yellow);font-size:0.75rem;" onclick="var p=this.nextElementSibling;p.style.display=p.style.display=='none'?'block':'none';this.textContent=p.style.display=='none'?'[+] '+this.getAttribute('data-label'):'[-] '+this.getAttribute('data-label');this.parentElement.style.padding=p.style.display=='none'?'0.3rem 0.75rem':'0.5rem 0.75rem';this.style.marginBottom=p.style.display=='none'?'0':'0.25rem'"></div>
         <div id="todo-body"></div>
       </div>
-      <div id="music-island" style="position:fixed;top:0.5rem;left:50%;transform:translateX(-50%);z-index:9999;background:var(--bg);border:1px solid var(--green);border-radius:20px;padding:0.3rem 0.8rem;font-family:var(--font-mono);font-size:0.75rem;display:flex;align-items:center;gap:0.6rem;box-shadow:0 0 12px rgba(51,255,51,0.15);opacity:0;pointer-events:none;transition:opacity 0.3s;cursor:pointer;">
-        <span id="music-island-info" style="color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;"></span>
-        <canvas id="music-spectrum" width="64" height="20" style="border-radius:4px;display:block;"></canvas>
-        <span id="music-island-close" style="color:var(--dim);cursor:pointer;font-size:0.7rem;line-height:1;">✕</span>
+      <div id="music-island" style="position:fixed;top:0.5rem;left:50%;transform:translateX(-50%);z-index:9999;background:var(--bg);border:1px solid var(--green);border-radius:20px;padding:0.35rem 0.35rem 0.35rem 0.7rem;font-family:var(--font-mono);font-size:0.7rem;display:flex;align-items:center;gap:0.5rem;box-shadow:0 0 16px rgba(51,255,51,0.2),0 0 4px rgba(51,255,51,0.1);opacity:0;pointer-events:none;transition:opacity 0.3s,box-shadow 0.3s;cursor:pointer;max-width:90vw;">
+        <span id="music-island-icon" style="color:var(--green);font-size:0.85rem;flex-shrink:0;">▶</span>
+        <div style="display:flex;flex-direction:column;min-width:0;gap:1px;">
+          <span id="music-island-info" style="color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;line-height:1.3;"></span>
+          <span id="music-island-sub" style="color:var(--dim);font-size:0.6rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;line-height:1.2;"></span>
+        </div>
+        <canvas id="music-spectrum" width="56" height="18" style="border-radius:3px;display:block;flex-shrink:0;"></canvas>
+        <span id="music-island-close" style="color:var(--dim);cursor:pointer;font-size:0.65rem;line-height:1;padding:0 2px;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--dim)'">✕</span>
       </div>
 
       <nav class="nav">
