@@ -6,7 +6,7 @@ import Layout from "../../layouts/Layout.astro";
 import { readingTime } from "../../utils/readingTime";
 
 export async function getStaticPaths() {
-  const posts = await getCollection("blog");
+  const posts = (await getCollection("blog")).filter(p => !p.data.draft);
   return posts.map((post) => ({
     params: { slug: post.slug },
     props: { post },
@@ -16,7 +16,7 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content } = await post.render();
 
-const allPosts = await getCollection("blog");
+const allPosts = (await getCollection("blog")).filter(p => !p.data.draft);
 let seriesPrev, seriesNext;
 if (post.data.series) {
   const sameSeries = allPosts

@@ -12,7 +12,7 @@ import InitScripts from "../components/scripts/InitScripts.astro";
 const { title } = Astro.props;
 const path = Astro.url.pathname;
 
-const allPosts = await getCollection("blog");
+const allPosts = (await getCollection("blog")).filter(p => !p.data.draft);
 const slugs = allPosts.map(p => p.slug);
 const tags = [...new Set(allPosts.flatMap(p => p.data.tags ?? []))];
 const series = [...new Set(allPosts.map(p => p.data.series).filter(Boolean))];

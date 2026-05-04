@@ -4,7 +4,7 @@ import Layout from "../layouts/Layout.astro";
 import { readFileSync } from "fs";
 import { join } from "path";
 
-const posts = await getCollection("blog");
+const posts = (await getCollection("blog")).filter(p => !p.data.draft);
 const now = new Date();
 const year = now.getFullYear();
 

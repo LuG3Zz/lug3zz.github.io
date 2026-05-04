@@ -13,6 +13,7 @@ const blog = defineCollection({
     pinned: z.boolean().optional(),
     image: z.string().optional(),
     password: z.string().optional(),
+    draft: z.boolean().optional(),
   }),
   slug: ({ data, defaultSlug }) => data.slug || defaultSlug,
 });

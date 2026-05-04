@@ -4,7 +4,7 @@ import { join } from "path";
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 
-const posts = await getCollection("blog");
+const posts = (await getCollection("blog")).filter(p => !p.data.draft);
 const index = posts.map((p) => {
   const filePath = join(process.cwd(), "src/content/blog", p.id);
   let content = "";

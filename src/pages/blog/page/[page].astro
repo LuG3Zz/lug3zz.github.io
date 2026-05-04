@@ -6,8 +6,8 @@ import BlogPostItem from "../../../components/BlogPostItem.astro";
 
 export async function getStaticPaths() {
   const PAGE_SIZE = 5;
-  const all = await getCollection("blog");
-  const visible = all.filter(p => !p.data.password);
+  const all = (await getCollection("blog")).filter(p => !p.data.draft);
+  const visible = all.filter(p => !p.data.password && !p.data.draft);
   const sorted = visible
     .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
     .sort((a, b) => (b.data.pinned ? 1 : 0) - (a.data.pinned ? 1 : 0));
@@ -20,8 +20,8 @@ export async function getStaticPaths() {
 
 const PAGE_SIZE = 5;
 const { pageNum, totalPages } = Astro.props;
-const all = await getCollection("blog");
-const visible = all.filter(p => !p.data.password);
+const all = (await getCollection("blog")).filter(p => !p.data.draft);
+const visible = all.filter(p => !p.data.password && !p.data.draft);
 const sorted = visible
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
   .sort((a, b) => (b.data.pinned ? 1 : 0) - (a.data.pinned ? 1 : 0));

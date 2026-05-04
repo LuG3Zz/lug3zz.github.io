@@ -53,6 +53,8 @@
 - `pinned` optional boolean for pinning posts to top of listings
 - `image` optional string for cover image path
 - `password` optional string for password-protected articles (hidden from listings)
+- `draft` optional boolean — set `true` to exclude from build (not published)
+- Template at `src/content/blog/_template.md` with all fields documented
 - Dynamic listing via `getCollection("blog")` — new `.md` file auto-appears
 
 ## Deployment
