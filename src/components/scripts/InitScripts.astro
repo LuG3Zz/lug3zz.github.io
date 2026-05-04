@@ -83,7 +83,7 @@
   }
 
   // Article page setup — TOC, scroll-spy, copy button, password, progress
-  var artScrollHead = null, artProgEl = null;
+  var artObserver = null, artProgEl = null;
 
   function initArticlePage() {
     var tocB = document.getElementById("toc-toggle");
@@ -92,25 +92,51 @@
     if (tocB && tocL) {
       tocB.onclick = function() { var e = tocL.style.display !== "none"; tocL.style.display = e ? "none" : "block"; tocI.textContent = e ? "[+]" : "[-]"; };
     }
-    if (artScrollHead) window.removeEventListener("scroll", artScrollHead);
+    if (artObserver) { artObserver.disconnect(); artObserver = null; }
     var tLinks = document.querySelectorAll(".toc a, .toc-mobile a");
     tLinks.forEach(function(a) { a.onclick = function() { if (tocL && window.innerWidth < 1200) { tocL.style.display = "none"; if (tocI) tocI.textContent = "[+]"; } }; });
     var hdgs = [];
     tLinks.forEach(function(a) { var id = a.getAttribute("href").slice(1); var e = document.getElementById(id) || document.querySelector("[id='" + id + "']"); if (e) hdgs.push({ el: e, link: a }); });
     if (hdgs.length) {
-      var hdgsAbs = hdgs.map(function(h) { return h.el.getBoundingClientRect().top + window.scrollY; });
-      setInterval(function() {
-        var act = null;
-        var sy = window.scrollY + 80;
-        for (var i = 0; i < hdgsAbs.length; i++) {
-          if (hdgsAbs[i] <= sy) act = hdgs[i];
+      artObserver = new IntersectionObserver(function(entries) {
+        var actId = null;
+        var inter = [];
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].isIntersecting) inter.push(entries[i].target);
+        }
+        if (inter.length) {
+          var topY = Infinity;
+          for (var i = 0; i < inter.length; i++) {
+            var y = inter[i].getBoundingClientRect().top;
+            if (y < topY) { topY = y; actId = inter[i].id; }
+          }
+        } else {
+          var sy = window.scrollY + 80;
+          for (var i = 0; i < hdgs.length; i++) {
+            if (hdgs[i].el.getBoundingClientRect().top + window.scrollY <= sy) actId = hdgs[i].el.id;
+          }
         }
         hdgs.forEach(function(h) {
-          h.link.style.color = (h === act) ? "#33ff33" : "#666666";
-          h.link.style.fontWeight = (h === act) ? "bold" : "normal";
+          h.link.classList.toggle("toc-active", h.el.id === actId);
         });
-        if (act && act.link.closest(".toc")) act.link.scrollIntoView({ block: "nearest", behavior: "auto" });
-      }, 200);
+        if (actId) {
+          var a = document.querySelector('.toc a[href="#' + actId + '"]');
+          if (a) a.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+      }, { rootMargin: "-10% 0px -75% 0px", threshold: 0 });
+      hdgs.forEach(function(h) { artObserver.observe(h.el); });
+      // initial activation
+      setTimeout(function() {
+        var sy = window.scrollY + 80, best = null;
+        for (var i = 0; i < hdgs.length; i++) {
+          if (hdgs[i].el.getBoundingClientRect().top + window.scrollY <= sy) best = hdgs[i];
+        }
+        if (best) {
+          hdgs.forEach(function(h) {
+            h.link.classList.toggle("toc-active", h === best);
+          });
+        }
+      }, 300);
     }
     if (artProgEl) artProgEl.remove();
     artProgEl = document.createElement("div");
