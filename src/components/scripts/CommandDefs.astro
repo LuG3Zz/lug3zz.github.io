@@ -286,18 +286,26 @@
     if (!gistData.todos) gistData.todos = [];
     var sub = (parts[1] || "").toLowerCase();
     var rest = parts.slice(2).join(" ").trim();
-    if (!sub || sub === "list") { renderTodos(); if (!gistData.todos || gistData.todos.length === 0) showToast("no todos");
+    var rp = parts.slice(2);
+    if (!sub || sub === "list") {
+      var filt = null;
+      for (var fi = 2; fi < parts.length; fi++) {
+        if (parts[fi] === "--tag" && parts[fi + 1]) { if (!filt) filt = {}; filt.tag = parts[fi + 1]; fi++; }
+        else if (parts[fi] === "--priority" && parts[fi + 1]) { if (!filt) filt = {}; filt.priority = parts[fi + 1]; fi++; }
+        else if (parts[fi] === "--overdue") { if (!filt) filt = {}; filt.overdue = true; }
+      }
+      renderTodos(filt);
     } else if (sub === "add") {
       if (!rest) { showToast("Usage: todo add [--high|--low] [#tag] [--due YYYY-MM-DD] <text>"); return; }
       var parsed = parseTodoArgs(rest); if (!parsed.text) { showToast("todo add: text required"); return; }
       var maxId = gistData.todos.reduce(function(m, t) { return Math.max(m, t.id || 0); }, 0);
       gistData.todos.push({ id: maxId + 1, text: parsed.text, done: false, createdAt: Date.now(), priority: parsed.priority, tags: parsed.tags, dueDate: parsed.dueDate });
-      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("todo added: " + parsed.text); } else showToast("todo add: failed to save"); });
+      todoMutate("todo added: " + parsed.text);
     } else if (sub === "edit") {
-      var n = parseInt(parts[2]), newText = parts.slice(3).join(" ").trim();
+      var n = parseInt(parts[2]), newText = rp.slice(1).join(" ").trim();
       if (isNaN(n) || n < 1 || !gistData.todos || n > gistData.todos.length || !newText) { showToast("Usage: todo edit <number> <new text>"); return; }
       gistData.todos[n - 1].text = newText;
-      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("edited"); } else showToast("todo edit: failed"); });
+      todoMutate("edited");
     } else if (sub === "search") {
       if (!rest) { showToast("Usage: todo search <query>"); return; }
       var q = rest.toLowerCase(), results = (gistData.todos || []).filter(function(t) { return t.text.toLowerCase().includes(q); });
@@ -307,67 +315,62 @@
       showInTodoText("search", slines.join("\n"));
       showToast(results.length + " match" + (results.length > 1 ? "es" : ""));
     } else if (sub === "stats") {
-      var todos = gistData.todos || [], archived = gistData.archived || [];
-      var allDone = todos.filter(function(t) { return t.done; }).length + archived.length;
-      var total = todos.length + archived.length, pending = todos.filter(function(t) { return !t.done; });
-      var byPrio = { high: 0, medium: 0, low: 0 }; pending.forEach(function(t) { byPrio[t.priority || "medium"]++; });
-      var byTag = {}; todos.forEach(function(t) { (t.tags || []).forEach(function(tag) { byTag[tag] = (byTag[tag] || 0) + 1; }); });
-      var maxPrio = Math.max(byPrio.high, byPrio.medium, byPrio.low, 1), slines2 = [];
-      slines2.push(" total: " + total + "  done: " + allDone + "  pending: " + pending.length + "  rate: " + (total > 0 ? Math.round(allDone / total * 100) : 0) + "%");
-      slines2.push(renderBar("[H]", byPrio.high, maxPrio, pending.length));
-      slines2.push(renderBar("[M]", byPrio.medium, maxPrio, pending.length));
-      slines2.push(renderBar("[L]", byPrio.low, maxPrio, pending.length));
-      var tagKeys = Object.keys(byTag);
-      if (tagKeys.length > 0) { var maxTag = Math.max.apply(null, tagKeys.map(function(k) { return byTag[k]; })); slines2.push(""); for (var ti = 0; ti < Math.min(tagKeys.length, 5); ti++) slines2.push(renderBar("#" + tagKeys[ti], byTag[tagKeys[ti]], maxTag)); }
-      slines2.push(""); slines2.push(" archived: " + archived.length);
+      var st = getTodoStats();
+      var maxPrio = Math.max(st.byPrio.high, st.byPrio.medium, st.byPrio.low, 1);
+      var slines2 = [];
+      slines2.push(" total: " + st.total + "  done: " + st.totalDone + "  pending: " + st.pending + "  rate: " + (st.total > 0 ? Math.round(st.totalDone / st.total * 100) : 0) + "%");
+      slines2.push(renderBar("[H]", st.byPrio.high, maxPrio, st.pending));
+      slines2.push(renderBar("[M]", st.byPrio.medium, maxPrio, st.pending));
+      slines2.push(renderBar("[L]", st.byPrio.low, maxPrio, st.pending));
+      var tagKeys = Object.keys(st.byTag);
+      if (tagKeys.length > 0) { var maxTag = Math.max.apply(null, tagKeys.map(function(k) { return st.byTag[k]; })); slines2.push(""); for (var ti = 0; ti < Math.min(tagKeys.length, 5); ti++) slines2.push(renderBar("#" + tagKeys[ti], st.byTag[tagKeys[ti]], maxTag)); }
+      slines2.push(""); slines2.push(" archived: " + st.archived);
+      if (!st.noDue) slines2.push(" overdue: " + st.todos.filter(function(t) { return !t.done && t.dueDate && t.dueDate < new Date().toISOString().slice(0, 10); }).length);
       showInTodoText("stats", wrapBox(slines2, "stats").join("\n"));
+    } else if (sub === "overdue") {
+      renderTodos({ overdue: true });
+      var ovCount = (gistData.todos || []).filter(function(t) { return !t.done && t.dueDate && t.dueDate < new Date().toISOString().slice(0, 10); }).length;
+      showToast(ovCount + " overdue");
     } else if (sub === "week") {
-      var today = new Date(), dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], wlines = [];
-      for (var wi = 6; wi >= 0; wi--) {
-        var d = new Date(today); d.setDate(d.getDate() - wi);
-        var dateKey = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-        var tCount = 0; if (gistData.todos) for (var tj = 0; tj < gistData.todos.length; tj++) { var t = gistData.todos[tj]; if (t.createdAt) { var cd = new Date(t.createdAt); if (cd.getFullYear() === d.getFullYear() && cd.getMonth() === d.getMonth() && cd.getDate() === d.getDate()) tCount++; } }
-        var pCount = (gistData.pomodoros && gistData.pomodoros[dateKey]) || 0;
-        wlines.push(" " + (wi === 0 ? "\u2192" : " ") + " " + dayNames[d.getDay()] + " " + String(d.getDate()).padStart(2, " ") + "    todo:" + (tCount || "-") + "  pomo:" + (pCount || "-"));
-      }
-      showInTodoText("week", wrapBox(wlines, "week").join("\n"));
+      showInTodoText("week", wrapBox(getTodoWeek(), "week").join("\n"));
     } else if (sub === "move") {
       var from = parseInt(parts[2]), to = parseInt(parts[3]);
       if (isNaN(from) || isNaN(to) || from < 1 || to < 1 || !gistData.todos || from > gistData.todos.length || to > gistData.todos.length) { showToast("Usage: todo move <from> <to>"); return; }
       var item = gistData.todos.splice(from - 1, 1)[0]; gistData.todos.splice(to - 1, 0, item);
-      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("moved " + from + " \u2192 " + to); } else showToast("todo move: failed"); });
+      todoMutate("moved " + from + " \u2192 " + to);
     } else if (sub === "archive") {
       var doneTodos = (gistData.todos || []).filter(function(t) { return t.done; });
       if (doneTodos.length === 0) { showToast("no done todos to archive"); return; }
       if (!gistData.archived) gistData.archived = [];
       doneTodos.forEach(function(t) { t.completedAt = t.completedAt || Date.now(); });
       gistData.archived = gistData.archived.concat(doneTodos); gistData.todos = gistData.todos.filter(function(t) { return !t.done; });
-      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("archived " + doneTodos.length + " todos"); } else showToast("archive: failed"); });
+      todoMutate("archived " + doneTodos.length + " todos");
     } else if (sub === "done") {
-      if (rest === "all") { (gistData.todos || []).forEach(function(t) { t.done = true; }); saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("all done"); } else showToast("todo: failed to save"); }); return; }
+      if (rest === "all") { (gistData.todos || []).forEach(function(t) { t.done = true; }); todoMutate("all done"); return; }
       var n = parseInt(rest);
       if (isNaN(n) || n < 1 || !gistData.todos || n > gistData.todos.length) { showToast("Usage: todo done <number|all>"); return; }
       gistData.todos[n - 1].done = true; gistData.todos[n - 1].completedAt = Date.now();
-      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("done: " + n); } else showToast("todo: failed to save"); });
+      todoMutate("done: " + n);
     } else if (sub === "undo") {
       var n = parseInt(rest);
       if (isNaN(n) || n < 1 || !gistData.todos || n > gistData.todos.length) { showToast("Usage: todo undo <number>"); return; }
       gistData.todos[n - 1].done = false; delete gistData.todos[n - 1].completedAt;
-      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("undone: " + n); } else showToast("todo: failed to save"); });
+      todoMutate("undone: " + n);
     } else if (sub === "rm") {
       var n = parseInt(rest);
       if (isNaN(n) || n < 1 || !gistData.todos || n > gistData.todos.length) { showToast("Usage: todo rm <number>"); return; }
       var removed = gistData.todos.splice(n - 1, 1)[0];
-      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("removed: " + removed.text); } else showToast("todo rm: failed to save"); });
+      todoMutate("removed: " + removed.text);
     } else if (sub === "clear") {
-      if (!gistData.todos) { showToast("no todos to clear"); return; }
+      if (!gistData.todos || (gistData.todos.filter(function(t) { return t.done; }).length === 0)) { showToast("no done todos to clear"); return; }
+      var cleared = gistData.todos.filter(function(t) { return t.done; }).length;
       gistData.todos = gistData.todos.filter(function(t) { return !t.done; });
-      saveGist(gistData).then(function(ok) { if (ok) { renderTodos(); showToast("cleared done"); } else showToast("todo clear: failed to save"); });
+      todoMutate("cleared " + cleared + " done");
     } else if (sub === "calendar") {
       var calYear = parseInt(parts[2]) || new Date().getFullYear();
       var calMonth = parts[2] && parts[3] ? parseInt(parts[3]) - 1 : new Date().getMonth();
       renderTodoCalendar(calYear, calMonth);
-    } else { showToast("todo: add|edit|search|stats|week|move|archive|done|undo|rm|clear|calendar|list"); }
+    } else { showToast("todo: add|edit|search|stats|week|move|archive|done|undo|rm|clear|overdue|calendar|list [--tag #|--priority high|--overdue]"); }
   };
 
   commands.habit = function(parts) {
@@ -581,7 +584,7 @@
   var argMap = {
     cat: compData.slugs, tag: compData.tags, series: compData.series,
     get: compData.scripts, cd: ["blog","tags","travel","activity","archive","dashboard","now","search","scripts","downloads","about","home"],
-    todo: ["add","edit","search","stats","week","move","archive","done","undo","rm","clear","calendar","list"],
+    todo: ["add","edit","search","stats","week","move","archive","done","undo","rm","clear","overdue","calendar","list"],
     habit: ["add","rm","list","calendar"],
     mood: ["1","2","3","4","5","calendar"],
     post: ["list","rm"],

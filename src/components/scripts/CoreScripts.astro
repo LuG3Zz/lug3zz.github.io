@@ -251,7 +251,10 @@
     if (t.priority === "high") line += " \u26a0";
     if (t.priority === "low") line += " \u2193";
     if (t.tags && t.tags.length) line += " #" + t.tags.join(" #");
-    if (t.dueDate) line += " (\u23f0 " + t.dueDate + ")";
+    if (t.dueDate) {
+      var overdue = !t.done && t.dueDate < new Date().toISOString().slice(0, 10);
+      line += " (" + (overdue ? "\u23f0" : "\ud83d\udcc5") + " " + t.dueDate + (overdue ? " OVERDUE" : "") + ")";
+    }
     return line;
   }
 
@@ -279,14 +282,72 @@
     el.style.display = "block";
   }
 
-  function renderTodos() {
+  function renderTodos(filter) {
     if (!gistData || !gistData.todos) return;
-    var html = "";
-    for (var i = 0; i < gistData.todos.length; i++) {
-      html += escHtml(todoLine(i + 1, gistData.todos[i]));
-      if (i < gistData.todos.length - 1) html += "\n";
+    var todos = gistData.todos;
+    var indices = [];
+    for (var i = 0; i < todos.length; i++) {
+      var t = todos[i];
+      if (filter) {
+        if (filter.tag && (t.tags || []).indexOf(filter.tag) === -1) continue;
+        if (filter.priority && t.priority !== filter.priority) continue;
+        if (filter.overdue) {
+          if (t.done || !t.dueDate || t.dueDate >= new Date().toISOString().slice(0, 10)) continue;
+        }
+      }
+      indices.push(i);
     }
-    showInTodo("todos", html);
+    var html = "";
+    for (var di = 0; di < indices.length; di++) {
+      var idx = indices[di];
+      html += escHtml(todoLine(idx + 1, todos[idx]));
+      if (di < indices.length - 1) html += "\n";
+    }
+    var label = "todos";
+    if (filter) {
+      var parts = [];
+      if (filter.tag) parts.push("#" + filter.tag);
+      if (filter.priority) parts.push(filter.priority);
+      if (filter.overdue) parts.push("overdue");
+      if (parts.length) label += " (" + parts.join(", ") + ")";
+    }
+    if (indices.length === 0 && !filter) label += " (empty)";
+    showInTodo(label, html || "(no matches)");
+  }
+
+  function todoMutate(okMsg) {
+    return saveGist(gistData).then(function(ok) {
+      if (ok) { renderTodos(); showToast(okMsg); }
+      else showToast("save failed");
+      return ok;
+    });
+  }
+
+  function getTodoStats() {
+    var todos = gistData.todos || [], archived = gistData.archived || [];
+    var done = todos.filter(function(t) { return t.done; }).length;
+    var pending = todos.filter(function(t) { return !t.done; });
+    var totalDone = done + archived.length;
+    var total = todos.length + archived.length;
+    var byPrio = { high: 0, medium: 0, low: 0 };
+    pending.forEach(function(t) { byPrio[t.priority || "medium"]++; });
+    var byTag = {};
+    todos.forEach(function(t) { (t.tags || []).forEach(function(tag) { byTag[tag] = (byTag[tag] || 0) + 1; }); });
+    var noDue = !todos.some(function(t) { return !t.done && t.dueDate; });
+    return { total: total, totalDone: totalDone, done: done, pending: pending.length, byPrio: byPrio, byTag: byTag, archived: archived.length, noDue: noDue, todos: todos };
+  }
+
+  function getTodoWeek() {
+    var today = new Date(), dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], wlines = [];
+    for (var wi = 6; wi >= 0; wi--) {
+      var d = new Date(today); d.setDate(d.getDate() - wi);
+      var dateKey = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      var tCount = 0;
+      if (gistData.todos) for (var tj = 0; tj < gistData.todos.length; tj++) { var td = gistData.todos[tj]; if (td.createdAt) { var cd = new Date(td.createdAt); if (cd.getFullYear() === d.getFullYear() && cd.getMonth() === d.getMonth() && cd.getDate() === d.getDate()) tCount++; } }
+      var pCount = (gistData.pomodoros && gistData.pomodoros[dateKey]) || 0;
+      wlines.push(" " + (wi === 0 ? "\u2192" : " ") + " " + dayNames[d.getDay()] + " " + String(d.getDate()).padStart(2, " ") + "    todo:" + (tCount || "-") + "  pomo:" + (pCount || "-"));
+    }
+    return wlines;
   }
 
   function renderTodoCalendar(year, month) {
