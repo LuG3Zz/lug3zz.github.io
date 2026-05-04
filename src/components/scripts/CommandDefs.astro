@@ -6,17 +6,17 @@
     var slug = parts.slice(1).join(" ");
     if (!slug) { showToast("Usage: cat <slug>"); return; }
     if (slug.includes("/")) { showToast("cat: " + slug + ": No such file"); return; }
-    window.location.href = "/blog/" + slug;
+    spaNavigate("/blog/" + slug);
   };
 
-  commands.activity = function(parts) { window.location.href = "/activity"; };
-  commands.archive = function(parts) { window.location.href = "/archive"; };
-  commands.travel = function(parts) { window.location.href = "/travel"; };
-  commands.downloads = function(parts) { window.location.href = "/downloads"; };
-  commands.scripts = function(parts) { window.location.href = "/scripts"; };
-  commands.ls = function(parts) { window.location.href = "/blog"; };
-  commands.whoami = function(parts) { window.location.href = "/about"; };
-  commands.dashboard = function(parts) { window.location.href = "/dashboard"; };
+  commands.activity = function(parts) { spaNavigate("/activity"); };
+  commands.archive = function(parts) { spaNavigate("/archive"); };
+  commands.travel = function(parts) { spaNavigate("/travel"); };
+  commands.downloads = function(parts) { spaNavigate("/downloads"); };
+  commands.scripts = function(parts) { spaNavigate("/scripts"); };
+  commands.ls = function(parts) { spaNavigate("/blog"); };
+  commands.whoami = function(parts) { spaNavigate("/about"); };
+  commands.dashboard = function(parts) { spaNavigate("/dashboard"); };
 
   commands.weather = function(parts) {
     var city = parts.slice(1).join(" ");
@@ -44,8 +44,8 @@
 
   commands.get = function(parts) {
     var script = parts.slice(1).join(" ");
-    if (!script) { window.location.href = "/scripts"; return; }
-    window.location.href = "/scripts/" + script;
+    if (!script) { spaNavigate("/scripts"); return; }
+    spaNavigate("/scripts/" + script);
   };
 
   commands.help = function(parts) { showToast("cat | cd | tag | grep | series | theme | login | todo | pomo | clear"); };
@@ -64,14 +64,14 @@
 
   commands.series = function(parts) {
     var series = parts.slice(1).join(" ");
-    if (!series) { window.location.href = "/series"; return; }
-    window.location.href = "/series/" + series;
+    if (!series) { spaNavigate("/series"); return; }
+    spaNavigate("/series/" + series);
   };
 
   commands.tag = function(parts) {
     var tag = parts.slice(1).join(" ");
-    if (!tag) { window.location.href = "/tags"; return; }
-    window.location.href = "/tags/" + tag;
+    if (!tag) { spaNavigate("/tags"); return; }
+    spaNavigate("/tags/" + tag);
   };
 
   commands.cd = function(parts) {
@@ -89,7 +89,7 @@
     }
     path = path.replace(/\/$/, "") || "/";
     var valid = knownPaths.indexOf(path) !== -1 || knownPrefixes.some(function(p) { return path.startsWith(p); });
-    if (valid) { window.location.href = path; }
+    if (valid) { spaNavigate(path); }
     else { showToast("cd: " + path + ": No such directory"); }
   };
 
@@ -187,7 +187,7 @@
 
   commands.rand = function(parts) {
     var slugs = JSON.parse(document.getElementById("completion-data").textContent).slugs;
-    if (slugs.length > 0) window.location.href = "/blog/" + slugs[Math.floor(Math.random() * slugs.length)];
+    if (slugs.length > 0) spaNavigate("/blog/" + slugs[Math.floor(Math.random() * slugs.length)]);
   };
 
   commands.pomodoro = commands.pomo = function(parts) {
