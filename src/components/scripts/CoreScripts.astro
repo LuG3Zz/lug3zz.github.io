@@ -315,12 +315,39 @@
     showInTodo(label, html || "(no matches)");
   }
 
-  function todoMutate(okMsg) {
+  function gistMutate(okMsg, afterSave) {
     return saveGist(gistData).then(function(ok) {
-      if (ok) { renderTodos(); showToast(okMsg); }
+      if (ok) showToast(okMsg);
       else showToast("save failed");
+      if (afterSave) afterSave();
       return ok;
     });
+  }
+
+  function todoMutate(okMsg) {
+    return gistMutate(okMsg, renderTodos);
+  }
+
+  function renderHabitList() {
+    if (!gistData || !gistData.habits) return;
+    var hkeys = Object.keys(gistData.habits);
+    if (hkeys.length === 0) { showToast("no habits. type: habit add <name>"); return; }
+    var today = new Date().toISOString().slice(0, 10), hlines = [];
+    for (var hi = 0; hi < hkeys.length; hi++) hlines.push((hi + 1) + ". " + (gistData.habits[hkeys[hi]][today] ? "[x]" : "[ ]") + " " + hkeys[hi]);
+    showInTodoText("habits", hlines.join("\n"));
+  }
+
+  function renderPostList() {
+    if (!gistData || !gistData.posts || gistData.posts.length === 0) { showToast("no posts yet. type: post <text>"); return; }
+    var lines = [];
+    for (var pi = 0; pi < Math.min(gistData.posts.length, 10); pi++) {
+      var idx = gistData.posts.length - 1 - pi;
+      var p = gistData.posts[idx];
+      var d = new Date(p.createdAt);
+      lines.push((pi + 1) + ". [" + d.toISOString().slice(0, 10) + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + "] " + p.text);
+    }
+    showInTodoText("posts", lines.join("\n"));
+    showToast("showing " + Math.min(gistData.posts.length, 10) + "/" + gistData.posts.length + " posts");
   }
 
   function getTodoStats() {

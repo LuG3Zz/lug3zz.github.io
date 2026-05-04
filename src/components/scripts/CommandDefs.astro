@@ -379,20 +379,16 @@
     if (!gistData.habits || Array.isArray(gistData.habits)) gistData.habits = {};
     var hsub = (parts[1] || "").toLowerCase(), hrest = parts.slice(2).join(" ").trim();
     if (!hsub || hsub === "list") {
-      var hkeys = Object.keys(gistData.habits);
-      if (hkeys.length === 0) { showToast("no habits. type: habit add <name>"); return; }
-      var today = new Date().toISOString().slice(0, 10), hlines = [];
-      for (var hi = 0; hi < hkeys.length; hi++) hlines.push((hi + 1) + ". " + (gistData.habits[hkeys[hi]][today] ? "[x]" : "[ ]") + " " + hkeys[hi]);
-            showInTodoText("habits", hlines.join("\n"));
+      renderHabitList();
     } else if (hsub === "add") {
       if (!hrest) { showToast("Usage: habit add <name>"); return; }
       if (gistData.habits[hrest]) { showToast("habit exists: " + hrest); return; }
       gistData.habits[hrest] = {};
-      saveGist(gistData).then(function(ok) { if (ok) showToast("habit added: " + hrest); else showToast("habit add: failed"); });
+      gistMutate("habit added: " + hrest);
     } else if (hsub === "rm") {
       if (!hrest || !gistData.habits[hrest]) { showToast("Usage: habit rm <name>"); return; }
       delete gistData.habits[hrest];
-      saveGist(gistData).then(function(ok) { if (ok) showToast("removed: " + hrest); else showToast("habit rm: failed"); });
+      gistMutate("removed: " + hrest);
     } else if (hsub === "calendar") {
       var hname = parts[2];
       if (!hname) { showToast("Usage: habit calendar <name>"); return; }
@@ -434,14 +430,7 @@
       if (gistData.habits[hsub]) {
         var today = new Date().toISOString().slice(0, 10);
         gistData.habits[hsub][today] = !gistData.habits[hsub][today];
-        saveGist(gistData).then(function(ok) {
-          if (ok) {
-            showToast(gistData.habits[hsub][today] ? "\u2705 " + hsub : "  " + hsub);
-            var hkeys = Object.keys(gistData.habits), hlines = [];
-            for (var hi = 0; hi < hkeys.length; hi++) hlines.push((hi + 1) + ". " + (gistData.habits[hkeys[hi]][today] ? "[x]" : "[ ]") + " " + hkeys[hi]);
-      showInTodoText("habits", hlines.join("\n"));
-          } else showToast("habit: failed");
-        });
+        gistMutate(gistData.habits[hsub][today] ? "\u2705 " + hsub : "  " + hsub, renderHabitList);
       } else { showToast("habit: unknown \"" + hsub + "\" (add|list|rm|<name>)"); }
     }
   };
@@ -455,7 +444,7 @@
     else if (!isNaN(val) && val >= 1 && val <= 5) {
       var today = new Date().toISOString().slice(0, 10);
       gistData.moods[today] = val;
-      saveGist(gistData).then(function(ok) { if (ok) showToast("mood: " + "\ud83d\ude1e\ud83d\ude10\ud83d\ude42\ud83d\ude0a\ud83d\ude04".slice((val - 1) * 2, val * 2)); else showToast("mood: failed"); });
+      gistMutate("mood: " + "\ud83d\ude1e\ud83d\ude10\ud83d\ude42\ud83d\ude0a\ud83d\ude04".slice((val - 1) * 2, val * 2));
     } else {
       var today = new Date().toISOString().slice(0, 10);
       var m = gistData.moods[today];
@@ -471,29 +460,19 @@
     var sub = (parts[1] || "").toLowerCase();
     var rest = parts.slice(2).join(" ").trim();
     if (sub === "list" || !sub) {
-      if (gistData.posts.length === 0) { showToast("no posts yet. type: post <text>"); return; }
-      var lines = [];
-      for (var pi = 0; pi < Math.min(gistData.posts.length, 10); pi++) {
-        var idx = gistData.posts.length - 1 - pi;
-        var p = gistData.posts[idx];
-        var d = new Date(p.createdAt);
-        lines.push((pi + 1) + ". [" + d.toISOString().slice(0, 10) + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + "] " + p.text);
-      }
-      var el = document.getElementById("todo-display");
-      if (el) { el.textContent = lines.join("\n"); el.style.display = "block"; }
-      showToast("showing " + Math.min(gistData.posts.length, 10) + "/" + gistData.posts.length + " posts");
+      renderPostList();
     } else if (sub === "rm") {
       var n = parseInt(rest);
       if (isNaN(n) || n < 1 || n > gistData.posts.length) { showToast("Usage: post rm <number>"); return; }
       var idx = gistData.posts.length - n;
       var removed = gistData.posts.splice(idx, 1)[0];
-      saveGist(gistData).then(function(ok) { if (ok) showToast("removed post: " + removed.text.slice(0, 30)); else showToast("post rm: failed"); });
+      gistMutate("removed post: " + removed.text.slice(0, 30));
     } else {
       var text = (sub === "add" ? rest : parts.slice(1).join(" ").trim());
       if (!text) { showToast("Usage: post <text> or post list"); return; }
       var maxId = gistData.posts.reduce(function(m, p) { return Math.max(m, p.id || 0); }, 0);
       gistData.posts.push({ id: maxId + 1, text: text, createdAt: Date.now() });
-      saveGist(gistData).then(function(ok) { if (ok) showToast("post added"); else showToast("post: failed"); });
+      gistMutate("post added");
     }
   };
 
