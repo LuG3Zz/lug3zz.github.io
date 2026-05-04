@@ -24,6 +24,8 @@
     } catch(e) {}
   }
 
+  var musicMarqueeAnims = {};
+
   function musicShowIsland(song) {
     var el = document.getElementById("music-island");
     var info = document.getElementById("music-island-info");
@@ -36,7 +38,46 @@
       el.style.opacity = "1";
       el.style.pointerEvents = "auto";
       el.style.boxShadow = "0 0 20px rgba(51,255,51,0.3),0 0 6px rgba(51,255,51,0.15)";
+      requestAnimationFrame(function() {
+        musicCheckMarquee(info, "info");
+        if (sub) musicCheckMarquee(sub, "sub");
+      });
     }
+  }
+
+  function musicCheckMarquee(span, key) {
+    var parent = span.parentElement;
+    if (!parent) return;
+    if (musicMarqueeAnims[key]) { cancelAnimationFrame(musicMarqueeAnims[key]); musicMarqueeAnims[key] = null; }
+    span.style.transform = "translateX(0)";
+    var ow = span.scrollWidth, pw = parent.clientWidth;
+    if (ow <= pw) return;
+    var start = 0, dir = -1, speed = 0.4;
+    function step() {
+      start += dir * speed;
+      if (start < pw - ow) { start = pw - ow; dir = 1; }
+      if (start > 0) { start = 0; dir = -1; }
+      span.style.transform = "translateX(" + start + "px)";
+      musicMarqueeAnims[key] = requestAnimationFrame(step);
+    }
+    musicMarqueeAnims[key] = requestAnimationFrame(step);
+  }
+
+  function musicHideIsland() {
+    var el = document.getElementById("music-island");
+    if (el) {
+      el.style.opacity = "0";
+      el.style.pointerEvents = "none";
+      el.style.boxShadow = "0 0 16px rgba(51,255,51,0.2),0 0 4px rgba(51,255,51,0.1)";
+    }
+    musicStopSpectrum();
+    musicSaveSession();
+    if (musicMarqueeAnims.info) { cancelAnimationFrame(musicMarqueeAnims.info); musicMarqueeAnims.info = null; }
+    if (musicMarqueeAnims.sub) { cancelAnimationFrame(musicMarqueeAnims.sub); musicMarqueeAnims.sub = null; }
+    var info = document.getElementById("music-island-info");
+    var sub = document.getElementById("music-island-sub");
+    if (info) info.style.transform = "";
+    if (sub) sub.style.transform = "";
   }
 
   function musicHideIsland() {
