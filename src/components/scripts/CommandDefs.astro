@@ -29,6 +29,12 @@
         renderProfile();
         showToast("avatar updated");
       });
+    } else if (sub === "bio") {
+      var text = parts.slice(2).join(" ");
+      if (!text) { showToast("Usage: profile bio <text>"); return; }
+      localStorage.setItem("profile-bio", text);
+      renderProfile();
+      showToast("bio updated");
     } else {
       togglePanel("right");
       showToast("profile " + (document.getElementById("info-right")?.classList.contains("visible") ? "shown" : "hidden"));
@@ -600,7 +606,7 @@
     mood: ["1","2","3","4","5","calendar"],
     post: ["list","rm"],
     music: ["search","play","next","prev","stop","pause","list","vol","now","loop","shuffle","seek"],
-    profile: ["avatar"],
+    profile: ["avatar", "bio"],
     theme: THEMES,
     grep: null,
   };
