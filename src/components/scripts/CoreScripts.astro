@@ -111,7 +111,7 @@
 
   function updatePrompt() {
     var el = document.getElementById("prompt-user");
-    if (el) el.textContent = localStorage.getItem("logged-in") === "true" ? "root" : "guest";
+    if (el) el.textContent = localStorage.getItem("logged-in") === "true" ? (localStorage.getItem("gist-user") || "root") : "guest";
   }
 
   // ─── Crypto ────────────────────────────────
@@ -564,7 +564,7 @@
 
   function renderUserProfile() {
     var avatar = localStorage.getItem("avatar-ascii") || defaultAsciiAvatar("user");
-    var username = localStorage.getItem("gist-key") || "user";
+    var username = localStorage.getItem("gist-user") || "user";
     var html = '<pre style="font-size:0.6rem;line-height:1.1;color:var(--cyan);margin:0 0 0.5rem 0;">' + escHtml(avatar) + '</pre>';
     html += '<div style="border-top:1px dashed var(--border);margin:0.5rem 0;"></div>';
     html += '<div style="font-size:0.75rem;line-height:1.8;">';

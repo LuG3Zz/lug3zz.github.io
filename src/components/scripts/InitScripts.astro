@@ -89,6 +89,13 @@
     var tocB = document.getElementById("toc-toggle");
     var tocL = document.getElementById("toc-list");
     var tocI = document.getElementById("toc-indicator");
+    // Hide left panel on article pages
+    if (tocB || tocL) {
+      var leftPanel = document.getElementById("info-left");
+      var leftResizer = document.getElementById("left-resizer");
+      if (leftPanel && leftPanel.style.display !== "none") leftPanel.style.display = "none";
+      if (leftResizer && leftResizer.style.display !== "none") leftResizer.style.display = "none";
+    }
     if (tocB && tocL) {
       tocB.onclick = function() { var e = tocL.style.display !== "none"; tocL.style.display = e ? "none" : "block"; tocI.textContent = e ? "[+]" : "[-]"; };
     }

@@ -281,6 +281,7 @@
             var decPat = xorDecrypt(gistData.encryptedPat, hash);
             localStorage.setItem("gist-pat", decPat);
           }
+          localStorage.setItem("gist-user", username);
           updatePrompt(); renderTodos(); renderProfile();
           showToast("login: welcome, " + username);
         });
