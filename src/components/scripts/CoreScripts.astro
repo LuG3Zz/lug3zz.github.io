@@ -365,11 +365,11 @@
     var visible = panel.classList.contains("visible");
     if (visible) {
       panel.classList.remove("visible");
-      toggle.textContent = side === "left" ? "\u25b6" : "\u25c0";
+    toggle.textContent = side === "left" ? "\u25b6" : "\u25c0";
       if (resizer) resizer.style.display = "none";
     } else {
       panel.classList.add("visible");
-      toggle.textContent = side === "left" ? "\u25c0" : "\u25b6";
+      toggle.textContent = side === "left" ? "\u25b6" : "\u25c0";
       if (resizer) resizer.style.display = "block";
       alignSidebars();
     }
