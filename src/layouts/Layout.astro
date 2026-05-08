@@ -66,12 +66,14 @@ const searchIndex = allPosts.map((p) => {
 <body>
   <div id="info-left" class="sidebar-panel sidebar-left">
     <div id="info-left-content" class="sidebar-content" style="width:260px;padding:2rem 0 2rem 1.5rem;">
+      <div id="panel-left-head" style="cursor:pointer;color:var(--yellow);font-size:0.75rem;margin-bottom:0.25rem;" onclick="togglePanel('left')">[&lt;]</div>
       <div id="todo-head" style="display:none;cursor:pointer;color:var(--yellow);font-size:0.75rem;" onclick="var p=document.getElementById('todo-body');p.style.display=p.style.display=='none'?'block':'none';this.textContent=p.style.display=='none'?'[+] '+this.getAttribute('data-label'):'[-] '+this.getAttribute('data-label');this.parentElement.style.padding=p.style.display=='none'?'0.3rem 0.75rem':'0.5rem 0.75rem';this.style.marginBottom=p.style.display=='none'?'0':'0.25rem'"></div>
       <div id="todo-body" style="white-space:pre-wrap;"></div>
     </div>
   </div>
   <div id="info-right" class="sidebar-panel sidebar-right">
     <div id="info-right-content" class="sidebar-content" style="width:240px;padding:2rem 1.5rem 2rem 0;">
+      <div style="cursor:pointer;color:var(--yellow);font-size:0.75rem;margin-bottom:0.5rem;" onclick="togglePanel('right')">[&gt;] profile</div>
       <div id="profile-content" style="font-family:var(--font-mono);font-size:0.8125rem;"></div>
     </div>
   </div>
