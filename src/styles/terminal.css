@@ -463,43 +463,27 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
   .back-to-top { width: 2rem; height: 2rem; font-size: 1rem; bottom: 0.75rem; right: 0.75rem; }
 }
 
-/* ─── Sidebar panels (fixed, slide in/out) ─────── */
+/* ─── Sidebar panels (fixed) ─────────────────── */
 .sidebar-panel {
   position: fixed;
   z-index: 100;
   display: flex;
-  transition: transform 0.25s ease;
-  pointer-events: none;
+  visibility: hidden;
+  overflow: hidden;
 }
 .sidebar-panel.visible {
-  pointer-events: auto;
+  visibility: visible;
 }
 .sidebar-left {
   left: 0;
-  transform: translateX(-100%);
-}
-.sidebar-left.visible {
-  transform: translateX(0);
 }
 .sidebar-right {
   right: 0;
-  transform: translateX(100%);
-}
-.sidebar-right.visible {
-  transform: translateX(0);
 }
 .sidebar-content {
-  overflow: auto;
+  overflow-y: auto;
   flex-shrink: 0;
-}
-.sidebar-resizer {
-  width: 4px;
-  cursor: col-resize;
-  background: var(--border);
-  flex-shrink: 0;
-}
-.sidebar-resizer:hover {
-  background: var(--cyan);
+  height: 100%;
 }
 
 /* ─── Sidebar toggle tabs ──────────────────── */
@@ -513,11 +497,11 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
   font-size: 0.65rem;
   color: var(--dim);
   user-select: none;
-  display: none;
+  visibility: hidden;
   line-height: 1;
 }
 .sidebar-toggle.active {
-  display: block;
+  visibility: visible;
 }
 .sidebar-toggle-left {
   left: 0;

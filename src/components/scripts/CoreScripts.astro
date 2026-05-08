@@ -360,19 +360,28 @@
   function togglePanel(side) {
     var panel = document.getElementById("info-" + side);
     var toggle = document.getElementById(side + "-toggle");
-    var resizer = document.getElementById(side + "-resizer");
     if (!panel || !toggle) return;
     var visible = panel.classList.contains("visible");
     if (visible) {
       panel.classList.remove("visible");
-    toggle.textContent = side === "left" ? "\u25b6" : "\u25c0";
-      if (resizer) resizer.style.display = "none";
+      toggle.textContent = side === "left" ? "\u25b6" : "\u25c0";
     } else {
       panel.classList.add("visible");
       toggle.textContent = side === "left" ? "\u25b6" : "\u25c0";
-      if (resizer) resizer.style.display = "block";
       alignSidebars();
     }
+  }
+
+  function expandPanel(side) {
+    var panel = document.getElementById("info-" + side);
+    var toggle = document.getElementById(side + "-toggle");
+    if (!panel || !toggle) return;
+    if (panel.classList.contains("visible")) return;
+    panel.classList.add("visible");
+    toggle.textContent = side === "left" ? "\u25b6" : "\u25c0";
+    toggle.classList.add("active");
+    alignSidebars();
+  }
   }
 
   function expandPanel(side) {
@@ -589,42 +598,12 @@
     document.getElementById("profile-content").innerHTML = html;
   }
 
-  // ─── Resizer ──────────────────────────────
-  function initInfoResizer() {
-    function makeResizer(resizerId, panelId) {
-      var resizer = document.getElementById(resizerId);
-      var panel = document.getElementById(panelId);
-      if (!resizer || !panel) return;
-      resizer.addEventListener("mousedown", function(e) {
-        e.preventDefault();
-        document.body.classList.add("resizing");
-        var startX = e.clientX, startW = panel.offsetWidth;
-        function onMove(e2) {
-          var dx = e2.clientX - startX;
-          var newW;
-          if (panelId === "info-left-content") newW = startW + dx;
-          else newW = startW - dx;
-          panel.style.width = Math.max(160, Math.min(400, newW)) + "px";
-        }
-        function onUp() {
-          document.removeEventListener("mousemove", onMove);
-          document.removeEventListener("mouseup", onUp);
-          document.body.classList.remove("resizing");
-        }
-        document.addEventListener("mousemove", onMove);
-        document.addEventListener("mouseup", onUp);
-      });
-    }
-    makeResizer("left-resizer", "info-left-content");
-    makeResizer("right-resizer", "info-right-content");
-  }
-
   // ─── Sidebar alignment ────────────────────
   function alignSidebars() {
     var nav = document.querySelector('.nav');
     if (!nav) return;
     var navBottom = nav.getBoundingClientRect().bottom;
-    ["info-left","left-resizer","info-right","right-resizer","left-toggle","right-toggle"].forEach(function(id) {
+    ["info-left","info-right","left-toggle","right-toggle"].forEach(function(id) {
       var el = document.getElementById(id);
       if (el && el.style.display !== "none") {
         el.style.top = navBottom + "px";
