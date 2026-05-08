@@ -18,6 +18,23 @@
   commands.whoami = function(parts) { spaNavigate("/about"); };
   commands.dashboard = function(parts) { spaNavigate("/dashboard"); };
 
+  commands.profile = function(parts) {
+    var sub = (parts[1] || "").toLowerCase();
+    if (sub === "avatar") {
+      var url = parts[2];
+      if (!url) { showToast("Usage: profile avatar <imgUrl>"); return; }
+      var fullUrl = url.startsWith("http") ? url : window.location.origin + url;
+      imageToAscii(fullUrl, function(ascii) {
+        localStorage.setItem("avatar-ascii", ascii);
+        renderProfile();
+        showToast("avatar updated");
+      });
+    } else {
+      renderProfile();
+      showToast("profile shown");
+    }
+  };
+
   commands.weather = function(parts) {
     var city = parts.slice(1).join(" ");
     if (!city) {
@@ -234,7 +251,7 @@
       setupData.encryptedPat = xorEncrypt(gpat, hash);
       localStorage.setItem("gist-key", hash);
       saveGist(setupData).then(function(ok) {
-        if (ok) { gistData = setupData; localStorage.setItem("logged-in", "true"); updatePrompt(); showToast("gist setup done, logged in"); }
+        if (ok) { gistData = setupData; localStorage.setItem("logged-in", "true"); updatePrompt(); renderProfile(); showToast("gist setup done, logged in"); }
         else showToast("gist-setup: failed");
       });
     });
@@ -264,7 +281,7 @@
             var decPat = xorDecrypt(gistData.encryptedPat, hash);
             localStorage.setItem("gist-pat", decPat);
           }
-          updatePrompt(); renderTodos();
+          updatePrompt(); renderTodos(); renderProfile();
           showToast("login: welcome, " + username);
         });
       });
@@ -275,8 +292,9 @@
     localStorage.removeItem("logged-in");
     localStorage.removeItem("gist-key");
     updatePrompt();
-    var el = document.getElementById("todo-display");
+    var el = document.getElementById("info-left");
     if (el) el.style.display = "none";
+    renderProfile();
     showToast("logged out");
   };
 
@@ -393,7 +411,7 @@
       var hname = parts[2];
       if (!hname) { showToast("Usage: habit calendar <name>"); return; }
       if (!gistData.habits[hname]) { showToast("habit not found: " + hname); return; }
-      var hel = document.getElementById("todo-display");
+      var hel = document.getElementById("info-left");
       if (!hel) return;
       var now = new Date(), year = now.getFullYear();
       var jan1 = new Date(year, 0, 1), dec31 = new Date(year + 1, 0, 0);
@@ -581,6 +599,7 @@
     mood: ["1","2","3","4","5","calendar"],
     post: ["list","rm"],
     music: ["search","play","next","prev","stop","pause","list","vol","now","loop","shuffle","seek"],
+    profile: ["avatar"],
     theme: THEMES,
     grep: null,
   };

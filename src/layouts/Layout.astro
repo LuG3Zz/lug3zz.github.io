@@ -64,7 +64,13 @@ const searchIndex = allPosts.map((p) => {
   <script id="theme-data" type="application/json" set:html={JSON.stringify(THEMES)}></script>
   </head>
 <body>
-  <div class="container">
+  <div style="display:flex;align-items:flex-start;justify-content:center;">
+    <div id="info-left" style="display:none;width:260px;flex-shrink:0;overflow:auto;padding:2rem 0 2rem 1.5rem;">
+      <div id="todo-head" style="display:none;cursor:pointer;color:var(--yellow);font-size:0.75rem;" onclick="var p=document.getElementById('todo-body');p.style.display=p.style.display=='none'?'block':'none';this.textContent=p.style.display=='none'?'[+] '+this.getAttribute('data-label'):'[-] '+this.getAttribute('data-label');this.parentElement.style.padding=p.style.display=='none'?'0.3rem 0.75rem':'0.5rem 0.75rem';this.style.marginBottom=p.style.display=='none'?'0':'0.25rem'"></div>
+      <div id="todo-body" style="white-space:pre-wrap;"></div>
+    </div>
+    <div id="left-resizer" style="display:none;width:4px;cursor:col-resize;background:var(--border);flex-shrink:0;margin-top:2rem;"></div>
+    <div class="container" style="flex:0 1 820px;min-width:0;margin:0;">
     <header class="terminal-header">
       <div class="header-top">
         <div class="ascii-art">  _                             _
@@ -100,10 +106,7 @@ const searchIndex = allPosts.map((p) => {
       <div id="cmd-suggestions" class="cmd-suggestions"></div>
       <div id="grep-results" class="grep-results"></div>
       <div id="pomodoro-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;"></div>
-      <div id="todo-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;white-space:pre-wrap;">
-        <div id="todo-head" style="display:none;cursor:pointer;color:var(--yellow);font-size:0.75rem;" onclick="var p=this.nextElementSibling;p.style.display=p.style.display=='none'?'block':'none';this.textContent=p.style.display=='none'?'[+] '+this.getAttribute('data-label'):'[-] '+this.getAttribute('data-label');this.parentElement.style.padding=p.style.display=='none'?'0.3rem 0.75rem':'0.5rem 0.75rem';this.style.marginBottom=p.style.display=='none'?'0':'0.25rem'"></div>
-        <div id="todo-body"></div>
-      </div>
+
       <div id="music-island" style="position:fixed;top:0.5rem;left:50%;transform:translateX(-50%);z-index:9999;background:var(--bg);border:1px solid var(--green);border-radius:20px;padding:0.35rem 0.35rem 0.35rem 0.7rem;font-family:var(--font-mono);font-size:0.7rem;display:flex;align-items:center;gap:0.5rem;box-shadow:0 0 16px rgba(51,255,51,0.2),0 0 4px rgba(51,255,51,0.1);opacity:0;pointer-events:none;transition:opacity 0.3s,box-shadow 0.3s;cursor:pointer;max-width:90vw;">
         <span id="music-island-icon" style="color:var(--green);font-size:0.85rem;flex-shrink:0;">▶</span>
         <div style="display:flex;flex-direction:column;min-width:0;gap:1px;overflow:hidden;">
@@ -153,6 +156,11 @@ const searchIndex = allPosts.map((p) => {
       </div>
     </footer>
   </div>
+  <div id="right-resizer" style="display:none;width:4px;cursor:col-resize;background:var(--border);flex-shrink:0;margin-top:2rem;"></div>
+  <div id="info-right" style="display:none;width:240px;flex-shrink:0;overflow:auto;padding:2rem 1.5rem 2rem 0;">
+    <div id="profile-content" style="font-family:var(--font-mono);font-size:0.8125rem;"></div>
+  </div>
+</div>
 
   <div id="cmd-toast" class="cmd-toast"><span id="toast-msg"></span><span class="dismiss">[x]</span></div>
   <span id="uptime-data" style="display:none;" data-start={firstCommitDate}></span>

@@ -224,9 +224,14 @@
           }
         }
       }
+      renderProfile();
     });
+  } else {
+    renderProfile();
   }
 
+  initInfoResizer();
+  initPanelFocusGuard();
   initArticlePage();
 
   // Music island close

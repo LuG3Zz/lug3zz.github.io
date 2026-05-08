@@ -259,7 +259,7 @@
   }
 
   function showInTodo(label, html) {
-    var el = document.getElementById("todo-display");
+    var el = document.getElementById("info-left");
     var head = document.getElementById("todo-head");
     var body = document.getElementById("todo-body");
     if (!el || !head || !body) return;
@@ -271,7 +271,7 @@
   }
 
   function showInTodoText(label, text) {
-    var el = document.getElementById("todo-display");
+    var el = document.getElementById("info-left");
     var head = document.getElementById("todo-head");
     var body = document.getElementById("todo-body");
     if (!el || !head || !body) return;
@@ -378,7 +378,7 @@
   }
 
   function renderTodoCalendar(year, month) {
-    var el = document.getElementById("todo-display");
+    var el = document.getElementById("info-left");
     if (!el) return;
     var today = new Date();
     var daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -430,7 +430,7 @@
   }
 
   function renderMoodCalendar() {
-    var el = document.getElementById("todo-display");
+    var el = document.getElementById("info-left");
     if (!el || !gistData || !gistData.moods) return;
     var today = new Date();
     var year = today.getFullYear(), month = today.getMonth();
@@ -454,6 +454,139 @@
     }
     lines.push(" \ud83d\ude1e \ud83d\ude10 \ud83d\ude42 \ud83d\ude0a \ud83d\ude04  \u25cb today no record");
     showInTodoText("mood", lines.join("\n"));
+  }
+
+  // ─── Image to ASCII ──────────────────────
+  function imageToAscii(url, callback) {
+    var img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = function() {
+      var c = document.createElement('canvas');
+      var w = 48, h = Math.round(img.height / img.width * w * 0.45);
+      c.width = w; c.height = h;
+      var ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      var d = ctx.getImageData(0, 0, w, h).data;
+      var chars = "@%#*+=-:. ", out = "";
+      for (var y = 0; y < h; y++) {
+        for (var x = 0; x < w; x++) {
+          var i = (y * w + x) * 4;
+          var b = (d[i] + d[i+1] + d[i+2]) / 3;
+          out += chars[Math.floor(b / 255 * (chars.length - 1))];
+        }
+        out += "\n";
+      }
+      callback(out);
+    };
+    img.onerror = function() { callback("(avatar load failed)"); };
+    img.src = url;
+  }
+
+  // ─── Default ASCII avatar by seed ────────
+  function defaultAsciiAvatar(seed) {
+    var avatars = [
+      '    .--.\n   /    \\\n  | o  o |\n  |  __  |\n   \\    /\n    `--\'',
+      '   |\\---/|\n   | o o |\n   \\_ W _/\n     ||\n    (__)',
+      '   .-""""-.\n  /        \\\n |  O    O |\n |    <>   |\n  \\ """" /\n   \'----\'',
+      '    /\\_/\\\n   (=o.o=)\n   ( >.< )\n    "--"',
+      '   ┌─┐ ┌─┐\n   │ │ │ │\n   └─┘ └─┘\n    ────'
+    ];
+    var idx = 0;
+    if (seed) for (var i = 0; i < seed.length; i++) idx = (idx + seed.charCodeAt(i)) % avatars.length;
+    return avatars[idx];
+  }
+
+  // ─── Profile rendering ────────────────────
+  function renderProfile() {
+    var loggedIn = localStorage.getItem("logged-in") === "true";
+    var right = document.getElementById("info-right");
+    if (!right) return;
+    if (!loggedIn) { renderAuthorInfo(); right.style.display = "block"; return; }
+    renderUserProfile();
+    right.style.display = "block";
+  }
+
+  function renderAuthorInfo() {
+    var avatar = localStorage.getItem("avatar-ascii") || defaultAsciiAvatar("");
+    var html = '<pre style="font-size:0.6rem;line-height:1.1;color:var(--cyan);margin:0 0 0.5rem 0;">' + escHtml(avatar) + '</pre>';
+    html += '<div style="border-top:1px dashed var(--border);margin:0.5rem 0;"></div>';
+    html += '<div style="font-size:0.75rem;line-height:1.8;">';
+    html += 'author: <span style="color:var(--green)">lug3zz</span><br>';
+    html += '<span style="color:var(--dim);font-size:0.65rem;">\u559c\u6b22\u5199\u4ee3\u7801\u3001\u6298\u817e\u7ec8\u7aef</span><br>';
+    html += '<a href="/about" style="color:var(--blue)">/about</a><br>';
+    html += '<a href="https://github.com/LuG3Zz" style="color:var(--dim);font-size:0.65rem;">github.com/LuG3Zz</a>';
+    html += '</div>';
+    document.getElementById("profile-content").innerHTML = html;
+  }
+
+  function renderUserProfile() {
+    var avatar = localStorage.getItem("avatar-ascii") || defaultAsciiAvatar("user");
+    var username = localStorage.getItem("gist-key") || "user";
+    var html = '<pre style="font-size:0.6rem;line-height:1.1;color:var(--cyan);margin:0 0 0.5rem 0;">' + escHtml(avatar) + '</pre>';
+    html += '<div style="border-top:1px dashed var(--border);margin:0.5rem 0;"></div>';
+    html += '<div style="font-size:0.75rem;line-height:1.8;">';
+    html += 'user: <span style="color:var(--green)">' + escHtml(username) + '</span><br>';
+    html += 'status: <span style="color:var(--green)">logged in</span><br>';
+    var uptimeEl = document.getElementById("footer-uptime");
+    html += 'uptime: ' + (uptimeEl ? uptimeEl.textContent : "--") + '<br>';
+    html += 'date: ' + new Date().toISOString().slice(0, 10) + '<br>';
+    html += '</div>';
+    if (gistData) {
+      html += '<div style="border-top:1px dashed var(--border);margin:0.5rem 0;"></div>';
+      html += '<div style="font-size:0.75rem;line-height:1.8;"><span style="color:var(--yellow)">\u2014\u2014 stats \u2014\u2014</span><br>';
+      var todos = gistData.todos || [];
+      var doneTodos = todos.filter(function(t) { return t.done; }).length;
+      html += 'todos: ' + doneTodos + '/' + todos.length + '<br>';
+      var today = new Date().toISOString().slice(0, 10);
+      var habitKeys = gistData.habits ? Object.keys(gistData.habits) : [];
+      var doneHabits = 0;
+      for (var hi = 0; hi < habitKeys.length; hi++) {
+        if (gistData.habits[habitKeys[hi]][today]) doneHabits++;
+      }
+      html += 'habits: ' + doneHabits + '/' + habitKeys.length + '<br>';
+      var pomos = (gistData.pomodoros && gistData.pomodoros[today]) || 0;
+      html += 'pomos: ' + pomos + '<br>';
+      html += '</div>';
+    }
+    document.getElementById("profile-content").innerHTML = html;
+  }
+
+  // ─── Resizer ──────────────────────────────
+  function initInfoResizer() {
+    function makeResizer(resizerId, panelId) {
+      var resizer = document.getElementById(resizerId);
+      var panel = document.getElementById(panelId);
+      if (!resizer || !panel) return;
+      resizer.addEventListener("mousedown", function(e) {
+        e.preventDefault();
+        document.body.classList.add("resizing");
+        var startX = e.clientX, startW = panel.offsetWidth;
+        function onMove(e2) {
+          var dx = e2.clientX - startX;
+          var newW;
+          if (panelId === "info-left") newW = startW + dx;
+          else newW = startW - dx;
+          panel.style.width = Math.max(160, Math.min(400, newW)) + "px";
+        }
+        function onUp() {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+          document.body.classList.remove("resizing");
+        }
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      });
+    }
+    makeResizer("left-resizer", "info-left");
+    makeResizer("right-resizer", "info-right");
+  }
+
+  // ─── Panel focus guard ────────────────────
+  function initPanelFocusGuard() {
+    ["info-left","info-right"].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener("mousedown", function(e) { e.stopPropagation(); });
+    });
   }
 
 </script>

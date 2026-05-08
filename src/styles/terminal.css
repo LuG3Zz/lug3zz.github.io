@@ -462,3 +462,16 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
   .cmd-toast { font-size: 0.75rem; padding: 0.5rem 1rem; max-width: 90vw; }
   .back-to-top { width: 2rem; height: 2rem; font-size: 1rem; bottom: 0.75rem; right: 0.75rem; }
 }
+
+@media (max-width: 900px) {
+  #info-left, #left-resizer, #info-right, #right-resizer {
+    display: none !important;
+  }
+}
+body.resizing {
+  cursor: col-resize !important;
+  user-select: none;
+}
+#left-resizer:hover, #right-resizer:hover {
+  background: var(--cyan);
+}
