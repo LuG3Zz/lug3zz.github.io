@@ -24,6 +24,7 @@ if (showMeta) {
   try { sz = fmtSize(statSync(join(process.cwd(), "src/content/blog", post.id)).size); } catch (_) {}
 }
 const isPin = post.data.pinned;
+const isNew = !isPin && (Date.now() - post.data.date.valueOf()) < 14 * 24 * 60 * 60 * 1000;
 
 function fmtSize(bytes: number): string {
   if (bytes < 1024) return bytes + "B";
@@ -44,5 +45,6 @@ function fmtSize(bytes: number): string {
     {post.data.title}
   </a>
   {isPin && <span style="color: var(--yellow); font-size: 0.75rem; flex-shrink:0;">[Pinned]</span>}
+  {isNew && <span style="color: var(--green); font-size: 0.65rem; flex-shrink:0; font-weight:bold;">[NEW]</span>}
   <span class="post-date" style="margin-left: auto;flex-shrink:0;">{date}</span>
 </li>

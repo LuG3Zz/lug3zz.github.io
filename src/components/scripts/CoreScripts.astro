@@ -271,6 +271,7 @@
     el.style.display = "block";
     if (resizer) resizer.style.display = "block";
     expandPanel("left");
+    alignSidebars();
     renderProfile();
   }
 
@@ -287,6 +288,7 @@
     el.style.display = "block";
     if (resizer) resizer.style.display = "block";
     expandPanel("left");
+    alignSidebars();
     renderProfile();
   }
 
@@ -354,7 +356,8 @@
       var d = new Date(p.createdAt);
       lines.push((pi + 1) + ". [" + d.toISOString().slice(0, 10) + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + "] " + p.text);
     }
-    showInTodoText("mood", lines.join("\n"));
+    showInTodoText("posts", lines.join("\n"));
+    showToast("showing " + Math.min(gistData.posts.length, 10) + "/" + gistData.posts.length + " posts");
   }
 
   // ─── Panel toggle ──────────────────────────
@@ -386,6 +389,7 @@
       if (resizer) resizer.style.display = collapsed ? "block" : "none";
       localStorage.setItem("info-right-collapsed", collapsed ? "false" : "true");
     }
+    alignSidebars();
   }
 
   function getTodoStats() {
@@ -542,6 +546,7 @@
     if (!loggedIn) { renderAuthorInfo(); right.style.display = "block"; }
     else { renderUserProfile(); right.style.display = "block"; }
     expandPanel("right");
+    alignSidebars();
   }
 
   function renderAuthorInfo() {
@@ -640,6 +645,21 @@
     }
     makeResizer("left-resizer", "info-left-content");
     makeResizer("right-resizer", "info-right-content");
+  }
+
+  // ─── Sidebar alignment ────────────────────
+  function alignSidebars() {
+    var nav = document.querySelector('.nav');
+    if (!nav) return;
+    var container = document.querySelector('.container');
+    if (!container) return;
+    var navBottom = nav.getBoundingClientRect().bottom;
+    var containerTop = container.getBoundingClientRect().top;
+    var offset = navBottom - containerTop + 4;
+    ["info-left","left-resizer","right-resizer","info-right"].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.style.display !== "none") el.style.marginTop = offset + "px";
+    });
   }
 
   // ─── Panel focus guard ────────────────────

@@ -250,6 +250,8 @@
     }
   });
   initArticlePage();
+  alignSidebars();
+  window.addEventListener("resize", alignSidebars);
 
   // Music island close
   document.getElementById("music-island-close").addEventListener("click", function(e) {
