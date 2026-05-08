@@ -382,20 +382,6 @@
     toggle.classList.add("active");
     alignSidebars();
   }
-  }
-
-  function expandPanel(side) {
-    var panel = document.getElementById("info-" + side);
-    var toggle = document.getElementById(side + "-toggle");
-    var resizer = document.getElementById(side + "-resizer");
-    if (!panel || !toggle) return;
-    if (panel.classList.contains("visible")) return;
-    panel.classList.add("visible");
-    toggle.textContent = side === "left" ? "\u25c0" : "\u25b6";
-    if (resizer) resizer.style.display = "block";
-    toggle.classList.add("active");
-    alignSidebars();
-  }
 
   function getTodoStats() {
     var todos = gistData.todos || [], archived = gistData.archived || [];
