@@ -557,7 +557,7 @@
   function renderAuthorInfo() {
     var avatar = localStorage.getItem("avatar-ascii") || AUTHOR_ASCII;
     var bio = (gistData && gistData.bio) || localStorage.getItem("profile-bio") || "\u559c\u6b22\u5199\u4ee3\u7801\u3001\u6298\u817e\u7ec8\u7aef";
-    var html = '<pre style="font-size:0.6rem;line-height:1.1;color:var(--cyan);margin:0 0 0.5rem 0;">' + escHtml(avatar) + '</pre>';
+    var html = '<pre style="font-size:0.55rem;line-height:1.05;color:var(--cyan);margin:0 0 0.5rem 0;overflow-x:auto;max-width:100%;">' + escHtml(avatar) + '</pre>';
     html += '<div style="border-top:1px dashed var(--border);margin:0.5rem 0;"></div>';
     html += '<div style="font-size:0.75rem;line-height:1.8;">';
     html += 'author: <span style="color:var(--green)">lug3zz</span><br>';
@@ -571,7 +571,7 @@
   function renderUserProfile() {
     var avatar = localStorage.getItem("avatar-ascii") || defaultAsciiAvatar("user");
     var username = localStorage.getItem("gist-user") || "user";
-    var html = '<pre style="font-size:0.6rem;line-height:1.1;color:var(--cyan);margin:0 0 0.5rem 0;">' + escHtml(avatar) + '</pre>';
+    var html = '<pre style="font-size:0.55rem;line-height:1.05;color:var(--cyan);margin:0 0 0.5rem 0;overflow-x:auto;max-width:100%;">' + escHtml(avatar) + '</pre>';
     html += '<div style="border-top:1px dashed var(--border);margin:0.5rem 0;"></div>';
     html += '<div style="font-size:0.75rem;line-height:1.8;">';
     html += 'user: <span style="color:var(--green)">' + escHtml(username) + '</span><br>';
