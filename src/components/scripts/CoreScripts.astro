@@ -94,6 +94,8 @@
     localStorage.setItem("theme", name);
     var sel = document.getElementById("theme-select");
     if (sel) sel.value = name;
+    // Re-render profile avatar filter to match new theme
+    if (document.getElementById("info-right")?.classList.contains("visible")) renderProfile();
   }
 
   // ─── Data persistence ──────────────────────
@@ -522,6 +524,25 @@
   }
 
   // ─── Profile rendering ────────────────────
+  function getThemeFilter() {
+    var green = getComputedStyle(document.documentElement).getPropertyValue('--green').trim();
+    if (!green || green === '#33ff33') return 'grayscale(100%) sepia(100%) hue-rotate(50deg) saturate(300%) brightness(90%) contrast(120%)';
+    var r = parseInt(green.slice(1,3), 16);
+    var g = parseInt(green.slice(3,5), 16);
+    var b = parseInt(green.slice(5,7), 16);
+    var max = Math.max(r,g,b)/255, min = Math.min(r,g,b)/255;
+    r/=255; g/=255; b/=255;
+    var l = (max + min) / 2, s = 0, h = 0;
+    if (max !== min) {
+      var d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+      else if (max === g) h = ((b - r) / d + 2) * 60;
+      else h = ((r - g) / d + 4) * 60;
+    }
+    return 'grayscale(100%) sepia(100%) hue-rotate(' + (h - 35) + 'deg) saturate(300%) brightness(90%) contrast(120%)';
+  }
+
   function renderProfile() {
     var loggedIn = localStorage.getItem("logged-in") === "true";
     var right = document.getElementById("info-right");
@@ -534,7 +555,7 @@
 
   function renderAuthorInfo() {
     var bio = (gistData && gistData.bio) || localStorage.getItem("profile-bio") || "\u559c\u6b22\u5199\u4ee3\u7801\u3001\u6298\u817e\u7ec8\u7aef";
-    var html = '<img src="/images/avatar.png" alt="avatar" style="max-width:100%;height:auto;border-radius:4px;border:1px solid var(--border);margin-bottom:0.5rem;filter:grayscale(100%) sepia(100%) hue-rotate(50deg) saturate(300%);" />';
+    var html = '<img src="/images/avatar.png" alt="avatar" style="max-width:100%;height:auto;border-radius:4px;border:1px solid var(--border);margin-bottom:0.5rem;filter:' + getThemeFilter() + ';" />';
     html += '<div style="border-top:1px dashed var(--border);margin:0.5rem 0;"></div>';
     html += '<div style="font-size:0.75rem;line-height:1.8;">';
     html += 'author: <span style="color:var(--green)">lug3zz</span><br>';
@@ -547,15 +568,16 @@
 
   function renderUserProfile() {
     var username = localStorage.getItem("gist-user") || "user";
-    var html = '<img src="/images/avatar.png" alt="avatar" style="max-width:100%;height:auto;border-radius:4px;border:1px solid var(--border);margin-bottom:0.5rem;filter:grayscale(100%) sepia(100%) hue-rotate(50deg) saturate(300%);" />';
+    var html = '<img src="/images/avatar.png" alt="avatar" style="max-width:100%;height:auto;border-radius:4px;border:1px solid var(--border);margin-bottom:0.5rem;filter:' + getThemeFilter() + ';" />';
     html += '<div style="border-top:1px dashed var(--border);margin:0.5rem 0;"></div>';
     html += '<div style="font-size:0.75rem;line-height:1.8;">';
     html += 'user: <span style="color:var(--green)">' + escHtml(username) + '</span><br>';
     html += 'status: <span style="color:var(--green)">logged in</span><br>';
     var bio = (gistData && gistData.bio) || localStorage.getItem("profile-bio");
     if (bio) html += '<span style="color:var(--dim);font-size:0.65rem;">' + escHtml(bio) + '</span><br>';
-    var uptimeEl = document.getElementById("footer-uptime");
-    html += 'uptime: ' + (uptimeEl ? uptimeEl.textContent : "--") + '<br>';
+    var fEl = document.getElementById("footer-uptime");
+    var uptime = fEl ? fEl.textContent : "--";
+    html += 'uptime: ' + uptime + '<br>';
     html += 'date: ' + new Date().toISOString().slice(0, 10) + '<br>';
     html += '</div>';
     if (gistData) {
