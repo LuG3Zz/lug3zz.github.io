@@ -486,37 +486,6 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
   height: 100%;
 }
 
-/* ─── Sidebar toggle tabs ──────────────────── */
-.sidebar-toggle {
-  position: fixed;
-  z-index: 102;
-  cursor: pointer;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  padding: 0.5rem 0.25rem;
-  font-size: 0.65rem;
-  color: var(--dim);
-  user-select: none;
-  visibility: hidden;
-  line-height: 1;
-}
-.sidebar-toggle.active {
-  visibility: visible;
-}
-.sidebar-toggle-left {
-  left: 0;
-  border-left: none;
-  border-radius: 0 4px 4px 0;
-}
-.sidebar-toggle-right {
-  right: 0;
-  border-right: none;
-  border-radius: 4px 0 0 4px;
-}
-.sidebar-toggle:hover {
-  color: var(--green);
-}
-
 @media (max-width: 900px) {
-  .sidebar-panel, .sidebar-toggle { display: none !important; }
+  .sidebar-panel { display: none !important; }
 }

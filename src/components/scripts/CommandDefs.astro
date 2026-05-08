@@ -30,8 +30,8 @@
         showToast("avatar updated");
       });
     } else {
-      renderProfile();
-      showToast("profile shown");
+      togglePanel("right");
+      showToast("profile " + (document.getElementById("info-right")?.classList.contains("visible") ? "shown" : "hidden"));
     }
   };
 

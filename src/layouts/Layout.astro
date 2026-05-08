@@ -64,8 +64,6 @@ const searchIndex = allPosts.map((p) => {
   <script id="theme-data" type="application/json" set:html={JSON.stringify(THEMES)}></script>
   </head>
 <body>
-  <div id="left-toggle" class="sidebar-toggle sidebar-toggle-left" onclick="togglePanel('left')">▶</div>
-  <div id="right-toggle" class="sidebar-toggle sidebar-toggle-right" onclick="togglePanel('right')">◀</div>
   <div id="info-left" class="sidebar-panel sidebar-left">
     <div id="info-left-content" class="sidebar-content" style="width:260px;padding:2rem 0 2rem 1.5rem;">
       <div id="todo-head" style="display:none;cursor:pointer;color:var(--yellow);font-size:0.75rem;" onclick="var p=document.getElementById('todo-body');p.style.display=p.style.display=='none'?'block':'none';this.textContent=p.style.display=='none'?'[+] '+this.getAttribute('data-label'):'[-] '+this.getAttribute('data-label');this.parentElement.style.padding=p.style.display=='none'?'0.3rem 0.75rem':'0.5rem 0.75rem';this.style.marginBottom=p.style.display=='none'?'0':'0.25rem'"></div>
