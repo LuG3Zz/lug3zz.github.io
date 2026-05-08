@@ -136,7 +136,7 @@
 
   document.addEventListener("click", function(e) {
     hideSuggestions();
-    if (e.target.tagName !== "A" && e.target.tagName !== "IMG" && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA" && !window.getSelection().toString()) {
+    if (e.target.closest(".terminal-line") && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") {
       input.focus();
     }
   });
