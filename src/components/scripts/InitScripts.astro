@@ -232,6 +232,23 @@
 
   initInfoResizer();
   initPanelFocusGuard();
+  // Restore collapse state
+  ["left","right"].forEach(function(side) {
+    var collapsed = localStorage.getItem("info-" + side + "-collapsed");
+    if (collapsed === "true") {
+      var content = document.getElementById("info-" + side + "-content");
+      var toggle = document.getElementById(side + "-toggle");
+      if (content && toggle) {
+        content.setAttribute("data-collapsed", "true");
+        toggle.textContent = side === "left" ? "\u25b6" : "\u25c0";
+        content.style.width = "0";
+        content.style.padding = side === "left" ? "2rem 0" : "0 1.5rem 0 0";
+        content.style.overflow = "hidden";
+        var resizer = document.getElementById(side + "-resizer");
+        if (resizer) resizer.style.display = "none";
+      }
+    }
+  });
   initArticlePage();
 
   // Music island close

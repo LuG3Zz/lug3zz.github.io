@@ -260,6 +260,7 @@
 
   function showInTodo(label, html) {
     var el = document.getElementById("info-left");
+    var resizer = document.getElementById("left-resizer");
     var head = document.getElementById("todo-head");
     var body = document.getElementById("todo-body");
     if (!el || !head || !body) return;
@@ -268,10 +269,14 @@
     head.style.display = "";
     body.innerHTML = html;
     el.style.display = "block";
+    if (resizer) resizer.style.display = "block";
+    expandPanel("left");
+    renderProfile();
   }
 
   function showInTodoText(label, text) {
     var el = document.getElementById("info-left");
+    var resizer = document.getElementById("left-resizer");
     var head = document.getElementById("todo-head");
     var body = document.getElementById("todo-body");
     if (!el || !head || !body) return;
@@ -280,6 +285,9 @@
     head.style.display = "";
     body.textContent = text;
     el.style.display = "block";
+    if (resizer) resizer.style.display = "block";
+    expandPanel("left");
+    renderProfile();
   }
 
   function renderTodos(filter) {
@@ -346,8 +354,38 @@
       var d = new Date(p.createdAt);
       lines.push((pi + 1) + ". [" + d.toISOString().slice(0, 10) + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + "] " + p.text);
     }
-    showInTodoText("posts", lines.join("\n"));
-    showToast("showing " + Math.min(gistData.posts.length, 10) + "/" + gistData.posts.length + " posts");
+    showInTodoText("mood", lines.join("\n"));
+  }
+
+  // ─── Panel toggle ──────────────────────────
+  function togglePanel(side) {
+    if (side === "left") {
+      var content = document.getElementById("info-left-content");
+      var toggle = document.getElementById("left-toggle");
+      var resizer = document.getElementById("left-resizer");
+      if (!content || !toggle) return;
+      var collapsed = content.getAttribute("data-collapsed") === "true";
+      content.setAttribute("data-collapsed", collapsed ? "false" : "true");
+      toggle.textContent = collapsed ? "\u25c0" : "\u25b6";
+      content.style.width = collapsed ? "260px" : "0";
+      content.style.padding = collapsed ? "2rem 0 2rem 1.5rem" : "2rem 0";
+      content.style.overflow = collapsed ? "auto" : "hidden";
+      if (resizer) resizer.style.display = collapsed ? "block" : "none";
+      localStorage.setItem("info-left-collapsed", collapsed ? "false" : "true");
+    } else {
+      var content = document.getElementById("info-right-content");
+      var toggle = document.getElementById("right-toggle");
+      var resizer = document.getElementById("right-resizer");
+      if (!content || !toggle) return;
+      var collapsed = content.getAttribute("data-collapsed") === "true";
+      content.setAttribute("data-collapsed", collapsed ? "false" : "true");
+      toggle.textContent = collapsed ? "\u25b6" : "\u25c0";
+      content.style.width = collapsed ? "240px" : "0";
+      content.style.padding = collapsed ? "2rem 1.5rem 2rem 0" : "0 1.5rem 0 0";
+      content.style.overflow = collapsed ? "auto" : "hidden";
+      if (resizer) resizer.style.display = collapsed ? "block" : "none";
+      localStorage.setItem("info-right-collapsed", collapsed ? "false" : "true");
+    }
   }
 
   function getTodoStats() {
@@ -501,9 +539,9 @@
     var loggedIn = localStorage.getItem("logged-in") === "true";
     var right = document.getElementById("info-right");
     if (!right) return;
-    if (!loggedIn) { renderAuthorInfo(); right.style.display = "block"; return; }
-    renderUserProfile();
-    right.style.display = "block";
+    if (!loggedIn) { renderAuthorInfo(); right.style.display = "block"; }
+    else { renderUserProfile(); right.style.display = "block"; }
+    expandPanel("right");
   }
 
   function renderAuthorInfo() {
@@ -551,6 +589,29 @@
     document.getElementById("profile-content").innerHTML = html;
   }
 
+  // ─── Expand panel helper ──────────────────
+  function expandPanel(side) {
+    var contentId = side === "left" ? "info-left-content" : "info-right-content";
+    var toggleId = side === "left" ? "left-toggle" : "right-toggle";
+    var content = document.getElementById(contentId);
+    var toggle = document.getElementById(toggleId);
+    if (!content || !toggle) return;
+    if (content.getAttribute("data-collapsed") !== "true") return;
+    content.setAttribute("data-collapsed", "false");
+    toggle.textContent = side === "left" ? "\u25c0" : "\u25b6";
+    content.style.width = side === "left" ? "260px" : "240px";
+    content.style.padding = side === "left" ? "2rem 0 2rem 1.5rem" : "2rem 1.5rem 2rem 0";
+    content.style.overflow = "auto";
+    var resizer = document.getElementById(side + "-resizer");
+    if (resizer) {
+      var leftPanel = document.getElementById("info-left");
+      var rightPanel = document.getElementById("info-right");
+      if (side === "left" && leftPanel && leftPanel.style.display !== "none") resizer.style.display = "block";
+      if (side === "right" && rightPanel && rightPanel.style.display !== "none") resizer.style.display = "block";
+    }
+    localStorage.setItem("info-" + side + "-collapsed", "false");
+  }
+
   // ─── Resizer ──────────────────────────────
   function initInfoResizer() {
     function makeResizer(resizerId, panelId) {
@@ -564,7 +625,7 @@
         function onMove(e2) {
           var dx = e2.clientX - startX;
           var newW;
-          if (panelId === "info-left") newW = startW + dx;
+          if (panelId === "info-left-content") newW = startW + dx;
           else newW = startW - dx;
           panel.style.width = Math.max(160, Math.min(400, newW)) + "px";
         }
@@ -577,13 +638,13 @@
         document.addEventListener("mouseup", onUp);
       });
     }
-    makeResizer("left-resizer", "info-left");
-    makeResizer("right-resizer", "info-right");
+    makeResizer("left-resizer", "info-left-content");
+    makeResizer("right-resizer", "info-right-content");
   }
 
   // ─── Panel focus guard ────────────────────
   function initPanelFocusGuard() {
-    ["info-left","info-right"].forEach(function(id) {
+    ["info-left-content","info-right-content"].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) el.addEventListener("mousedown", function(e) { e.stopPropagation(); });
     });
