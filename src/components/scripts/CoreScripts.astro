@@ -575,6 +575,8 @@
     html += '<div style="font-size:0.75rem;line-height:1.8;">';
     html += 'user: <span style="color:var(--green)">' + escHtml(username) + '</span><br>';
     html += 'status: <span style="color:var(--green)">logged in</span><br>';
+    var bio = localStorage.getItem("profile-bio");
+    if (bio) html += '<span style="color:var(--dim);font-size:0.65rem;">' + escHtml(bio) + '</span><br>';
     var uptimeEl = document.getElementById("footer-uptime");
     html += 'uptime: ' + (uptimeEl ? uptimeEl.textContent : "--") + '<br>';
     html += 'date: ' + new Date().toISOString().slice(0, 10) + '<br>';
