@@ -92,9 +92,11 @@
     // Hide left panel on article pages
     if (tocB || tocL) {
       var leftPanel = document.getElementById("info-left");
+      var leftToggle = document.getElementById("left-toggle");
       var leftResizer = document.getElementById("left-resizer");
-      if (leftPanel && leftPanel.style.display !== "none") leftPanel.style.display = "none";
-      if (leftResizer && leftResizer.style.display !== "none") leftResizer.style.display = "none";
+      if (leftPanel) leftPanel.classList.remove("visible");
+      if (leftToggle) leftToggle.classList.remove("active");
+      if (leftResizer) leftResizer.style.display = "none";
     }
     if (tocB && tocL) {
       tocB.onclick = function() { var e = tocL.style.display !== "none"; tocL.style.display = e ? "none" : "block"; tocI.textContent = e ? "[+]" : "[-]"; };
@@ -239,23 +241,6 @@
 
   initInfoResizer();
   initPanelFocusGuard();
-  // Restore collapse state
-  ["left","right"].forEach(function(side) {
-    var collapsed = localStorage.getItem("info-" + side + "-collapsed");
-    if (collapsed === "true") {
-      var content = document.getElementById("info-" + side + "-content");
-      var toggle = document.getElementById(side + "-toggle");
-      if (content && toggle) {
-        content.setAttribute("data-collapsed", "true");
-        toggle.textContent = side === "left" ? "\u25b6" : "\u25c0";
-        content.style.width = "0";
-        content.style.padding = side === "left" ? "2rem 0" : "0 1.5rem 0 0";
-        content.style.overflow = "hidden";
-        var resizer = document.getElementById(side + "-resizer");
-        if (resizer) resizer.style.display = "none";
-      }
-    }
-  });
   initArticlePage();
   alignSidebars();
   window.addEventListener("resize", alignSidebars);

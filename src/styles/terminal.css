@@ -463,15 +463,76 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
   .back-to-top { width: 2rem; height: 2rem; font-size: 1rem; bottom: 0.75rem; right: 0.75rem; }
 }
 
-@media (max-width: 900px) {
-  #info-left, #left-resizer, #info-right, #right-resizer {
-    display: none !important;
-  }
+/* ─── Sidebar panels (fixed, slide in/out) ─────── */
+.sidebar-panel {
+  position: fixed;
+  z-index: 100;
+  display: flex;
+  transition: transform 0.25s ease;
+  pointer-events: none;
 }
-body.resizing {
-  cursor: col-resize !important;
-  user-select: none;
+.sidebar-panel.visible {
+  pointer-events: auto;
 }
-#left-resizer:hover, #right-resizer:hover {
+.sidebar-left {
+  left: 0;
+  transform: translateX(-100%);
+}
+.sidebar-left.visible {
+  transform: translateX(0);
+}
+.sidebar-right {
+  right: 0;
+  transform: translateX(100%);
+}
+.sidebar-right.visible {
+  transform: translateX(0);
+}
+.sidebar-content {
+  overflow: auto;
+  flex-shrink: 0;
+}
+.sidebar-resizer {
+  width: 4px;
+  cursor: col-resize;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.sidebar-resizer:hover {
   background: var(--cyan);
+}
+
+/* ─── Sidebar toggle tabs ──────────────────── */
+.sidebar-toggle {
+  position: fixed;
+  z-index: 102;
+  cursor: pointer;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.25rem;
+  font-size: 0.65rem;
+  color: var(--dim);
+  user-select: none;
+  display: none;
+  line-height: 1;
+}
+.sidebar-toggle.active {
+  display: block;
+}
+.sidebar-toggle-left {
+  left: 0;
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+}
+.sidebar-toggle-right {
+  right: 0;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+}
+.sidebar-toggle:hover {
+  color: var(--green);
+}
+
+@media (max-width: 900px) {
+  .sidebar-panel, .sidebar-toggle { display: none !important; }
 }

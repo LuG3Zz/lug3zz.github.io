@@ -64,16 +64,22 @@ const searchIndex = allPosts.map((p) => {
   <script id="theme-data" type="application/json" set:html={JSON.stringify(THEMES)}></script>
   </head>
 <body>
-  <div style="display:flex;align-items:flex-start;justify-content:center;">
-    <div id="info-left" style="display:none;flex-shrink:0;display:flex;align-items:stretch;">
-      <div id="info-left-content" style="width:260px;overflow:auto;padding:2rem 0 2rem 1.5rem;transition:width 0.2s,padding 0.2s;flex-shrink:0;">
-        <div id="todo-head" style="display:none;cursor:pointer;color:var(--yellow);font-size:0.75rem;" onclick="var p=document.getElementById('todo-body');p.style.display=p.style.display=='none'?'block':'none';this.textContent=p.style.display=='none'?'[+] '+this.getAttribute('data-label'):'[-] '+this.getAttribute('data-label');this.parentElement.style.padding=p.style.display=='none'?'0.3rem 0.75rem':'0.5rem 0.75rem';this.style.marginBottom=p.style.display=='none'?'0':'0.25rem'"></div>
-        <div id="todo-body" style="white-space:pre-wrap;"></div>
-      </div>
-      <div id="left-toggle" style="cursor:pointer;display:flex;align-items:center;padding:0 0.3rem;color:var(--dim);font-size:0.65rem;user-select:none;" onclick="togglePanel('left')">◀</div>
+  <div id="left-toggle" class="sidebar-toggle sidebar-toggle-left" onclick="togglePanel('left')">▶</div>
+  <div id="right-toggle" class="sidebar-toggle sidebar-toggle-right" onclick="togglePanel('right')">◀</div>
+  <div id="info-left" class="sidebar-panel sidebar-left">
+    <div id="info-left-content" class="sidebar-content" style="width:260px;padding:2rem 0 2rem 1.5rem;">
+      <div id="todo-head" style="display:none;cursor:pointer;color:var(--yellow);font-size:0.75rem;" onclick="var p=document.getElementById('todo-body');p.style.display=p.style.display=='none'?'block':'none';this.textContent=p.style.display=='none'?'[+] '+this.getAttribute('data-label'):'[-] '+this.getAttribute('data-label');this.parentElement.style.padding=p.style.display=='none'?'0.3rem 0.75rem':'0.5rem 0.75rem';this.style.marginBottom=p.style.display=='none'?'0':'0.25rem'"></div>
+      <div id="todo-body" style="white-space:pre-wrap;"></div>
     </div>
-    <div id="left-resizer" style="display:none;width:4px;cursor:col-resize;background:var(--border);flex-shrink:0;"></div>
-    <div class="container" style="flex:0 0 820px;margin:0;">
+    <div id="left-resizer" class="sidebar-resizer" style="display:none;"></div>
+  </div>
+  <div id="info-right" class="sidebar-panel sidebar-right">
+    <div id="right-resizer" class="sidebar-resizer" style="display:none;"></div>
+    <div id="info-right-content" class="sidebar-content" style="width:240px;padding:2rem 1.5rem 2rem 0;">
+      <div id="profile-content" style="font-family:var(--font-mono);font-size:0.8125rem;"></div>
+    </div>
+  </div>
+  <div class="container">
     <header class="terminal-header">
       <div class="header-top">
         <div class="ascii-art">  _                             _
@@ -159,14 +165,6 @@ const searchIndex = allPosts.map((p) => {
       </div>
     </footer>
   </div>
-  <div id="right-resizer" style="display:none;width:4px;cursor:col-resize;background:var(--border);flex-shrink:0;"></div>
-  <div id="info-right" style="display:none;flex-shrink:0;display:flex;align-items:stretch;">
-    <div id="right-toggle" style="cursor:pointer;display:flex;align-items:center;padding:0 0.3rem;color:var(--dim);font-size:0.65rem;user-select:none;" onclick="togglePanel('right')">▶</div>
-    <div id="info-right-content" style="width:240px;overflow:auto;padding:2rem 1.5rem 2rem 0;transition:width 0.2s,padding 0.2s;flex-shrink:0;">
-      <div id="profile-content" style="font-family:var(--font-mono);font-size:0.8125rem;"></div>
-    </div>
-  </div>
-</div>
 
   <div id="cmd-toast" class="cmd-toast"><span id="toast-msg"></span><span class="dismiss">[x]</span></div>
   <span id="uptime-data" style="display:none;" data-start={firstCommitDate}></span>
