@@ -222,7 +222,6 @@
     loadGist().then(function(data) {
       if (data) {
         gistData = data;
-        if (data.todos && data.todos.length > 0) renderTodos();
         if (data.pomodoros) {
           var today = new Date().toISOString().slice(0, 10);
           if (data.pomodoros[today] && data.pomodoros[today] > getDailyPomo()) {
@@ -237,6 +236,7 @@
         }
       }
       renderProfile();
+      initArticlePage();
     });
   } else {
     renderProfile();
