@@ -32,9 +32,14 @@
     } else if (sub === "bio") {
       var text = parts.slice(2).join(" ");
       if (!text) { showToast("Usage: profile bio <text>"); return; }
-      localStorage.setItem("profile-bio", text);
-      renderProfile();
-      showToast("bio updated");
+      if (localStorage.getItem("logged-in") === "true" && gistData) {
+        gistData.bio = text;
+        gistMutate("bio updated", renderProfile);
+      } else {
+        localStorage.setItem("profile-bio", text);
+        renderProfile();
+        showToast("bio updated (local)");
+      }
     } else {
       togglePanel("right");
       showToast("profile " + (document.getElementById("info-right")?.classList.contains("visible") ? "shown" : "hidden"));

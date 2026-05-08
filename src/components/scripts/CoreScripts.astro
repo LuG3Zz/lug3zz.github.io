@@ -556,11 +556,12 @@
 
   function renderAuthorInfo() {
     var avatar = localStorage.getItem("avatar-ascii") || AUTHOR_ASCII;
+    var bio = (gistData && gistData.bio) || localStorage.getItem("profile-bio") || "\u559c\u6b22\u5199\u4ee3\u7801\u3001\u6298\u817e\u7ec8\u7aef";
     var html = '<pre style="font-size:0.6rem;line-height:1.1;color:var(--cyan);margin:0 0 0.5rem 0;">' + escHtml(avatar) + '</pre>';
     html += '<div style="border-top:1px dashed var(--border);margin:0.5rem 0;"></div>';
     html += '<div style="font-size:0.75rem;line-height:1.8;">';
     html += 'author: <span style="color:var(--green)">lug3zz</span><br>';
-    html += '<span style="color:var(--dim);font-size:0.65rem;">' + escHtml(localStorage.getItem("profile-bio") || "\u559c\u6b22\u5199\u4ee3\u7801\u3001\u6298\u817e\u7ec8\u7aef") + '</span><br>';
+    html += '<span style="color:var(--dim);font-size:0.65rem;">' + escHtml(bio) + '</span><br>';
     html += '<a href="/about" style="color:var(--blue)">/about</a><br>';
     html += '<a href="https://github.com/LuG3Zz" style="color:var(--dim);font-size:0.65rem;">github.com/LuG3Zz</a>';
     html += '</div>';
@@ -575,7 +576,7 @@
     html += '<div style="font-size:0.75rem;line-height:1.8;">';
     html += 'user: <span style="color:var(--green)">' + escHtml(username) + '</span><br>';
     html += 'status: <span style="color:var(--green)">logged in</span><br>';
-    var bio = localStorage.getItem("profile-bio");
+    var bio = (gistData && gistData.bio) || localStorage.getItem("profile-bio");
     if (bio) html += '<span style="color:var(--dim);font-size:0.65rem;">' + escHtml(bio) + '</span><br>';
     var uptimeEl = document.getElementById("footer-uptime");
     html += 'uptime: ' + (uptimeEl ? uptimeEl.textContent : "--") + '<br>';

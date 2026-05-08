@@ -230,6 +230,11 @@
             localStorage.setItem("pomo-count", String(data.pomodoros[today]));
           }
         }
+        // Migrate local bio to gist
+        if (!data.bio && localStorage.getItem("profile-bio")) {
+          gistData.bio = localStorage.getItem("profile-bio");
+          saveGist(gistData);
+        }
       }
       renderProfile();
     });
