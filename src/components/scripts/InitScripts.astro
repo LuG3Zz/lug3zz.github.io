@@ -92,7 +92,9 @@
     // Hide left panel on article pages
     if (tocB || tocL) {
       var leftPanel = document.getElementById("info-left");
+      var expandLeft = document.getElementById("expand-left");
       if (leftPanel) leftPanel.classList.remove("visible");
+      if (expandLeft) expandLeft.style.display = "none";
     }
     if (tocB && tocL) {
       tocB.onclick = function() { var e = tocL.style.display !== "none"; tocL.style.display = e ? "none" : "block"; tocI.textContent = e ? "[+]" : "[-]"; };

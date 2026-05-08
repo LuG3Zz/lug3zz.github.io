@@ -359,15 +359,19 @@
   // ─── Panel toggle ──────────────────────────
   function togglePanel(side) {
     var panel = document.getElementById("info-" + side);
+    var expand = document.getElementById("expand-" + side);
     if (!panel) return;
     panel.classList.toggle("visible");
+    if (expand) expand.style.display = panel.classList.contains("visible") ? "none" : "block";
     if (panel.classList.contains("visible")) alignSidebars();
   }
 
   function expandPanel(side) {
     var panel = document.getElementById("info-" + side);
+    var expand = document.getElementById("expand-" + side);
     if (!panel || panel.classList.contains("visible")) return;
     panel.classList.add("visible");
+    if (expand) expand.style.display = "none";
     alignSidebars();
   }
 
@@ -527,8 +531,31 @@
     expandPanel("right");
   }
 
+  var AUTHOR_ASCII = [":-----:   @.   ----:-- -.------.--- *-%@%%%% + %   %      . ++%%*  - --  - +",
+"     .-    *%%* #% ------- :-----:.  --- *%%%%# %%%  #%#    +#%% %%%   : --  -++",
+"        + :%=*%%   :--::--.:--.      =:*%%#:*#..%%  @%= *   =%# %%%#   .%:----++",
+"         .% *%%%%@* ----:  .        @%%%%%--*%*-   -** * ** %%*.%%%#  :%#  ---++",
+"                     --.           .::#%*%%%#::#%%#:..: -% *%++%%%#  .@=+  --- +",
+"                                          +-%%%%%@=%- =*-#%@=%%%=:  .###.: -:--+",
+"                                     -+:    :-%%%%%%%%%%%%##%%#:  .#+:*   --::--",
+"                                  ++-++:*%*   +%%%%%%%%%%%%%%%%%%%%%*-    --::+-",
+"                                  **+.%%%%%* #%%%%%%%%%%%%%%%#   . +      ----++",
+"                                    %%%%%%%#%%%%%%%%%%%%%%%: =.%          =--  +",
+"                                 *%###%:%%%%%%%%%%%%%%%%%  +-*%%    .     =---=+",
+"                                  %%%%%%%%%%%%%%%%%%%%%%%:.%%%*-     +  .  =-- .",
+"                                   *%%%%%%%%%%%%%%%%%%%%%%#=..#      -  :    --=",
+"        .+-  --                    .#%%%%%%%%%%%%%%%%%%%%%%%%%+      ...-    .--",
+"        -++ .++             .+-      #%%%%%%%%%%%%%%%%%%%%%%%%        .--.+     ",
+"         =++++==          +:++:     +%@%%%%%%%%%%%%%%%%%%%%%%+  -       ----=   ",
+"                                   ::#%%%%%%%%%%%%%%%%%%%#=%#   :       ----:-  ",
+"                                   :--:=@%%+%%%%%%%%%%%%%%%%   -:  .     :----- ",
+"                    =            : :  - *--.%%%%%%%%%%%%%%     --  .:------  ---",
+"          +            :       :: :.::   @..=%%% *#%%%%%.+     =+   +++-:-:--:  ",
+"             *                #:.. ::  -. % ##%%##%%%.          +    ++++= ---- ",
+"                            --     :::   -+  #%%%%#              =    ++++ --  -"].join("\n");
+
   function renderAuthorInfo() {
-    var avatar = localStorage.getItem("avatar-ascii") || defaultAsciiAvatar("");
+    var avatar = localStorage.getItem("avatar-ascii") || AUTHOR_ASCII;
     var html = '<pre style="font-size:0.6rem;line-height:1.1;color:var(--cyan);margin:0 0 0.5rem 0;">' + escHtml(avatar) + '</pre>';
     html += '<div style="border-top:1px dashed var(--border);margin:0.5rem 0;"></div>';
     html += '<div style="font-size:0.75rem;line-height:1.8;">';
@@ -577,7 +604,7 @@
     var nav = document.querySelector('.nav');
     if (!nav) return;
     var navBottom = nav.getBoundingClientRect().bottom;
-    ["info-left","info-right"].forEach(function(id) {
+    ["info-left","info-right","expand-left","expand-right"].forEach(function(id) {
       var el = document.getElementById(id);
       if (el && el.style.display !== "none") {
         el.style.top = navBottom + "px";

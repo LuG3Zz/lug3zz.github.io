@@ -487,5 +487,23 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
 }
 
 @media (max-width: 900px) {
-  .sidebar-panel { display: none !important; }
+  .sidebar-panel, .expand-btn { display: none !important; }
+}
+
+.expand-btn {
+  position: fixed;
+  z-index: 99;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--yellow);
+  user-select: none;
+}
+.expand-btn:hover {
+  color: var(--green);
+}
+.expand-left {
+  left: 0;
+}
+.expand-right {
+  right: 0;
 }
