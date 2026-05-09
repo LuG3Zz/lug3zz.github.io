@@ -291,90 +291,122 @@ lineHtml += lineLabelsBottom + "</svg>";
 ---
 
 <Layout title="activity">
-  <div style="margin-bottom: 0.5rem;">
-    <span style="color: var(--green);">[guest@brownlu-blog]</span>
-    <span style="color: var(--dim);"> ~ $ </span>
+  <div style="margin-bottom:0.5rem;">
+    <span style="color:var(--green);">[guest@brownlu-blog]</span>
+    <span style="color:var(--dim);"> ~ $ </span>
     <span>activity --stats</span>
   </div>
 
-  <div style="border:1px solid var(--border);border-radius:6px;padding:0.75rem 1rem;background:var(--bg);margin-bottom:1rem;font-size:0.8125rem;font-family:var(--font-mono);">
-    <div style="color:var(--green);margin-bottom:0.4rem;">$ stats</div>
-    <div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;">
-      <span><span style="color:var(--dim);">posts</span> <span>{totalPosts}</span></span>
-      <span><span style="color:var(--dim);">chars</span> <span>{totalChars.toLocaleString()}</span></span>
-      <span><span style="color:var(--dim);">words</span> <span>{totalWords.toLocaleString()}</span></span>
-      <span><span style="color:var(--dim);">avg/post</span> <span>{avgPostChars.toLocaleString()} chars</span></span>
-      <span><span style="color:var(--dim);">longest</span> <span><a href={"/blog/" + longestPost.slug} style="color:var(--fg);text-decoration:none;">{longestPost.title}</a> ({longestPost.len?.toLocaleString()} chars)</span></span>
-      <span><span style="color:var(--dim);">code lines</span> <span>{codeLines.toLocaleString()}</span></span>
-      <span><span style="color:var(--dim);">images</span> <span>{allImages}</span></span>
-      <span><span style="color:var(--dim);">tags</span> <span>{allTags.size}</span></span>
-      <span><span style="color:var(--dim);">time span</span> <span>{earliest ? earliest.toISOString().slice(0, 10) : "-"} ~ {latest ? latest.toISOString().slice(0, 10) : "-"}</span></span>
-      <span><span style="color:var(--dim);">posts/mo</span> <span>{postsPerMonth}</span></span>
+  <!-- ─── Stats Overview ──────────────── -->
+  <div class="section-box">
+    <div class="sec-head">$ stats</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem 1.5rem;font-size:0.8125rem;">
+      <div>
+        <div style="color:var(--dim);margin-bottom:0.35rem;border-bottom:1px dashed var(--border);padding-bottom:0.2rem;">general</div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">posts</span> <span style="color:var(--fg-bright);">{totalPosts}</span></div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">tags</span> <span style="color:var(--fg-bright);">{allTags.size}</span></div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">series</span> <span style="color:var(--fg-bright);">{seriesCount}</span></div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">time span</span> <span style="color:var(--fg-bright);">{earliest ? earliest.toISOString().slice(0, 10) : "-"} ~ {latest ? latest.toISOString().slice(0, 10) : "-"}</span></div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">posts/mo</span> <span style="color:var(--fg-bright);">{postsPerMonth}</span></div>
+      </div>
+      <div>
+        <div style="color:var(--dim);margin-bottom:0.35rem;border-bottom:1px dashed var(--border);padding-bottom:0.2rem;">content</div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">chars</span> <span style="color:var(--fg-bright);">{totalChars.toLocaleString()}</span></div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">words</span> <span style="color:var(--fg-bright);">{totalWords.toLocaleString()}</span></div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">avg/post</span> <span style="color:var(--fg-bright);">{avgPostChars.toLocaleString()} chars</span></div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">longest</span> <span style="color:var(--fg-bright);"><a href={"/blog/" + longestPost.slug} style="color:var(--fg);text-decoration:none;">{longestPost.title}</a></span></div>
+        <div style="line-height:1.9;font-size:0.7rem;color:var(--dim);padding-left:5.5rem;">({longestPost.len?.toLocaleString()} chars)</div>
+      </div>
+      <div>
+        <div style="color:var(--dim);margin-bottom:0.35rem;border-bottom:1px dashed var(--border);padding-bottom:0.2rem;">code & media</div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">code lines</span> <span style="color:var(--fg-bright);">{codeLines.toLocaleString()}</span></div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">images</span> <span style="color:var(--fg-bright);">{allImages}</span></div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">cover images</span> <span style="color:var(--fg-bright);">{withCover}/{totalPosts}</span></div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">links</span> <span style="color:var(--fg-bright);">{totalLinks}</span> <span style="color:var(--dim);">(ext: {totalExtLinks})</span></div>
+        <div style="line-height:1.9;"><span style="color:var(--yellow);">with series</span> <span style="color:var(--fg-bright);">{withSeries}</span></div>
+      </div>
     </div>
   </div>
 
-  <div style="border:1px solid var(--border);border-radius:6px;padding:0.75rem 1rem;background:var(--bg);margin-bottom:1rem;font-size:0.75rem;font-family:var(--font-mono);">
-    <div style="color:var(--green);margin-bottom:0.4rem;">$ tables</div>
-    <div style="display:flex;gap:2rem;flex-wrap:wrap;">
+  <!-- ─── Tables: Year / Weekday / Content ──── -->
+  <div class="section-box">
+    <div class="sec-head">$ tables</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;font-size:0.75rem;">
       <div>
-        <div style="color:var(--dim);margin-bottom:0.25rem;">by year</div>
+        <div style="color:var(--dim);margin-bottom:0.4rem;">by year</div>
         {yearCounts.map(({ year: y, count: c }) => (
-          <div><a href={"/archive#year-" + y} style="color:var(--yellow);display:inline-block;width:4rem;text-decoration:none;">{y}</a><span>{c} post{c > 1 ? "s" : ""}</span></div>
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:2px;">
+            <a href={"/archive#year-" + y} style="color:var(--yellow);width:3.5rem;text-decoration:none;">{y}</a>
+            <div style="flex:1;height:10px;background:var(--bg);border:1px solid var(--border);border-radius:2px;overflow:hidden;">
+              <div style="height:100%;width:{Math.round((c / Math.max(...yearCounts.map(yc => yc.count))) * 100)}%;background:var(--green);border-radius:1px;"></div>
+            </div>
+            <span style="color:var(--dim);min-width:2rem;text-align:right;">{c}</span>
+          </div>
         ))}
-        <div style="border-top:1px solid var(--border);margin-top:0.25rem;padding-top:0.25rem;">
+        <div style="border-top:1px dashed var(--border);margin-top:0.35rem;padding-top:0.35rem;display:flex;gap:1rem;">
           <span style="color:var(--dim);">series: {seriesCount}</span>
-          <span style="color:var(--dim);margin-left:1rem;">with series: {withSeries}</span>
+          <span style="color:var(--dim);">series posts: {withSeries}</span>
         </div>
       </div>
       <div>
-        <div style="color:var(--dim);margin-bottom:0.25rem;">by weekday</div>
+        <div style="color:var(--dim);margin-bottom:0.4rem;">by weekday</div>
         {wdCounts.map((c, i) => (
           <div style="display:flex;align-items:center;margin-bottom:2px;">
-            <span style="color:var(--yellow);display:inline-block;width:3rem;">{wdNames[i]}</span>
-            <div style="width:{Math.round((c / maxWd) * 100)}%;height:12px;background:var(--green);border-radius:2px;min-width:{c > 0 ? '4px' : '0'};"></div>
-            <span style="color:var(--dim);margin-left:4px;">{c}</span>
+            <span style="color:var(--yellow);width:2.5rem;">{wdNames[i]}</span>
+            <div style="flex:1;height:10px;background:var(--bg);border:1px solid var(--border);border-radius:2px;overflow:hidden;">
+              <div style="height:100%;width:{Math.round((c / maxWd) * 100)}%;background:var(--green);border-radius:1px;"></div>
+            </div>
+            <span style="color:var(--dim);margin-left:4px;min-width:1.5rem;text-align:right;">{c}</span>
           </div>
         ))}
       </div>
       <div>
-        <div style="color:var(--dim);margin-bottom:0.25rem;">content</div>
-        <div><span style="color:var(--dim);">cover images: </span><span>{withCover}/{totalPosts}</span></div>
-        <div><span style="color:var(--dim);">links: </span><span>{totalLinks} (external: {totalExtLinks})</span></div>
+        <div style="color:var(--dim);margin-bottom:0.4rem;">content</div>
+        <div style="line-height:1.8;">
+          <div><span style="color:var(--yellow);"></span> <span style="color:var(--dim);">cover images:</span> <span>{withCover}/{totalPosts}</span></div>
+          <div><span style="color:var(--dim);">links:</span> <span>{totalLinks}</span> <span style="color:var(--dim);">(external: {totalExtLinks})</span></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div style="border: 1px solid var(--border); border-radius: 6px; padding: 1rem; background: var(--bg); margin-bottom: 1rem; overflow-x: auto;" set:html={html}></div>
+  <!-- ─── Activity Heatmap ─────────────── -->
+  <div class="section-box" style="overflow-x:auto;" set:html={html}></div>
 
-  <div style="border: 1px solid var(--border); border-radius: 6px; padding: 1rem; background: var(--bg); margin-bottom: 1.5rem; overflow-x: auto;" set:html={tagHtml}></div>
+  <!-- ─── Tag Distribution ─────────────── -->
+  <div class="section-box" style="overflow-x:auto;" set:html={tagHtml}></div>
 
-  <div style="border:1px solid var(--border);border-radius:6px;padding:1rem;background:var(--bg);margin-bottom:1.5rem;font-size:0.75rem;font-family:var(--font-mono);">
-    <div style="color:var(--green);margin-bottom:0.5rem;">$ charts</div>
-    <div style="display:flex;gap:2rem;align-items:flex-start;justify-content:space-around;">
-      <div>
-        <div style="color:var(--dim);margin-bottom:0.5rem;">tags pie</div>
+  <!-- ─── Charts ──────────────────────── -->
+  <div class="section-box">
+    <div class="sec-head">$ charts</div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;justify-content:space-around;">
+      <div style="text-align:center;">
+        <div style="color:var(--dim);margin-bottom:0.4rem;font-size:0.75rem;">tags pie</div>
         <div set:html={pieSvg}></div>
       </div>
-      <div>
-        <div style="color:var(--dim);margin-bottom:0.5rem;">weekday radar</div>
+      <div style="text-align:center;">
+        <div style="color:var(--dim);margin-bottom:0.4rem;font-size:0.75rem;">weekday radar</div>
         <div set:html={radarHtml}></div>
       </div>
-      <div>
-        <div style="color:var(--dim);margin-bottom:0.5rem;">cumulative posts</div>
+      <div style="text-align:center;">
+        <div style="color:var(--dim);margin-bottom:0.4rem;font-size:0.75rem;">cumulative posts</div>
         <div set:html={lineHtml}></div>
       </div>
     </div>
   </div>
 
-  <p style="margin-bottom: 0.5rem; color: var(--dim);">recent posts</p>
-  <ul class="post-list">
-    {posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 10).map((p) => (
-      <li class="post-item">
-        <a class="post-title" href={"/blog/" + p.slug} style="font-size: 0.8125rem;">
-          {p.data.title}
-        </a>
-        <span class="post-date">{p.data.date.toISOString().slice(0, 10)}</span>
-      </li>
-    ))}
-  </ul>
+  <!-- ─── Recent Posts ──────────────── -->
+  <div style="margin-top:1.5rem;">
+    <div style="margin-bottom:0.5rem;color:var(--dim);font-size:0.75rem;">$ cat --recent 10</div>
+    <ul class="post-list">
+      {posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 10).map((p) => (
+        <li class="post-item">
+          <a class="post-title" href={"/blog/" + p.slug} style="font-size:0.8125rem;">
+            {p.data.title}
+          </a>
+          <span class="post-date">{p.data.date.toISOString().slice(0, 10)}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
 </Layout>
