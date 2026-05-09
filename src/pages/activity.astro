@@ -63,6 +63,7 @@ const yearCounts = years.map(y => ({ year: y, count: posts.filter(p => p.data.da
 
 // Weekday distribution
 const wdNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const wdColors = ["var(--red)", "var(--green)", "var(--green)", "var(--green)", "var(--green)", "var(--yellow)", "var(--cyan)"];
 const wdCounts = [0, 0, 0, 0, 0, 0, 0];
 for (const p of posts) {
   wdCounts[p.data.date.getDay()]++;
@@ -171,7 +172,7 @@ for (let i = 0; i <= 4; i++) {
 html += '<span style="color:var(--dim);font-size:0.6875rem;">More</span>';
 html += '<span style="margin-left:1rem;color:var(--dim);font-size:0.6875rem;">Total: ' + posts.length + " posts</span></div></div>";
 
-// Tag distribution bar chart
+// Tag distribution — combined bar chart + pie side by side
 const tagCounts = new Map();
 for (const p of posts) {
   for (const t of p.data.tags || []) {
@@ -180,19 +181,6 @@ for (const p of posts) {
 }
 const sortedTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]);
 const maxTagCount = sortedTags.length > 0 ? sortedTags[0][1] : 1;
-
-let tagHtml = '<div style="font-size:0.75rem;line-height:1.6;font-family:var(--font-mono);">';
-tagHtml += '<div style="color:var(--green);margin-bottom:0.5rem;">tags distribution</div>';
-for (const [tag, count] of sortedTags) {
-  const pct = count / maxTagCount;
-  const barW = Math.round(pct * 100);
-  tagHtml += '<div style="display:flex;align-items:center;margin-bottom:4px;">' +
-    '<span style="color:var(--yellow);min-width:8rem;font-size:0.75rem;">' + tag + '</span>' +
-    '<div style="flex:1;height:14px;background:var(--bg);border:1px solid var(--border);border-radius:3px;overflow:hidden;margin:0 8px;">' +
-    '<div style="height:100%;width:' + barW + '%;background:var(--green);border-radius:2px;"></div></div>' +
-    '<span style="color:var(--dim);min-width:2rem;text-align:right;font-size:0.75rem;">' + count + '</span></div>';
-}
-tagHtml += "</div>";
 
 // Pie chart for tag distribution — SVG with hover segments
 const pieColors = ["#33ff33","#ffff33","#ff3333","#33aaff","#33ffff","#ff33aa","#aa33ff","#ff8833","#666"];
@@ -217,6 +205,28 @@ sortedTags.forEach(([tag, count], i) => {
 pieSvg += "</svg>";
 pieSvg += '<div id="pie-tooltip" style="position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.75rem;color:var(--yellow);display:none;pointer-events:none;white-space:nowrap;z-index:10;"></div>';
 pieSvg += `<script is:inline>(function(){var segs=document.querySelectorAll('.pie-seg');var tip=document.getElementById('pie-tooltip');segs.forEach(function(s){s.addEventListener('mouseenter',function(e){tip.textContent=s.getAttribute('data-tag');tip.style.display='block';});s.addEventListener('mousemove',function(e){tip.style.left=(e.pageX+10)+'px';tip.style.top=(e.pageY-20)+'px';});s.addEventListener('mouseleave',function(){tip.style.display='none';});});})();</script>`;
+
+// Build tagHtml: left bar chart + right pie
+let tagHtml = '<div style="display:flex;gap:1rem;align-items:flex-start;">';
+// Left: bar chart
+tagHtml += '<div style="flex:1;min-width:0;font-size:0.75rem;line-height:1.6;font-family:var(--font-mono);">';
+tagHtml += '<div style="color:var(--green);margin-bottom:0.5rem;">tags distribution</div>';
+for (const [tag, count] of sortedTags) {
+  const pct = count / maxTagCount;
+  const barW = Math.round(pct * 100);
+  tagHtml += '<div style="display:flex;align-items:center;margin-bottom:3px;">' +
+    '<span style="color:var(--yellow);min-width:8rem;font-size:0.75rem;">' + tag + '</span>' +
+    '<div style="flex:1;height:12px;background:var(--bg);border:1px solid var(--border);border-radius:3px;overflow:hidden;margin:0 8px;">' +
+    '<div style="height:100%;width:' + barW + '%;background:var(--green);border-radius:2px;"></div></div>' +
+    '<span style="color:var(--dim);min-width:2rem;text-align:right;font-size:0.75rem;">' + count + '</span></div>';
+}
+tagHtml += "</div>";
+
+// Right: pie chart
+tagHtml += '<div style="flex-shrink:0;text-align:center;">';
+tagHtml += '<div style="color:var(--dim);margin-bottom:0.5rem;font-size:0.75rem;">distribution</div>';
+tagHtml += '<div style="position:relative;">' + pieSvg + '</div></div>';
+tagHtml += "</div>";
 
 // Radar chart for weekday activity
 const wdMax = Math.max(...wdCounts, 1);
@@ -354,7 +364,7 @@ lineHtml += lineLabelsBottom + "</svg>";
           <div style="display:flex;align-items:center;margin-bottom:2px;">
             <span style="color:var(--yellow);width:2.5rem;">{wdNames[i]}</span>
             <div style="flex:1;height:10px;background:var(--bg);border:1px solid var(--border);border-radius:2px;overflow:hidden;">
-              <div style="height:100%;width:{Math.round((c / maxWd) * 100)}%;background:var(--green);border-radius:1px;"></div>
+              <div style="height:100%;width:{Math.round((c / maxWd) * 100)}%;background:{wdColors[i]};border-radius:1px;"></div>
             </div>
             <span style="color:var(--dim);margin-left:4px;min-width:1.5rem;text-align:right;">{c}</span>
           </div>
@@ -373,17 +383,13 @@ lineHtml += lineLabelsBottom + "</svg>";
   <!-- ─── Activity Heatmap ─────────────── -->
   <div class="section-box" style="overflow-x:auto;" set:html={html}></div>
 
-  <!-- ─── Tag Distribution ─────────────── -->
+  <!-- ─── Tag Distribution (bar + pie side by side) ── -->
   <div class="section-box" style="overflow-x:auto;" set:html={tagHtml}></div>
 
   <!-- ─── Charts ──────────────────────── -->
   <div class="section-box">
     <div class="sec-head">$ charts</div>
     <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;justify-content:space-around;">
-      <div style="text-align:center;">
-        <div style="color:var(--dim);margin-bottom:0.4rem;font-size:0.75rem;">tags pie</div>
-        <div set:html={pieSvg}></div>
-      </div>
       <div style="text-align:center;">
         <div style="color:var(--dim);margin-bottom:0.4rem;font-size:0.75rem;">weekday radar</div>
         <div set:html={radarHtml}></div>
