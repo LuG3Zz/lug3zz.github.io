@@ -564,17 +564,7 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
   right: 0;
 }
 
-/* ─── Terminal window chrome ─────────────── */
-.window-titlebar {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.6rem;
-  margin: -2rem -1.5rem 0 -1.5rem;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg) 95%, var(--fg) 5%);
-}
+
 .win-dot {
   width: 10px;
   height: 10px;
@@ -585,8 +575,8 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
 .win-dot-yellow { background: #ffbd2e; }
 .win-dot-green { background: #27c93f; }
 .win-title {
-  font-size: 0.8rem;
-  color: var(--fg);
+  font-size: 0.6rem;
+  color: var(--dim);
   margin-left: 0.3rem;
 }
 
