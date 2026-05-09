@@ -224,7 +224,8 @@ const searchIndex = allPosts.map((p) => {
     border-color: var(--green);
     background: var(--bg);
   }
-  :global(.toc) { display:none;position:fixed;left:1rem;top:50%;transform:translateY(-50%);width:160px;max-height:70vh;overflow-y:auto;z-index:var(--z-sidebar, 100); }
+  :global(.toc) { display:none;position:fixed;left:1rem;top:50%;transform:translateY(-50%);width:160px;max-height:70vh;overflow-y:auto;z-index:var(--z-sidebar, 100);scrollbar-width:none;-ms-overflow-style:none;mask-image:linear-gradient(to bottom,transparent 0,var(--bg) 1rem,var(--bg) calc(100% - 1rem),transparent 100%);-webkit-mask-image:linear-gradient(to bottom,transparent 0,var(--bg) 1rem,var(--bg) calc(100% - 1rem),transparent 100%); }
+  :global(.toc)::-webkit-scrollbar { display:none; }
   :global(.toc) a:hover { color:var(--green) !important; }
   :global(.toc-active) { color:var(--green) !important; font-weight:bold !important; }
   @media (min-width:1200px) { :global(.toc) { display:block; } }
