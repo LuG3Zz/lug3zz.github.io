@@ -71,7 +71,7 @@ import Layout from "../layouts/Layout.astro";
     function buildGroupHTML(dk) {
       var items = groups[dk];
       items.sort(function(a, b) { return b.date - a.date; });
-      var html = '<div style="display:flex;gap:0.75rem;animation:fadeIn 0.3s ease-out;">';
+      var html = '<div style="display:flex;gap:0.75rem;">';
       html += '<div style="display:flex;flex-direction:column;align-items:center;min-width:1.5rem;">';
       html += '<div style="width:2px;flex:1;background:var(--border);"></div>';
       html += '<div style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;margin:0.25rem 0;"></div>';
@@ -82,9 +82,9 @@ import Layout from "../layouts/Layout.astro";
       for (var ji = 0; ji < items.length; ji++) {
         var item = items[ji];
         var timeStr = String(item.date.getHours()).padStart(2, "0") + ":" + String(item.date.getMinutes()).padStart(2, "0");
-        html += '<div style="margin-bottom:0.5rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);">' +
+        html += '<div style="margin-bottom:0.5rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);" class="post-entry" data-text="' + escHtml(item.post.text) + '">' +
           '<div style="color:var(--dim);font-size:0.7rem;margin-bottom:0.25rem;">$ echo "#' + item.num + ' ' + timeStr + '"</div>' +
-          '<div style="font-size:0.875rem;">> ' + escHtml(item.post.text) + '</div>' +
+          '<div style="font-size:0.875rem;">> </div>' +
           '</div>';
       }
       html += '</div>';
@@ -92,14 +92,37 @@ import Layout from "../layouts/Layout.astro";
       return html;
     }
 
-    // Animate: output one date group at a time
+    // Typewriter effect: reveal one char at a time
+    function typePostText(el, text, i) {
+      if (i >= text.length) { el.textContent = text; return; }
+      el.textContent = text.slice(0, i + 1);
+      var delay = text.charCodeAt(i) > 127 ? 40 : 20 + Math.random() * 30;
+      setTimeout(function() { typePostText(el, text, i + 1); }, delay);
+    }
+
+    // Animate: one date group at a time, type each post text
     el.innerHTML = "";
     var idx = 0;
     function nextGroup() {
       if (idx >= dateKeys.length) return;
       el.insertAdjacentHTML("beforeend", buildGroupHTML(dateKeys[idx]));
+      // Start typing all posts in the newly inserted group
+      var entries = el.querySelectorAll(".post-entry");
+      var startFrom = Math.max(0, entries.length - groups[dateKeys[idx]].length);
+      var typing = function(entryIdx) {
+        if (entryIdx >= entries.length) return;
+        var entry = entries[entryIdx];
+        var text = entry.getAttribute("data-text") || "";
+        var target = entry.querySelector("div:last-child");
+        if (target) {
+          typePostText(target, text, 0, function() { typing(entryIdx + 1); });
+        } else {
+          typing(entryIdx + 1);
+        }
+      };
+      typing(startFrom);
       idx++;
-      setTimeout(nextGroup, 250);
+      setTimeout(nextGroup, 400);
     }
     nextGroup();
   }
