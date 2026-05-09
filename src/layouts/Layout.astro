@@ -161,6 +161,8 @@ const searchIndex = allPosts.map((p) => {
   }
   .cmd-suggestions.show { display: inline-block; }
   .cmd-suggestions .sug-item { cursor: pointer; transition: color 0.1s; }
+  .cmd-suggestions .sug-item:first-child { color: var(--green); }
+  .grep-results .gr-item::before { content: "→ "; color: var(--dim); }
   .grep-results {
     display: none;
     margin-top: 0.25rem;
@@ -338,6 +340,8 @@ const searchIndex = allPosts.map((p) => {
         <span>© {new Date().getFullYear()}</span>
         &nbsp;·&nbsp;
         <span>uptime: <span id="footer-uptime">--</span></span>
+        &nbsp;·&nbsp;
+        <span style="color:var(--dim);font-size:0.7rem;">theme: <span id="footer-theme" style="color:var(--green);"></span></span>
       </div>
     </footer>
   </div>

@@ -94,7 +94,8 @@
     localStorage.setItem("theme", name);
     var sel = document.getElementById("theme-select");
     if (sel) sel.value = name;
-    // Re-render profile avatar filter to match new theme
+    var ft = document.getElementById("footer-theme");
+    if (ft) ft.textContent = name;
     if (document.getElementById("info-right")?.classList.contains("visible")) renderProfile();
   }
 

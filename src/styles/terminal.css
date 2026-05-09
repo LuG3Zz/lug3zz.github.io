@@ -145,7 +145,7 @@
 html {
   font-size: 18px;
   scrollbar-width: thin;
-  scrollbar-color: var(--dim) var(--bg);
+  scrollbar-color: var(--green) var(--bg);
 }
 
 /* CRT scanline overlay */
@@ -178,6 +178,8 @@ a {
 }
 a:hover {
   text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--green);
 }
 a:visited {
   color: var(--green);
@@ -204,6 +206,9 @@ a:visited {
   flex-wrap: wrap;
 }
 
+.prompt, .ascii-art, .win-title, .terminal-line .prompt-user {
+  text-shadow: 0 0 4px rgba(51, 255, 51, 0.25);
+}
 .prompt {
   color: var(--prompt);
   white-space: nowrap;
@@ -514,6 +519,8 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
   overflow-y: auto;
   flex-shrink: 0;
   height: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: var(--dim) transparent;
 }
 
 @media (max-width: 640px) {
@@ -586,4 +593,41 @@ pre:hover .copy-btn {
 .code-header + pre {
   border-radius: 0 0 6px 6px;
   margin-top: 0;
+}
+
+/* ─── CRT glow effects ───────────────────── */
+.cmd-input:focus {
+  box-shadow: 0 0 6px rgba(51, 255, 51, 0.15);
+}
+
+/* ─── Pomodoro terminal style ────────────── */
+#pomodoro-display {
+  border-left: 3px solid var(--green);
+  padding-left: 0.75rem;
+}
+
+/* ─── [NEW] pulse animation ──────────────── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.post-item [NEW] {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Page transition ────────────────────── */
+main {
+  animation: terminalFadeIn 0.15s ease-out;
+}
+@keyframes terminalFadeIn {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+
+/* ─── Code line numbers ──────────────────── */
+pre .line-number {
+  color: var(--dim);
+  user-select: none;
+  padding-right: 1rem;
+  text-align: right;
 }
