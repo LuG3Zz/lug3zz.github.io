@@ -555,6 +555,8 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.6rem;
+  margin: -2rem -1.5rem 0 -1.5rem;
+  border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg) 95%, var(--fg) 5%);
 }
