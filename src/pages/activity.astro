@@ -349,7 +349,7 @@ lineHtml += lineLabelsBottom + "</svg>";
           <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:2px;">
             <a href={"/archive#year-" + y} style="color:var(--yellow);width:3.5rem;text-decoration:none;">{y}</a>
             <div style="flex:1;height:10px;background:var(--bg);border:1px solid var(--border);border-radius:2px;overflow:hidden;">
-              <div style="height:100%;width:{Math.round((c / Math.max(...yearCounts.map(yc => yc.count))) * 100)}%;background:var(--green);border-radius:1px;"></div>
+              <div style={{ height: '100%', width: Math.round((c / Math.max(...yearCounts.map(yc => yc.count))) * 100) + '%', background: 'var(--green)', borderRadius: '1px' }}></div>
             </div>
             <span style="color:var(--dim);min-width:2rem;text-align:right;">{c}</span>
           </div>
@@ -365,7 +365,7 @@ lineHtml += lineLabelsBottom + "</svg>";
           <div style="display:flex;align-items:center;margin-bottom:2px;">
             <span style="color:var(--yellow);width:2.5rem;">{wdNames[i]}</span>
             <div style="flex:1;height:10px;background:var(--bg);border:1px solid var(--border);border-radius:2px;overflow:hidden;">
-              <div style="height:100%;width:{Math.round((c / maxWd) * 100)}%;background:{wdColors[i]};border-radius:1px;"></div>
+              <div style={{ height: '100%', width: Math.round((c / maxWd) * 100) + '%', background: wdColors[i], borderRadius: '1px' }}></div>
             </div>
             <span style="color:var(--dim);margin-left:4px;min-width:1.5rem;text-align:right;">{c}</span>
           </div>
