@@ -128,7 +128,7 @@
         });
         if (actId) {
           var a = document.querySelector('.toc a[href="#' + actId + '"]');
-          if (a) a.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          if (a) a.scrollIntoView({ block: "center", behavior: "smooth" });
         }
       }, { rootMargin: "-10% 0px -75% 0px", threshold: 0 });
       hdgs.forEach(function(h) { artObserver.observe(h.el); });
