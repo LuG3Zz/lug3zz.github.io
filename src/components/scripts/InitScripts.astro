@@ -67,11 +67,10 @@
       var m = Math.floor(remaining / 60);
       var s = remaining % 60;
       var pct = 1 - remaining / (min * 60);
-      var bar = "";
-      for (var bi = 0; bi < 20; bi++) bar += bi < Math.round(pct * 20) ? "█" : "░";
+      var barW = Math.round(pct * 100);
       display.style.display = "block";
       display.style.borderColor = "var(--border)";
-      display.innerHTML = '<span style="color:var(--green);font-size:1rem;">🍅</span> <span style="color:var(--fg-bright);">' + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + '</span> <span style="color:var(--dim);font-size:0.7rem;">[' + bar + '] ' + min + 'min</span>' + (daily > 0 ? '<span style="color:var(--dim);font-size:0.7rem;margin-left:0.5rem;">🍅×' + daily + '</span>' : '');
+      display.innerHTML = '<span style="color:var(--green);font-size:1rem;">🍅</span> <span style="color:var(--fg-bright);">' + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + '</span> <span style="color:var(--dim);font-size:0.7rem;">[' + '<span style="color:var(--green);">' + "█".repeat(Math.round(pct * 10)) + '</span>' + "░".repeat(Math.round((1 - pct) * 10)) + '] ' + min + 'min</span>' + (daily > 0 ? '<span style="color:var(--dim);font-size:0.7rem;margin-left:0.5rem;">🍅×' + daily + '</span>' : '');
     }, 1000);
   }
   var savedEnd = localStorage.getItem("pomodoro-end");
