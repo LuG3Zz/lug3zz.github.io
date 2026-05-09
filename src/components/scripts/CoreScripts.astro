@@ -544,6 +544,24 @@
     return 'grayscale(100%) sepia(100%) hue-rotate(' + (h - 35) + 'deg) saturate(300%) brightness(90%) contrast(120%)';
   }
 
+  // ─── Typewriter effect ─────────────────────
+  var typeTimer = null;
+  function typeBio(text, elId) {
+    if (typeTimer) { clearTimeout(typeTimer); typeTimer = null; }
+    var el = document.getElementById(elId || "bio-typewriter");
+    if (!el) return;
+    el.textContent = "";
+    el.parentElement.scrollTop = 0;
+    function step(i) {
+      if (i >= text.length) { el.textContent = text; return; }
+      el.textContent = text.slice(0, i + 1);
+      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      var delay = text.charCodeAt(i) > 127 ? 30 : 15 + Math.random() * 20;
+      typeTimer = setTimeout(function() { step(i + 1); }, delay);
+    }
+    step(0);
+  }
+
   function renderProfile() {
     var loggedIn = localStorage.getItem("logged-in") === "true";
     var right = document.getElementById("info-right");
@@ -555,27 +573,28 @@
 
 
   function renderAuthorInfo() {
-    var bio = (gistData && gistData.bio) || localStorage.getItem("profile-bio") || "\u559c\u6b22\u5199\u4ee3\u7801\u3001\u6298\u817e\u7ec8\u7aef";
+    var bioText = (gistData && gistData.bio) || localStorage.getItem("profile-bio") || "\u559c\u6b22\u5199\u4ee3\u7801\u3001\u6298\u817e\u7ec8\u7aef";
     var html = '<img src="/images/avatar.png" alt="avatar" style="max-width:100%;height:auto;border-radius:4px;border:1px solid var(--border);margin-bottom:0.5rem;filter:' + getThemeFilter() + ';" />';
     html += '<div style="border-top:1px dashed var(--border);margin:0.5rem 0;"></div>';
-    html += '<div style="font-size:0.75rem;line-height:1.8;">';
+    html += '<div id="profile-bio" style="font-size:0.75rem;line-height:1.8;">';
     html += 'author: <span style="color:var(--green)">lug3zz</span><br>';
-    html += '<span style="color:var(--dim);font-size:0.65rem;">' + escHtml(bio) + '</span><br>';
+    html += '<span id="bio-typewriter" style="color:var(--dim);font-size:0.65rem;"></span><br>';
     html += '<a href="/about" style="color:var(--blue)">/about</a><br>';
     html += '<a href="https://github.com/LuG3Zz" style="color:var(--dim);font-size:0.65rem;">github.com/LuG3Zz</a>';
     html += '</div>';
     document.getElementById("profile-content").innerHTML = html;
+    typeBio(bioText);
   }
 
   function renderUserProfile() {
     var username = localStorage.getItem("gist-user") || "user";
     var html = '<img src="/images/avatar.png" alt="avatar" style="max-width:100%;height:auto;border-radius:4px;border:1px solid var(--border);margin-bottom:0.5rem;filter:' + getThemeFilter() + ';" />';
     html += '<div style="border-top:1px dashed var(--border);margin:0.5rem 0;"></div>';
-    html += '<div style="font-size:0.75rem;line-height:1.8;">';
+    html += '<div id="profile-bio" style="font-size:0.75rem;line-height:1.8;">';
     html += 'user: <span style="color:var(--green)">' + escHtml(username) + '</span><br>';
     html += 'status: <span style="color:var(--green)">logged in</span><br>';
-    var bio = (gistData && gistData.bio) || localStorage.getItem("profile-bio");
-    if (bio) html += '<span style="color:var(--dim);font-size:0.65rem;">' + escHtml(bio) + '</span><br>';
+    var bioText = (gistData && gistData.bio) || localStorage.getItem("profile-bio");
+    if (bioText) html += '<span id="bio-typewriter" style="color:var(--dim);font-size:0.65rem;"></span><br>';
     var fEl = document.getElementById("footer-uptime");
     var uptime = fEl ? fEl.textContent : "--";
     html += 'uptime: ' + uptime + '<br>';
@@ -599,6 +618,7 @@
       html += '</div>';
     }
     document.getElementById("profile-content").innerHTML = html;
+    if (bioText) typeBio(bioText);
   }
 
   // ─── Sidebar alignment ────────────────────
