@@ -219,7 +219,7 @@ for (let ti = 0; ti < sortedTags.length; ti++) {
   const color = tagColors[ti % tagColors.length];
   const weight = pct > 0.7 ? "bold" : "normal";
   const opacity = 0.6 + pct * 0.4;
-  tagHtml += '<a href="/tags/' + encodeURIComponent(tag) + '" style="font-size:' + fs.toFixed(2) + 'rem;color:' + color + ';font-weight:' + weight + ';opacity:' + opacity.toFixed(2) + ';text-decoration:none;border:1px solid transparent;border-radius:4px;padding:0.1rem 0.4rem;transition:all 0.15s;" onmouseover="this.style.borderColor=\'' + color + '\';this.style.background=\'rgba(255,255,255,0.05)\'" onmouseout="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'>' + tag + '</a>';
+  tagHtml += '<a href="/tags/' + encodeURIComponent(tag) + '" style="font-size:' + fs.toFixed(2) + 'rem;color:' + color + ';font-weight:' + weight + ';opacity:' + opacity.toFixed(2) + ';text-decoration:none;padding:0.15rem 0.3rem;transition:all 0.15s;" onmouseover="this.style.background=\'rgba(255,255,255,0.08)\'" onmouseout="this.style.background=\'transparent\'">' + tag + '</a>';
 }
 tagHtml += '</div>';
 tagHtml += "</div>";
