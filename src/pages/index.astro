@@ -20,18 +20,20 @@ const greenStyle = "color:var(--green);";
 const yellowStyle = "color:var(--yellow);";
 const blueStyle = "color:var(--blue);";
 const sepStyle = "border-top:1px dashed var(--border);margin:1.75rem 0;";
-const promptWrapper = `<span style="${greenStyle}">┌──(</span><span class="prompt-user-display" style="${yellowStyle}">guest</span><span style="${dimStyle}">@</span><span style="${blueStyle}">brownlu-blog</span><span style="${greenStyle}">)</span><span style="${dimStyle}"> ~$ </span>`;
+const promptUser = "guest";
 ---
 
 <Layout title={siteName}>
   <div style="margin-bottom:0.5rem;">
-    {promptWrapper}<span style={cmdStyle}>./welcome.sh --greet</span>
+    <span style="color:var(--green);">┌──(</span><span class="prompt-user-display" style="color:var(--yellow);">guest</span><span style="color:var(--dim);">@</span><span style="color:var(--blue);">brownlu-blog</span><span style="color:var(--green);">)</span><span style="color:var(--dim);"> ~$ </span>
+    <span style={cmdStyle}>./welcome.sh --greet</span>
   </div>
   <pre id="welcome-output" style="color:var(--yellow);margin:0 0 1.5rem 0;line-height:1.4;white-space:pre-wrap;background:none;border:none;padding:0;font-family:inherit;"></pre>
 
   <details class="help-section" id="help-section">
     <summary style="margin-bottom:0.5rem;cursor:pointer;list-style:none;display:flex;align-items:center;gap:0.5rem;">
-      {promptWrapper}<span style={cmdStyle}>help --show-commands</span>
+      <span style="color:var(--green);">┌──(</span><span class="prompt-user-display" style="color:var(--yellow);">guest</span><span style="color:var(--dim);">@</span><span style="color:var(--blue);">brownlu-blog</span><span style="color:var(--green);">)</span><span style="color:var(--dim);"> ~$ </span>
+      <span style={cmdStyle}>help --show-commands</span>
       <span id="help-toggle" style="color:var(--dim);font-size:0.75rem;margin-left:auto;">[+]</span>
     </summary>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.25rem 1rem;font-size:0.8125rem;margin-bottom:1.5rem;line-height:1.9;padding:0.25rem 0 0.25rem 0.5rem;border-left:2px solid var(--border);">
@@ -57,7 +59,8 @@ const promptWrapper = `<span style="${greenStyle}">┌──(</span><span class=
   <div style={sepStyle}></div>
 
   <div style="margin-bottom:1rem;">
-    {promptWrapper}<span style={cmdStyle}>ls --latest --posts 5</span>
+    <span style="color:var(--green);">┌──(</span><span class="prompt-user-display" style="color:var(--yellow);">guest</span><span style="color:var(--dim);">@</span><span style="color:var(--blue);">brownlu-blog</span><span style="color:var(--green);">)</span><span style="color:var(--dim);"> ~$ </span>
+    <span style={cmdStyle}>ls --latest --posts 5</span>
   </div>
 
   <h2 style="font-size:0.9rem;margin:0 0 0.75rem 0.5rem;color:var(--fg-bright);display:flex;align-items:center;gap:0.4rem;">
