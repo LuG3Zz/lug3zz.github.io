@@ -388,7 +388,7 @@ lineHtml += lineLabelsBottom + "</svg>";
     <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;justify-content:space-around;">
       <div style="text-align:center;">
         <div style="color:var(--dim);margin-bottom:0.4rem;font-size:0.75rem;">tags pie</div>
-        <div style="position:relative;">{pieSvg}</div>
+        <div style="position:relative;" set:html={pieSvg}></div>
       </div>
       <div style="text-align:center;">
         <div style="color:var(--dim);margin-bottom:0.4rem;font-size:0.75rem;">weekday radar</div>
