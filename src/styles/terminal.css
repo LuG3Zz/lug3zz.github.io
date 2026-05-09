@@ -613,8 +613,9 @@ pre:hover .copy-btn {
 
 /* ─── Pomodoro terminal style ────────────── */
 #pomodoro-display {
-  border-left: 3px solid var(--green);
+  border-left: 3px solid var(--green) !important;
   padding-left: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 /* ─── [NEW] pulse animation ──────────────── */

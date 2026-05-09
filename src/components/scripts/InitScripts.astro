@@ -50,7 +50,7 @@
       if (remaining <= 0) {
         var total = addDailyPomo();
         display.style.display = "block";
-        display.innerHTML = '<span style="color:var(--yellow);">⏰ Time\'s up! (' + min + ' min)</span><span style="color:var(--dim);font-size:0.7rem;margin-left:1rem;">today: 🍅×' + total + '</span>';
+        display.innerHTML = '<div style="display:flex;align-items:center;gap:0.5rem;"><span style="color:var(--yellow);font-size:0.95rem;">⏰</span><span style="color:var(--fg);font-size:0.85rem;">Time\'s up!</span><span style="color:var(--dim);font-size:0.7rem;">(' + min + ' min)</span><span style="color:var(--dim);font-size:0.7rem;margin-left:auto;">🍅×' + total + ' today</span></div>';
         display.style.borderColor = "var(--yellow)";
         clearInterval(window._pomoInterval);
         localStorage.removeItem("pomodoro-end");
@@ -67,10 +67,10 @@
       var m = Math.floor(remaining / 60);
       var s = remaining % 60;
       var pct = 1 - remaining / (min * 60);
-      var bar = "█".repeat(Math.round(pct * 20)) + "░".repeat(Math.round((1 - pct) * 20));
+      var barW = Math.round(pct * 100);
       display.style.display = "block";
       display.style.borderColor = "var(--border)";
-      display.innerHTML = '<span style="color:var(--green);">🍅 ' + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + '</span> <span style="color:var(--dim);font-size:0.7rem;">' + min + "min " + bar + (daily > 0 ? '</span><span style="color:var(--dim);font-size:0.7rem;margin-left:0.5rem;">today: 🍅×' + daily + '</span>' : '</span>');
+      display.innerHTML = '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;"><span style="color:var(--green);font-size:0.95rem;">🍅 ' + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + '</span><div style="flex:1;min-width:80px;height:8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;overflow:hidden;"><div style="height:100%;width:' + barW + '%;background:var(--green);border-radius:3px;"></div></div><span style="color:var(--dim);font-size:0.7rem;">' + min + "min" + (daily > 0 ? '</span><span style="color:var(--dim);font-size:0.7rem;margin-left:0.25rem;">🍅×' + daily + '</span>' : '</span>') + '</div>';
     }, 1000);
   }
   var savedEnd = localStorage.getItem("pomodoro-end");
