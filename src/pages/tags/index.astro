@@ -10,6 +10,19 @@ for (const post of posts) {
   }
 }
 const sorted = [...tags.entries()].sort((a, b) => b[1] - a[1]);
+const maxCount = sorted.length > 0 ? sorted[0][1] : 1;
+const tagColors = ["var(--green)","var(--yellow)","var(--red)","var(--blue)","var(--cyan)","#ff33aa","#aa33ff","var(--dim)"];
+let cloudHtml = '<div style="display:flex;flex-wrap:wrap;gap:0.6rem;align-items:center;line-height:1.6;padding:0.5rem 0;">';
+for (let i = 0; i < sorted.length; i++) {
+  const [tag, count] = sorted[i];
+  const pct = count / maxCount;
+  const fs = 0.75 + pct * 1.0;
+  const color = tagColors[i % tagColors.length];
+  const weight = pct > 0.6 ? "bold" : "normal";
+  const opacity = 0.55 + pct * 0.45;
+  cloudHtml += '<a href="/tags/' + tag + '" style="font-size:' + fs.toFixed(2) + 'rem;color:' + color + ';font-weight:' + weight + ';opacity:' + opacity.toFixed(2) + ';text-decoration:none;border:1px solid transparent;border-radius:4px;padding:0.15rem 0.5rem;transition:all 0.15s;white-space:nowrap;" onmouseover="this.style.borderColor=\'' + color + '\';this.style.background=\'rgba(255,255,255,0.05)\'" onmouseout="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'">' + tag + ' <span style="font-size:0.65rem;color:var(--dim);">(' + count + ')</span></a>';
+}
+cloudHtml += '</div>';
 ---
 
 <Layout title="tags">
@@ -21,16 +34,7 @@ const sorted = [...tags.entries()].sort((a, b) => b[1] - a[1]);
 
   <p style="margin-bottom: 1rem; color: var(--dim);">total {sorted.length}</p>
 
-  <ul class="post-list">
-    {sorted.map(([tag, count]) => (
-      <li class="post-item">
-        <a class="post-title" href={`/tags/${tag}`} style="font-size: 0.875rem;">
-          <span class="tag" style="margin-right: 0.5rem;">{tag}</span>
-        </a>
-        <span class="post-date">{count} post{count > 1 ? "s" : ""}</span>
-      </li>
-    ))}
-  </ul>
+  <div class="section-box" set:html={cloudHtml}></div>
 
   <div style="margin-top: 1rem;">
     <a href="/blog" class="tag" style="font-size: 0.875rem;">← back to /blog</a>
