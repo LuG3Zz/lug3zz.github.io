@@ -62,142 +62,6 @@ const searchIndex = allPosts.map((p) => {
   <title>{path === "/" ? "HOME" : title} | brownlu-blog</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💻</text></svg>" />
   <script id="theme-data" type="application/json" set:html={JSON.stringify(THEMES)}></script>
-  </head>
-<body>
-  <div id="info-left" class="sidebar-panel sidebar-left">
-    <div id="info-left-content" class="sidebar-content" style="width:260px;padding:2rem 0 2rem 1.5rem;font-size:0.7rem;">
-      <div id="panel-left-head" style="cursor:pointer;color:var(--yellow);font-size:0.75rem;margin-bottom:0.25rem;" onclick="togglePanel('left')">[&lt;]</div>
-      <div id="todo-head" style="display:none;cursor:pointer;color:var(--yellow);font-size:0.75rem;" onclick="var p=document.getElementById('todo-body');p.style.display=p.style.display=='none'?'block':'none';this.textContent=p.style.display=='none'?'[+] '+this.getAttribute('data-label'):'[-] '+this.getAttribute('data-label');this.parentElement.style.padding=p.style.display=='none'?'0.3rem 0.75rem':'0.5rem 0.75rem';this.style.marginBottom=p.style.display=='none'?'0':'0.25rem'"></div>
-      <div id="todo-body" style="white-space:pre-wrap;"></div>
-    </div>
-  </div>
-  <div id="info-right" class="sidebar-panel sidebar-right">
-    <div id="info-right-content" class="sidebar-content" style="width:280px;padding:2rem 1.5rem 2rem 0;">
-      <div style="cursor:pointer;color:var(--yellow);font-size:0.75rem;margin-bottom:0.5rem;" onclick="togglePanel('right')">[&gt;] profile</div>
-      <div id="profile-content" style="font-family:var(--font-mono);font-size:0.8125rem;"></div>
-    </div>
-  </div>
-  <div id="expand-left" class="expand-btn expand-left" onclick="expandPanel('left')" style="display:none;">[&gt;]</div>
-  <div id="expand-right" class="expand-btn expand-right" onclick="expandPanel('right')" style="display:none;">[&lt;]</div>
-  <div class="container">
-    <header class="terminal-header">
-      <div class="header-top">
-        <div class="ascii-art">  _                             _
- | |__  _ __ _____      ___ __ | |_   _
- | '_ \| '__/ _ \ \ /\ / / '_ \| | | | |
- | |_) | | | (_) \ V  V /| | | | | |_| |
- |_.__/|_|  \___/ \_/\_/ |_| |_|_|\__,_|</div>
-        {path === "/" && (
-          <div class="weather-box" data-astro-transition-persist>
-            <div class="weather-title">$ curl wttr.in</div>
-            <div class="weather-body" id="weather-body"><span class="weather-loading">fetching...</span></div>
-          </div>
-        )}
-      </div>
-
-      <div class="terminal-line">
-        <form id="cmd-form" style="display:contents;" onsubmit="return false;">
-        <span class="prompt">
-          <span class="prompt-user" id="prompt-user">guest</span>
-          <span class="prompt-at">@</span>
-          <span class="prompt-host">brownlu-blog</span>
-        </span>
-        <span class="prompt-sep"> ~ </span>
-        <span class="prompt-dir">/{path === "/" ? "" : path.replace(/\/$/, "").replace(/^\//, "") || "~"}</span>
-        <span class="prompt-end"> $</span>
-        <input type="text" id="cmd-input" class="cmd-input" spellcheck="false" autocomplete="off" />
-        <select id="theme-select" class="theme-select" style="margin-left:0.5rem;flex-shrink:0;">
-          {THEMES.map(t => <option value={t}>{t}</option>)}
-        </select>
-        </form>
-      </div>
-
-      <div id="cmd-suggestions" class="cmd-suggestions"></div>
-      <div id="grep-results" class="grep-results"></div>
-      <div id="pomodoro-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;"></div>
-
-      <div id="music-island" style="position:fixed;top:0.5rem;left:50%;transform:translateX(-50%);z-index:9999;background:var(--bg);border:1px solid var(--green);border-radius:20px;padding:0.35rem 0.35rem 0.35rem 0.7rem;font-family:var(--font-mono);font-size:0.7rem;display:flex;align-items:center;gap:0.5rem;box-shadow:0 0 16px rgba(51,255,51,0.2),0 0 4px rgba(51,255,51,0.1);opacity:0;pointer-events:none;transition:opacity 0.3s,box-shadow 0.3s;cursor:pointer;max-width:90vw;">
-        <span id="music-island-icon" style="color:var(--green);font-size:0.85rem;flex-shrink:0;">▶</span>
-        <div style="display:flex;flex-direction:column;min-width:0;gap:1px;overflow:hidden;">
-          <div style="overflow:hidden;max-width:260px;">
-            <span id="music-island-info" style="color:var(--fg);white-space:nowrap;display:inline-block;line-height:1.3;"></span>
-          </div>
-          <div style="overflow:hidden;max-width:260px;">
-            <span id="music-island-sub" style="color:var(--dim);font-size:0.6rem;white-space:nowrap;display:inline-block;line-height:1.2;"></span>
-          </div>
-        </div>
-        <canvas id="music-spectrum" width="56" height="18" style="border-radius:3px;display:block;flex-shrink:0;"></canvas>
-        <span id="music-island-close" style="color:var(--dim);cursor:pointer;font-size:0.65rem;line-height:1;padding:0 2px;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--dim)'">✕</span>
-      </div>
-
-      <nav class="nav">
-        <a href="/" class={path === "/" ? "active" : ""}>home</a>
-        <a href="/blog" class={path.startsWith("/blog") ? "active" : ""}>blog</a>
-        <a href="/tags" class={path.startsWith("/tags") ? "active" : ""}>tags</a>
-        <a href="/series" class={path.startsWith("/series") ? "active" : ""}>series</a>
-        <a href="/activity" class={path === "/activity" ? "active" : ""}>activity</a>
-        <a href="/archive" class={path === "/archive" ? "active" : ""}>archive</a>
-        <a href="/now" class={path === "/now" ? "active" : ""}>now</a>
-        <a href="/travel" class={path === "/travel" ? "active" : ""}>travel</a>
-
-        <a href="/about" class={path === "/about" ? "active" : ""}>about</a>
-      </nav>
-    </header>
-
-    <main>
-      <slot />
-    </main>
-
-    <footer class="terminal-footer">
-      <div class="terminal-line">
-        <span class="prompt-end">$</span>
-        <span>echo "EOF"</span>
-        <span class="cursor-block cursor-blink"></span>
-      </div>
-      <div style="margin-top: 0.5rem;">
-        <a href="https://github.com/LuG3Zz">github</a>
-        &nbsp;·&nbsp;
-        <span>powered by Astro</span>
-        &nbsp;·&nbsp;
-        <span>© {new Date().getFullYear()}</span>
-        &nbsp;·&nbsp;
-        <span>uptime: <span id="footer-uptime">--</span></span>
-      </div>
-    </footer>
-  </div>
-
-  <div id="cmd-toast" class="cmd-toast"><span id="toast-msg"></span><span class="dismiss">[x]</span></div>
-  <span id="uptime-data" style="display:none;" data-start={firstCommitDate}></span>
-  <button id="back-to-top" class="back-to-top" aria-label="Back to top">^</button>
-  <canvas id="matrix-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;pointer-events:none;display:none;"></canvas>
-
-  <script id="completion-data" type="application/json" set:html={completionJson}></script>
-  <script id="search-index" type="application/json" set:html={JSON.stringify(searchIndex)}></script>
-  <script is:inline id="fortune-data" type="application/json">[
-    {"text":"Talk is cheap. Show me the code.","author":"Linus Torvalds"},
-    {"text":"任何傻瓜都能写出计算机能理解的代码。优秀的程序员写的是人类能读懂的代码。","author":"Martin Fowler"},
-    {"text":"先有 Hello World，后有万水千山。","author":""},
-    {"text":"Simplicity is prerequisite for reliability.","author":"Edsger W. Dijkstra"},
-    {"text":"程序是写给人读的，顺便能在机器上跑。","author":"Harold Abelson"},
-    {"text":"在终端里，没有不可能的事，只有还没敲的命令。","author":""},
-    {"text":"Debugging is twice as hard as writing the code in the first place.","author":"Brian Kernighan"},
-    {"text":"打字是程序员最好的健身。","author":""},
-    {"text":"The best way to predict the future is to invent it.","author":"Alan Kay"},
-    {"text":"删除代码不是损失，是获得。","author":""},
-    {"text":"Keep it simple, stupid.","author":""},
-    {"text":"代码如诗，终端如画。","author":""},
-    {"text":"A journey of a thousand miles begins with a single step.","author":"Lao Tzu"},
-    {"text":"别重复造轮子，除非你想学习轮子的工作原理。","author":""},
-    {"text":"It works on my machine.","author":""},
-    {"text":"所谓程序员，就是一台将咖啡因转化为代码的机器。","author":""},
-    {"text":"The only way to learn a new programming language is by writing programs in it.","author":"Dennis Ritchie"},
-    {"text":"先让它跑起来，再让它跑得快。","author":""},
-    {"text":"读代码比写代码更难。所以如果你写不出干净的代码，你就看不懂你写了什么。","author":""},
-    {"text":"在这终端里，你就是 root。","author":""}
-  ]</script>
-</body>
-</html>
-
 <style>
   .ascii-art { line-height: 1.1; }
   .header-top {
@@ -264,7 +128,7 @@ const searchIndex = allPosts.map((p) => {
     bottom: 1.5rem;
     left: 50%;
     transform: translateX(-50%);
-    background: #1a1a1a;
+    background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.75rem 1.5rem;
@@ -273,11 +137,13 @@ const searchIndex = allPosts.map((p) => {
     font-size: 0.875rem;
     display: none;
     cursor: pointer;
-    z-index: 100;
+    z-index: var(--z-toast, 300);
     user-select: none;
   }
   .cmd-toast.show {
     display: block;
+    border-color: var(--green);
+    box-shadow: 0 0 12px rgba(51, 255, 51, 0.15);
   }
   .cmd-suggestions {
     display: none;
@@ -343,7 +209,7 @@ const searchIndex = allPosts.map((p) => {
     opacity: 0;
     transform: translateY(10px);
     transition: opacity 0.2s, transform 0.2s;
-    z-index: 1000;
+    z-index: var(--z-backtop, 400);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -354,9 +220,9 @@ const searchIndex = allPosts.map((p) => {
   }
   .back-to-top:hover {
     border-color: var(--green);
-    background: #1a1a1a;
+    background: var(--bg);
   }
-  :global(.toc) { display:none;position:fixed;left:1rem;top:50%;transform:translateY(-50%);width:160px;max-height:70vh;overflow-y:auto;z-index:100; }
+  :global(.toc) { display:none;position:fixed;left:1rem;top:50%;transform:translateY(-50%);width:160px;max-height:70vh;overflow-y:auto;z-index:var(--z-sidebar, 100); }
   :global(.toc) a:hover { color:var(--green) !important; }
   :global(.toc-active) { color:var(--green) !important; font-weight:bold !important; }
   @media (min-width:1200px) { :global(.toc) { display:block; } }
@@ -366,6 +232,149 @@ const searchIndex = allPosts.map((p) => {
   :global(.toc-mobile) :global(.toc-list) a:hover { color:var(--green) !important; }
   @media (min-width:1200px) { :global(.toc-mobile) { display:none; } }
 </style>
+  </head>
+<body>
+  <div id="info-left" class="sidebar-panel sidebar-left">
+    <div id="info-left-content" class="sidebar-content" style="width:260px;padding:2rem 0 2rem 1.5rem;font-size:0.7rem;">
+      <div id="panel-left-head" style="cursor:pointer;color:var(--yellow);font-size:0.75rem;margin-bottom:0.25rem;" onclick="togglePanel('left')">[&lt;]</div>
+      <div id="todo-head" style="display:none;cursor:pointer;color:var(--yellow);font-size:0.75rem;" onclick="var p=document.getElementById('todo-body');p.style.display=p.style.display=='none'?'block':'none';this.textContent=p.style.display=='none'?'[+] '+this.getAttribute('data-label'):'[-] '+this.getAttribute('data-label');this.parentElement.style.padding=p.style.display=='none'?'0.3rem 0.75rem':'0.5rem 0.75rem';this.style.marginBottom=p.style.display=='none'?'0':'0.25rem'"></div>
+      <div id="todo-body" style="white-space:pre-wrap;"></div>
+    </div>
+  </div>
+  <div id="info-right" class="sidebar-panel sidebar-right">
+    <div id="info-right-content" class="sidebar-content" style="width:280px;padding:2rem 1.5rem 2rem 0;">
+      <div style="cursor:pointer;color:var(--yellow);font-size:0.75rem;margin-bottom:0.5rem;" onclick="togglePanel('right')">[&gt;] profile</div>
+      <div id="profile-content" style="font-family:var(--font-mono);font-size:0.8125rem;"></div>
+    </div>
+  </div>
+  <div id="expand-left" class="expand-btn expand-left" onclick="expandPanel('left')" style="display:none;">[&gt;]</div>
+  <div id="expand-right" class="expand-btn expand-right" onclick="expandPanel('right')" style="display:none;">[&lt;]</div>
+  <div class="container">
+    <header class="terminal-header">
+      <div class="window-titlebar">
+        <span class="win-dot win-dot-red"></span>
+        <span class="win-dot win-dot-yellow"></span>
+        <span class="win-dot win-dot-green"></span>
+        <span class="win-title">brownlu@blog:~/$</span>
+      </div>
+      <div class="header-top">
+        <div class="ascii-art">  _                             _
+ | |__  _ __ _____      ___ __ | |_   _
+ | '_ \| '__/ _ \ \ /\ / / '_ \| | | | |
+ | |_) | | | (_) \ V  V /| | | | | |_| |
+ |_.__/|_|  \___/ \_/\_/ |_| |_|_|\__,_|</div>
+        {path === "/" && (
+          <div class="weather-box" data-astro-transition-persist>
+            <div class="weather-title">$ curl wttr.in</div>
+            <div class="weather-body" id="weather-body"><span class="weather-loading">fetching...</span></div>
+          </div>
+        )}
+      </div>
+
+      <div class="terminal-line">
+        <form id="cmd-form" style="display:contents;" onsubmit="return false;">
+        <span class="prompt">
+          <span class="prompt-user" id="prompt-user">guest</span>
+          <span class="prompt-at">@</span>
+          <span class="prompt-host">brownlu-blog</span>
+        </span>
+        <span class="prompt-sep"> ~ </span>
+        <span class="prompt-dir">/{path === "/" ? "" : path.replace(/\/$/, "").replace(/^\//, "") || "~"}</span>
+        <span class="prompt-end"> $</span>
+        <input type="text" id="cmd-input" class="cmd-input" spellcheck="false" autocomplete="off" />
+        <select id="theme-select" class="theme-select" style="margin-left:0.5rem;flex-shrink:0;">
+          {THEMES.map(t => <option value={t}>{t}</option>)}
+        </select>
+        </form>
+      </div>
+
+      <div id="cmd-suggestions" class="cmd-suggestions"></div>
+      <div id="grep-results" class="grep-results"></div>
+      <div id="pomodoro-display" style="display:none;margin-top:0.25rem;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-family:var(--font-mono);font-size:0.8125rem;"></div>
+
+      <div id="music-island" style="position:fixed;top:0.5rem;left:50%;transform:translateX(-50%);z-index:var(--z-island, 200);background:var(--bg);border:1px solid var(--green);border-radius:20px;padding:0.35rem 0.35rem 0.35rem 0.7rem;font-family:var(--font-mono);font-size:0.7rem;display:flex;align-items:center;gap:0.5rem;box-shadow:0 0 16px rgba(51,255,51,0.2),0 0 4px rgba(51,255,51,0.1);opacity:0;pointer-events:none;transition:opacity 0.3s,box-shadow 0.3s;cursor:pointer;max-width:90vw;">
+        <span id="music-island-icon" style="color:var(--green);font-size:0.85rem;flex-shrink:0;">▶</span>
+        <div style="display:flex;flex-direction:column;min-width:0;gap:1px;overflow:hidden;">
+          <div style="overflow:hidden;max-width:260px;">
+            <span id="music-island-info" style="color:var(--fg);white-space:nowrap;display:inline-block;line-height:1.3;"></span>
+          </div>
+          <div style="overflow:hidden;max-width:260px;">
+            <span id="music-island-sub" style="color:var(--dim);font-size:0.6rem;white-space:nowrap;display:inline-block;line-height:1.2;"></span>
+          </div>
+        </div>
+        <canvas id="music-spectrum" width="56" height="18" style="border-radius:3px;display:block;flex-shrink:0;"></canvas>
+        <span id="music-island-close" style="color:var(--dim);cursor:pointer;font-size:0.65rem;line-height:1;padding:0 2px;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--dim)'">✕</span>
+      </div>
+
+      <nav class="nav">
+        <a href="/" class={path === "/" ? "active" : ""}>home</a>
+        <a href="/blog" class={path.startsWith("/blog") ? "active" : ""}>blog</a>
+        <a href="/tags" class={path.startsWith("/tags") ? "active" : ""}>tags</a>
+        <a href="/series" class={path.startsWith("/series") ? "active" : ""}>series</a>
+        <a href="/activity" class={path === "/activity" ? "active" : ""}>activity</a>
+        <a href="/archive" class={path === "/archive" ? "active" : ""}>archive</a>
+        <a href="/now" class={path === "/now" ? "active" : ""}>now</a>
+        <a href="/travel" class={path === "/travel" ? "active" : ""}>travel</a>
+
+        <a href="/about" class={path === "/about" ? "active" : ""}>about</a>
+      </nav>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="terminal-footer">
+      <div class="terminal-line">
+        <span class="prompt-end">$</span>
+        <span>echo "EOF"</span>
+        <span class="cursor-block cursor-blink"></span>
+      </div>
+      <div style="margin-top: 0.5rem;">
+        <a href="https://github.com/LuG3Zz">github</a>
+        &nbsp;·&nbsp;
+        <span>powered by Astro</span>
+        &nbsp;·&nbsp;
+        <span>© {new Date().getFullYear()}</span>
+        &nbsp;·&nbsp;
+        <span>uptime: <span id="footer-uptime">--</span></span>
+      </div>
+    </footer>
+  </div>
+
+  <div id="cmd-toast" class="cmd-toast"><span id="toast-msg"></span><span class="dismiss">[x]</span></div>
+  <span id="uptime-data" style="display:none;" data-start={firstCommitDate}></span>
+  <button id="back-to-top" class="back-to-top" aria-label="Back to top">^</button>
+  <canvas id="matrix-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:var(--z-matrix, 500);pointer-events:none;display:none;"></canvas>
+
+  <script id="completion-data" type="application/json" set:html={completionJson}></script>
+  <script id="search-index" type="application/json" set:html={JSON.stringify(searchIndex)}></script>
+  <script is:inline id="fortune-data" type="application/json">[
+    {"text":"Talk is cheap. Show me the code.","author":"Linus Torvalds"},
+    {"text":"任何傻瓜都能写出计算机能理解的代码。优秀的程序员写的是人类能读懂的代码。","author":"Martin Fowler"},
+    {"text":"先有 Hello World，后有万水千山。","author":""},
+    {"text":"Simplicity is prerequisite for reliability.","author":"Edsger W. Dijkstra"},
+    {"text":"程序是写给人读的，顺便能在机器上跑。","author":"Harold Abelson"},
+    {"text":"在终端里，没有不可能的事，只有还没敲的命令。","author":""},
+    {"text":"Debugging is twice as hard as writing the code in the first place.","author":"Brian Kernighan"},
+    {"text":"打字是程序员最好的健身。","author":""},
+    {"text":"The best way to predict the future is to invent it.","author":"Alan Kay"},
+    {"text":"删除代码不是损失，是获得。","author":""},
+    {"text":"Keep it simple, stupid.","author":""},
+    {"text":"代码如诗，终端如画。","author":""},
+    {"text":"A journey of a thousand miles begins with a single step.","author":"Lao Tzu"},
+    {"text":"别重复造轮子，除非你想学习轮子的工作原理。","author":""},
+    {"text":"It works on my machine.","author":""},
+    {"text":"所谓程序员，就是一台将咖啡因转化为代码的机器。","author":""},
+    {"text":"The only way to learn a new programming language is by writing programs in it.","author":"Dennis Ritchie"},
+    {"text":"先让它跑起来，再让它跑得快。","author":""},
+    {"text":"读代码比写代码更难。所以如果你写不出干净的代码，你就看不懂你写了什么。","author":""},
+    {"text":"在这终端里，你就是 root。","author":""}
+  ]</script>
+</body>
+</html>
+
+
 
 <CoreScripts />
 <MusicPlayer />

@@ -13,6 +13,11 @@
   --cursor: #33ff33;
   --selection: rgba(255, 255, 255, 0.15);
   --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "WenQuanYi Micro Hei", monospace;
+  --z-sidebar: 100;
+  --z-island: 200;
+  --z-toast: 300;
+  --z-backtop: 400;
+  --z-matrix: 500;
 }
 
 [data-theme="catppuccin"] {
@@ -126,6 +131,13 @@
   box-sizing: border-box;
 }
 
+/* Theme transition for smooth switching */
+:root, body, .container, .terminal-header, .terminal-footer, .nav a, pre, code, input, select, button, textarea,
+.cmd-toast, .cmd-suggestions, .grep-results, .back-to-top, .sidebar-panel, .sidebar-content, .expand-btn,
+.music-island, #pomodoro-display, .callout, blockquote, .post-item, .tag, .weather-box, [class^="callout"] {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
 ::selection {
   background: var(--selection);
 }
@@ -134,6 +146,22 @@ html {
   font-size: 18px;
   scrollbar-width: thin;
   scrollbar-color: var(--dim) var(--bg);
+}
+
+/* CRT scanline overlay */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.025) 2px,
+    rgba(0,0,0,0.025) 4px
+  );
+  pointer-events: none;
+  z-index: var(--z-matrix, 99999);
 }
 
 body {
@@ -238,6 +266,8 @@ a:visited {
   background: var(--green);
   color: var(--bg);
   text-decoration: none;
+  border-color: var(--green);
+  box-shadow: 0 0 8px rgba(51, 255, 51, 0.25);
 }
 
 .ascii-art {
@@ -329,7 +359,7 @@ code {
 }
 
 pre {
-  background: #1a1a1a;
+  background: color-mix(in srgb, var(--bg) 85%, var(--fg) 15%);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 1rem;
@@ -466,7 +496,7 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
 /* ─── Sidebar panels (fixed) ─────────────────── */
 .sidebar-panel {
   position: fixed;
-  z-index: 100;
+  z-index: var(--z-sidebar, 100);
   display: flex;
   visibility: hidden;
   overflow: hidden;
@@ -486,13 +516,13 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
   height: 100%;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 640px) {
   .sidebar-panel, .expand-btn { display: none !important; }
 }
 
 .expand-btn {
   position: fixed;
-  z-index: 99;
+  z-index: calc(var(--z-sidebar, 100) - 1);
   cursor: pointer;
   font-size: 0.75rem;
   color: var(--yellow);
@@ -506,4 +536,54 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
 }
 .expand-right {
   right: 0;
+}
+
+/* ─── Terminal window chrome ─────────────── */
+.window-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.75rem;
+}
+.win-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.win-dot-red { background: #ff5f56; }
+.win-dot-yellow { background: #ffbd2e; }
+.win-dot-green { background: #27c93f; }
+.win-title {
+  font-size: 0.7rem;
+  color: var(--dim);
+  margin-left: 0.3rem;
+}
+
+/* ─── Code block copy button ─────────────── */
+.copy-btn {
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+pre:hover .copy-btn {
+  opacity: 1;
+}
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0.75rem;
+  background: color-mix(in srgb, var(--bg) 90%, var(--fg) 10%);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  font-size: 0.7rem;
+  color: var(--dim);
+  margin-bottom: 0;
+}
+.code-header + pre {
+  border-radius: 0 0 6px 6px;
+  margin-top: 0;
 }

@@ -80,17 +80,6 @@
     if (sub) sub.style.transform = "";
   }
 
-  function musicHideIsland() {
-    var el = document.getElementById("music-island");
-    if (el) {
-      el.style.opacity = "0";
-      el.style.pointerEvents = "none";
-      el.style.boxShadow = "0 0 16px rgba(51,255,51,0.2),0 0 4px rgba(51,255,51,0.1)";
-    }
-    musicStopSpectrum();
-    musicSaveSession();
-  }
-
   function musicUpdateIslandPlayState(playing) {
     var icon = document.getElementById("music-island-icon");
     var el = document.getElementById("music-island");
