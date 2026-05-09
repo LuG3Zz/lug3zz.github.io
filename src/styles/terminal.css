@@ -564,8 +564,8 @@ html[data-focus="true"] .weather-box { opacity: 0.08; pointer-events: none; tran
 .win-dot-yellow { background: #ffbd2e; }
 .win-dot-green { background: #27c93f; }
 .win-title {
-  font-size: 0.7rem;
-  color: var(--dim);
+  font-size: 0.8rem;
+  color: var(--fg);
   margin-left: 0.3rem;
 }
 
