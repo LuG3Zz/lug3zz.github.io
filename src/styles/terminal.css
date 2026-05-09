@@ -459,7 +459,10 @@ img {
 html[data-zen="true"] .header-top,
 html[data-zen="true"] nav:not(.toc),
 html[data-zen="true"] .help-section,
-html[data-zen="true"] .terminal-footer { display: none !important; }
+html[data-zen="true"] .terminal-footer,
+html[data-zen="true"] .window-titlebar,
+html[data-zen="true"] .sidebar-panel,
+html[data-zen="true"] .expand-btn { display: none !important; }
 html[data-zen="true"] .terminal-header { border-bottom: none !important; margin-bottom: 1rem !important; padding-bottom: 0 !important; }
 html[data-zen="true"] .container { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
 html[data-zen="true"] main { width: 100%; }
