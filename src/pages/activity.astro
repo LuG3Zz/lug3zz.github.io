@@ -222,10 +222,6 @@ for (let ti = 0; ti < sortedTags.length; ti++) {
   tagHtml += '<a href="/tags/' + encodeURIComponent(tag) + '" style="font-size:' + fs.toFixed(2) + 'rem;color:' + color + ';font-weight:' + weight + ';opacity:' + opacity.toFixed(2) + ';text-decoration:none;border:1px solid transparent;border-radius:4px;padding:0.1rem 0.4rem;transition:all 0.15s;" onmouseover="this.style.borderColor=\'' + color + '\';this.style.background=\'rgba(255,255,255,0.05)\'" onmouseout="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'>' + tag + '</a>';
 }
 tagHtml += '</div>';
-// Pie below
-tagHtml += '<div style="text-align:center;">';
-tagHtml += '<div style="color:var(--dim);margin-bottom:0.5rem;font-size:0.75rem;">distribution</div>';
-tagHtml += '<div style="position:relative;display:inline-block;">' + pieSvg + '</div></div>';
 tagHtml += "</div>";
 
 // Radar chart for weekday activity
@@ -390,6 +386,10 @@ lineHtml += lineLabelsBottom + "</svg>";
   <div class="section-box">
     <div class="sec-head">$ charts</div>
     <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;justify-content:space-around;">
+      <div style="text-align:center;">
+        <div style="color:var(--dim);margin-bottom:0.4rem;font-size:0.75rem;">tags pie</div>
+        <div style="position:relative;">{pieSvg}</div>
+      </div>
       <div style="text-align:center;">
         <div style="color:var(--dim);margin-bottom:0.4rem;font-size:0.75rem;">weekday radar</div>
         <div set:html={radarHtml}></div>
