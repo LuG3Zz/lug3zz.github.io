@@ -206,23 +206,24 @@ pieSvg += "</svg>";
 pieSvg += '<div id="pie-tooltip" style="position:absolute;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:0.75rem;color:var(--yellow);display:none;pointer-events:none;white-space:nowrap;z-index:10;"></div>';
 pieSvg += `<script is:inline>(function(){var segs=document.querySelectorAll('.pie-seg');var tip=document.getElementById('pie-tooltip');segs.forEach(function(s){s.addEventListener('mouseenter',function(e){tip.textContent=s.getAttribute('data-tag');tip.style.display='block';});s.addEventListener('mousemove',function(e){tip.style.left=(e.pageX+10)+'px';tip.style.top=(e.pageY-20)+'px';});s.addEventListener('mouseleave',function(){tip.style.display='none';});});})();</script>`;
 
-// Build tagHtml: left bar chart + right pie
+// Build tagHtml: left word cloud + right pie
+const tagColors = ["var(--green)","var(--yellow)","var(--red)","var(--blue)","var(--cyan)","#ff33aa","#aa33ff","var(--dim)"];
 let tagHtml = '<div style="display:flex;gap:1rem;align-items:flex-start;">';
-// Left: bar chart
-tagHtml += '<div style="flex:1;min-width:0;font-size:0.75rem;line-height:1.6;font-family:var(--font-mono);">';
-tagHtml += '<div style="color:var(--green);margin-bottom:0.5rem;">tags distribution</div>';
-for (const [tag, count] of sortedTags) {
+// Left: word cloud
+tagHtml += '<div style="flex:1;min-width:0;font-family:var(--font-mono);">';
+tagHtml += '<div style="color:var(--green);margin-bottom:0.5rem;font-size:0.75rem;">tags cloud</div>';
+tagHtml += '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;line-height:1.4;">';
+for (let ti = 0; ti < sortedTags.length; ti++) {
+  const [tag, count] = sortedTags[ti];
   const pct = count / maxTagCount;
-  const barW = Math.round(pct * 100);
-  tagHtml += '<div style="display:flex;align-items:center;margin-bottom:3px;">' +
-    '<span style="color:var(--yellow);min-width:8rem;font-size:0.75rem;">' + tag + '</span>' +
-    '<div style="flex:1;height:12px;background:var(--bg);border:1px solid var(--border);border-radius:3px;overflow:hidden;margin:0 8px;">' +
-    '<div style="height:100%;width:' + barW + '%;background:var(--green);border-radius:2px;"></div></div>' +
-    '<span style="color:var(--dim);min-width:2rem;text-align:right;font-size:0.75rem;">' + count + '</span></div>';
+  const fs = 0.7 + pct * 0.8;
+  const color = tagColors[ti % tagColors.length];
+  const weight = pct > 0.7 ? "bold" : "normal";
+  const opacity = 0.6 + pct * 0.4;
+  tagHtml += '<a href="/tags/' + encodeURIComponent(tag) + '" style="font-size:' + fs.toFixed(2) + 'rem;color:' + color + ';font-weight:' + weight + ';opacity:' + opacity.toFixed(2) + ';text-decoration:none;border:1px solid transparent;border-radius:4px;padding:0.1rem 0.4rem;transition:all 0.15s;" onmouseover="this.style.borderColor=\'' + color + '\';this.style.background=\'rgba(255,255,255,0.05)\'" onmouseout="this.style.borderColor=\'transparent\';this.style.background=\'transparent\'">' + tag + '</a>';
 }
-tagHtml += "</div>";
-
-// Right: pie chart
+tagHtml += '</div></div>';
+// Right: keep the pie chart
 tagHtml += '<div style="flex-shrink:0;text-align:center;">';
 tagHtml += '<div style="color:var(--dim);margin-bottom:0.5rem;font-size:0.75rem;">distribution</div>';
 tagHtml += '<div style="position:relative;">' + pieSvg + '</div></div>';
