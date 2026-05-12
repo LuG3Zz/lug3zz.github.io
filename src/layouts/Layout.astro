@@ -3,7 +3,6 @@ import "../styles/terminal.css";
 import { getCollection } from "astro:content";
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
-import { execSync } from "child_process";
 import CoreScripts from "../components/scripts/CoreScripts.astro";
 import MusicPlayer from "../components/scripts/MusicPlayer.astro";
 import CommandDefs from "../components/scripts/CommandDefs.astro";
@@ -21,10 +20,7 @@ const completionJson = JSON.stringify({ slugs, tags, series, scripts });
 const THEMES = ["terminal","catppuccin","matrix","nord","gruvbox","dracula","tokyo-night","one-dark"];
 
 // Get first commit date for uptime
-const firstCommitDate = (function() {
-  try { return execSync("git log --reverse --format=%cI --date=iso-strict", { encoding: "utf-8" }).trim().split("\n")[0]; }
-  catch (_) { return "2026-04-28T22:28:26+08:00"; }
-})();
+const firstCommitDate = "2026-04-28T22:28:26+08:00";
 
 const searchIndex = allPosts.map((p) => {
   const fp = join(process.cwd(), "src/content/blog", p.id);
