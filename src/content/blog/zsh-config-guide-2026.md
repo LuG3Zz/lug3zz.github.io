@@ -218,54 +218,50 @@ alias gl='git log --oneline --graph'
 
 ## Starship 提示符（14-prompt.zsh + starship.toml）
 
-Starship 配置文件和 Zsh 配置放在同一目录，通过 `.zshenv` 中的 `STARSHIP_CONFIG` 指向：
+Starship 使用 `pastel-powerline` 预设，彩色的 Powerline 风格分隔线让提示符既美观又信息丰富：
 
 ```toml
 format = """
-[](bg:#1e1e2e)\
+[](#9A348E)\
 $os\
 $username\
-[](bg:#1e1e2e)\
+[](bg:#DA627D fg:#9A348E)\
 $directory\
+[](fg:#DA627D bg:#FCA17D)\
 $git_branch\
 $git_status\
-$fill\
-$cmd_duration\
-$line_break\
-$character"""
-
-add_newline = false
-
-[os]
-disabled = false
-style = "bg:#1e1e2e fg:#ACB0BE"
-
-[username]
-show_always = true
-style_user = "bg:#1e1e2e fg:#89B4FA"
-style_root = "bg:#1e1e2e fg:#F38BA8"
-
-[directory]
-style = "bg:#1e1e2e fg:#F5C2E7"
-truncation_length = 3
-
-[git_branch]
-style = "bg:#1e1e2e fg:#B4BEFE"
-
-[git_status]
-style = "bg:#1e1e2e fg:#B4BEFE"
-
-[cmd_duration]
-style = "bg:#1e1e2e fg:#A6E3A1"
-show_milliseconds = false
-min_time = 2000
-
-[character]
-success_symbol = "[❯](fg:#A6E3A1)"
-error_symbol = "[❯](fg:#F38BA8)"
+[](fg:#FCA17D bg:#86BBD8)\
+$c\
+$elixir\
+$elm\
+$golang\
+$gradle\
+$haskell\
+$java\
+$julia\
+$maven\
+$nodejs\
+$bun\
+$nim\
+$rust\
+$scala\
+[](fg:#86BBD8 bg:#06969A)\
+$docker_context\
+[](fg:#06969A bg:#33658A)\
+$time\
+[ ](fg:#33658A)\
+"""
 ```
 
-单行提示符，显示 OS 图标 → 用户名 → 目录 → Git 信息，干净利落。
+应用方法：
+
+```bash
+starship preset pastel-powerline -o ~/.config/zshrc/starship.toml
+```
+
+配置文件与 Zsh 配置放在同一目录，通过 `.zshenv` 中的 `STARSHIP_CONFIG` 指向。
+
+效果预览：彩色分段提示符，显示 OS 图标 → 用户名 → 目录 → Git 信息 → 语言版本 → 时间。
 
 ## Zoxide 智能导航（20-customization）
 
