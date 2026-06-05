@@ -222,7 +222,6 @@ Starship 使用 Catppuccin Mocha 配色，简洁的单行非 Powerline 风格：
 
 ```toml
 format = """
-$os\
 $username\
 $directory\
 $git_branch\
@@ -233,10 +232,6 @@ $line_break\
 $character"""
 
 add_newline = false
-
-[os]
-disabled = false
-style = "fg:red"
 
 [username]
 show_always = true
@@ -263,7 +258,7 @@ error_symbol = "[❯](fg:red)"
 
 配置文件和 Zsh 配置放在同一目录，通过 `.zshenv` 中的 `STARSHIP_CONFIG` 指向。
 
-效果：OS 图标（红）→ 用户名（橙）→ 目录（黄）→ Git 信息（绿）→ 执行时长（紫），每段使用 Catppuccin Mocha 配色。
+效果：用户名（橙）→ 目录（黄）→ Git 信息（绿）→ 执行时长（紫），每段使用 Catppuccin Mocha 配色。
 
 ## Zoxide 智能导航（20-customization）
 
