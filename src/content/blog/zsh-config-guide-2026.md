@@ -218,50 +218,15 @@ alias gl='git log --oneline --graph'
 
 ## Starship 提示符（14-prompt.zsh + starship.toml）
 
-Starship 使用 `pastel-powerline` 预设，彩色的 Powerline 风格分隔线让提示符既美观又信息丰富：
-
-```toml
-format = """
-[](#9A348E)\
-$os\
-$username\
-[](bg:#DA627D fg:#9A348E)\
-$directory\
-[](fg:#DA627D bg:#FCA17D)\
-$git_branch\
-$git_status\
-[](fg:#FCA17D bg:#86BBD8)\
-$c\
-$elixir\
-$elm\
-$golang\
-$gradle\
-$haskell\
-$java\
-$julia\
-$maven\
-$nodejs\
-$bun\
-$nim\
-$rust\
-$scala\
-[](fg:#86BBD8 bg:#06969A)\
-$docker_context\
-[](fg:#06969A bg:#33658A)\
-$time\
-[ ](fg:#33658A)\
-"""
-```
-
-应用方法：
+Starship 使用 Catppuccin Mocha 配色方案的 `catppuccin-powerline` 预设，温暖的暗色系配色搭配 Powerline 分隔线：
 
 ```bash
-starship preset pastel-powerline -o ~/.config/zshrc/starship.toml
+starship preset catppuccin-powerline -o ~/.config/zshrc/starship.toml
 ```
 
-配置文件与 Zsh 配置放在同一目录，通过 `.zshenv` 中的 `STARSHIP_CONFIG` 指向。
+主题默认启用 mocha 暗色配色（`palette = 'catppuccin_mocha'`），配置文件与 Zsh 配置放在同一目录，通过 `.zshenv` 中的 `STARSHIP_CONFIG` 指向。
 
-效果预览：彩色分段提示符，显示 OS 图标 → 用户名 → 目录 → Git 信息 → 语言版本 → 时间。
+效果预览：粉色/橙色/黄色/绿色分段提示符，显示 OS → 用户名 → 目录 → Git → 语言版本 → 时间。
 
 ## Zoxide 智能导航（20-customization）
 
