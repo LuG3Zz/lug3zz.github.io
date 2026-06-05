@@ -226,29 +226,107 @@ starship preset jetpack -o ~/.config/zshrc/starship.toml
 
 配置文件和 Zsh 配置放在同一目录，通过 `.zshenv` 中的 `STARSHIP_CONFIG` 指向。激活 Python 虚拟环境时会显示 `(venv-name)`。上排显示命令耗时 → 主机名 → 用户名 → `❯`，右侧显示目录和 Git 状态等信息。
 
-## Zoxide 智能导航（20-customization）
+## 安装与使用
+
+如果你也想用这套配置，有两种方式：
+
+### 方式一：chezmoi 一键恢复（推荐）
 
 ```bash
-eval "$(zoxide init zsh)"
+# 1. 安装 chezmoi
+sudo pacman -S chezmoi        # Arch
+brew install chezmoi           # macOS
+
+# 2. 克隆我的 dotfiles
+chezmoi init --apply LuG3Zz
+
+# 3. 安装必备工具
+sudo pacman -S zoxide fzf eza fd ripgrep bat starship
 ```
 
-`z part/of/path` 直接跳转，Zoxide 会记住你访问过的目录，越用越聪明。
-
-还有一些实用函数：
+执行完打开新终端即可。后续更新：
 
 ```bash
-mkcd() { mkdir -p "$1" && cd "$1"; }
-
-extract() {
-    case "$1" in
-        *.tar.gz|*.tgz) tar xzf "$1" ;;
-        *.zip) unzip "$1" ;;
-        *.rar) unrar x "$1" ;;
-        *.7z) 7z x "$1" ;;
-        *) echo "Unknown archive: $1" ;;
-    esac
-}
+chezmoi update          # 拉取最新配置
+zplugin-update          # 更新 Zsh 插件
 ```
+
+### 方式二：手动搭建
+
+如果不想用 chezmoi，也可以直接从 GitHub 复制文件：
+
+```bash
+# 1. 克隆仓库
+git clone --depth 1 https://github.com/LuG3Zz/dotfiles.git ~/dotfiles
+
+# 2. 复制配置
+mkdir -p ~/.config/zshrc
+cp ~/dotfiles/.config/zshrc/* ~/.config/zshrc/
+cp ~/dotfiles/.zshenv ~/
+
+# 3. 安装依赖
+sudo pacman -S zoxide fzf eza fd ripgrep bat starship
+```
+
+第一次打开终端时，插件会自动 `git clone` 到 `~/.local/share/zsh/plugins/`，后续自动加载。
+
+### 必备快捷键参考
+
+| 快捷键 | 功能 | 说明 |
+|---|---|---|
+| `Tab` | 命令补全 | 交互式菜单，大小写不敏感 |
+| `↑` / `↓` | 历史子串搜索 | 输入部分命令后再按，搜索匹配的历史记录 |
+| `Ctrl+R` | 模糊搜索历史 | FZF 弹窗，带预览，按时间排序 |
+| `Ctrl+T` | 模糊搜索文件 | 包含隐藏文件，用 `bat` 预览内容 |
+| `Alt+C` | 模糊搜索目录 | 用 `eza` 预览目录树 |
+| `Ctrl+F` | 搜索文件（不含隐藏） | 区别于 `Ctrl+T`，只搜普通文件 |
+| `→` | 接受自动建议 | 灰色提示的命令，按右箭头补全 |
+| `Ctrl+\` | 切换自动建议 | 开关自动建议功能 |
+| `Ctrl+←` / `Ctrl+→` | 单词跳转 | 按单词移动光标 |
+| `ESC` | 进入 Vi 普通模式 | `h/j/k/l` 移动，`/` 搜索，`d`/`y`/`p` 编辑 |
+
+### 日常使用
+
+```bash
+# 文件操作
+ls               # 彩色图标列表
+ll               # 长格式 + Git 状态
+la               # 包含隐藏文件
+lt               # 树形目录
+llt              # 两级目录树（快速预览）
+cat file.py      # 语法高亮
+catp file.py     # 不分页的 bat
+
+# 导航
+z proj           # 跳转到 ~/Project（Zoxide 智能匹配）
+..               # 返回上级
+-                # 返回上一个目录
+mkcd new-dir     # 创建目录并进入
+
+# 搜索
+grep pattern     # 用 ripgrep 搜索（比 grep 快得多）
+fd name          # 用 fd 查找文件（比 find 快）
+
+# 项目管理
+gs ga gc gp gl   # Git 快捷操作 (status/add/commit/push/log)
+extract file.gz  # 解压任意格式压缩包
+y                # 启动 Yazi 文件管理器（退出时自动 cd 到目录）
+
+# 插件管理
+zplugin-update   # 一键更新所有 Zsh 插件
+
+# 代理
+proxy_toggle     # 启用/禁用 HTTP 代理
+```
+
+### 一些实用技巧
+
+- **`z foo`** — Zoxide 会自动学习你最常去的目录，只用输入部分路径就能跳转
+- **隐藏历史** — 命令以空格开头就不会被记录，适合输密码或临时命令
+- **进入目录** — 直接输入目录名按回车就行（`AUTO_CD`），不需要 `cd`
+- **目录栈** — `d` 查看历史目录列表，`1` `2` `3` 快速跳转
+- **`Ctrl+R` 用法** — 按 `Ctrl+R` 后，输入关键词，匹配的历史命令会实时预览，按回车执行
+- **Vi 模式** — 按 `ESC` 进入普通模式后，可以使用 `vi`/`l` 移动光标，`/` 搜索历史，`dw` 删除单词等操作
 
 ## 日常效果一览
 
@@ -271,10 +349,6 @@ extract() {
 
 这套配置的核心理念很明确：**去掉黑盒，完全掌控**。
 
-没有 Oh My Zsh 的启动性能损耗，没有插件管理器的复杂 DSL，每个文件、每行配置都清清楚楚。所有文件通过 `chezmoi` 管理（源码在 [GitHub](https://github.com/LuG3Zz/dotfiles)），新机器上一行命令就能恢复：
-
-```bash
-chezmoi init --apply LuG3Zz
-```
+没有 Oh My Zsh 的启动性能损耗，没有插件管理器的复杂 DSL，每个文件、每行配置都清清楚楚。所有文件通过 `chezmoi` 管理（源码在 [GitHub](https://github.com/LuG3Zz/dotfiles)），安装方法见上方「安装与使用」章节。
 
 如果你也厌倦了那些厚重的框架，不妨试试这个路子。从零开始搭建的配置，会比任何一个开箱即用的方案都更懂你的需求。
