@@ -218,15 +218,52 @@ alias gl='git log --oneline --graph'
 
 ## Starship 提示符（14-prompt.zsh + starship.toml）
 
-Starship 使用 Catppuccin Mocha 配色方案的 `catppuccin-powerline` 预设，温暖的暗色系配色搭配 Powerline 分隔线：
+Starship 使用 Catppuccin Mocha 配色，简洁的单行非 Powerline 风格：
 
-```bash
-starship preset catppuccin-powerline -o ~/.config/zshrc/starship.toml
+```toml
+format = """
+$os\
+$username\
+$directory\
+$git_branch\
+$git_status\
+$fill\
+$cmd_duration\
+$line_break\
+$character"""
+
+add_newline = false
+
+[os]
+disabled = false
+style = "fg:red"
+
+[username]
+show_always = true
+style_user = "fg:peach"
+
+[directory]
+style = "fg:yellow"
+truncation_length = 3
+
+[git_branch]
+style = "fg:green"
+
+[git_status]
+style = "fg:green"
+
+[cmd_duration]
+style = "fg:lavender"
+min_time = 2000
+
+[character]
+success_symbol = "[❯](fg:green)"
+error_symbol = "[❯](fg:red)"
 ```
 
-主题默认启用 mocha 暗色配色（`palette = 'catppuccin_mocha'`），配置文件与 Zsh 配置放在同一目录，通过 `.zshenv` 中的 `STARSHIP_CONFIG` 指向。
+配置文件和 Zsh 配置放在同一目录，通过 `.zshenv` 中的 `STARSHIP_CONFIG` 指向。
 
-效果预览：粉色/橙色/黄色/绿色分段提示符，显示 OS → 用户名 → 目录 → Git → 语言版本 → 时间。
+效果：OS 图标（红）→ 用户名（橙）→ 目录（黄）→ Git 信息（绿）→ 执行时长（紫），每段使用 Catppuccin Mocha 配色。
 
 ## Zoxide 智能导航（20-customization）
 
