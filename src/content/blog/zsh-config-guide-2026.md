@@ -226,129 +226,172 @@ starship preset jetpack -o ~/.config/zshrc/starship.toml
 
 配置文件和 Zsh 配置放在同一目录，通过 `.zshenv` 中的 `STARSHIP_CONFIG` 指向。激活 Python 虚拟环境时会显示 `(venv-name)`。上排显示命令耗时 → 主机名 → 用户名 → `❯`，右侧显示目录和 Git 状态等信息。
 
-## 安装与使用
+## 使用指南
 
-如果你也想用这套配置，有两种方式：
+### 📂 文件浏览与查看
 
-### 方式一：chezmoi 一键恢复（推荐）
+进入终端第一件事就是看文件，这应该是最常用的操作。
 
-```bash
-# 1. 安装 chezmoi
-sudo pacman -S chezmoi        # Arch
-brew install chezmoi           # macOS
-
-# 2. 克隆我的 dotfiles
-chezmoi init --apply LuG3Zz
-
-# 3. 安装必备工具
-sudo pacman -S zoxide fzf eza fd ripgrep bat starship
-```
-
-执行完打开新终端即可。后续更新：
-
-```bash
-chezmoi update          # 拉取最新配置
-zplugin-update          # 更新 Zsh 插件
-```
-
-### 方式二：手动搭建
-
-如果不想用 chezmoi，也可以直接从 GitHub 复制文件：
-
-```bash
-# 1. 克隆仓库
-git clone --depth 1 https://github.com/LuG3Zz/dotfiles.git ~/dotfiles
-
-# 2. 复制配置
-mkdir -p ~/.config/zshrc
-cp ~/dotfiles/.config/zshrc/* ~/.config/zshrc/
-cp ~/dotfiles/.zshenv ~/
-
-# 3. 安装依赖
-sudo pacman -S zoxide fzf eza fd ripgrep bat starship
-```
-
-第一次打开终端时，插件会自动 `git clone` 到 `~/.local/share/zsh/plugins/`，后续自动加载。
-
-### 必备快捷键参考
-
-| 快捷键 | 功能 | 说明 |
+| 命令 | 作用 | 示例 |
 |---|---|---|
-| `Tab` | 命令补全 | 交互式菜单，大小写不敏感 |
-| `↑` / `↓` | 历史子串搜索 | 输入部分命令后再按，搜索匹配的历史记录 |
-| `Ctrl+R` | 模糊搜索历史 | FZF 弹窗，带预览，按时间排序 |
-| `Ctrl+T` | 模糊搜索文件 | 包含隐藏文件，用 `bat` 预览内容 |
-| `Alt+C` | 模糊搜索目录 | 用 `eza` 预览目录树 |
-| `Ctrl+F` | 搜索文件（不含隐藏） | 区别于 `Ctrl+T`，只搜普通文件 |
-| `→` | 接受自动建议 | 灰色提示的命令，按右箭头补全 |
-| `Ctrl+\` | 切换自动建议 | 开关自动建议功能 |
-| `Ctrl+←` / `Ctrl+→` | 单词跳转 | 按单词移动光标 |
-| `ESC` | 进入 Vi 普通模式 | `h/j/k/l` 移动，`/` 搜索，`d`/`y`/`p` 编辑 |
+| `ls` | 文件列表，带彩色图标 | `ls` |
+| `ll` | 文件列表 + 权限/大小/Git 状态 | `ll` |
+| `la` | 包含隐藏文件（以 `.` 开头的） | `la` |
+| `lt` | 树形目录结构 | `lt` |
+| `llt` | 两级目录树（最常用） | `llt ~/Project` |
+| `tree` | 完整树形视图 | `tree` |
+| `cat` | 文件内容，语法高亮 | `cat main.py` |
+| `catp` | 文件内容，不分页直接输出 | `catp config.json` |
 
-### 日常使用
+文件列表默认**目录排在文件前面**（`--group-directories-first`），再不用在一堆目录名里找文件了。`lt` 和 `llt` 可以快速看清项目结构.
+
+### 🔍 搜索与查找
+
+这套配置的搜索能力是提升最大的地方：
+
+**模糊搜索历史命令 — `Ctrl+R`**
+
+按 `Ctrl+R` 弹出 FZF 搜索窗口，输入任意关键词（如 `docker`），所有匹配的历史命令实时列出，用 `↑/↓` 选择后回车执行。搜索结果是按时间排序的，最近使用的优先。
+
+**模糊搜索文件 — `Ctrl+T`**
+
+在当前目录搜索文件（包含隐藏文件），右侧用 `bat` 实时显示文件内容预览，不用打开就知道是不是要找的那个。
+
+**模糊搜索目录 — `Alt+C`**
+
+搜索目录并快速跳转，右侧用 `eza` 显示目录树预览。
+
+**模糊搜索文件（不含隐藏） — `Ctrl+F`**
+
+和 `Ctrl+T` 一样，但只搜普通文件，不包含隐藏文件。
+
+**文本搜索 — `grep`**
 
 ```bash
-# 文件操作
-ls               # 彩色图标列表
-ll               # 长格式 + Git 状态
-la               # 包含隐藏文件
-lt               # 树形目录
-llt              # 两级目录树（快速预览）
-cat file.py      # 语法高亮
-catp file.py     # 不分页的 bat
+grep "error" -r src/    # 递归搜索 src 目录下的所有文件
+```
 
-# 导航
-z proj           # 跳转到 ~/Project（Zoxide 智能匹配）
-..               # 返回上级
--                # 返回上一个目录
-mkcd new-dir     # 创建目录并进入
+`grep` 实际上调用的是 **ripgrep**（`rg`），比传统 `grep` 快得多，支持正则、彩色输出、自动忽略 `.gitignore` 中的文件。
 
-# 搜索
-grep pattern     # 用 ripgrep 搜索（比 grep 快得多）
-fd name          # 用 fd 查找文件（比 find 快）
+**文件查找 — `fd`**
 
-# 项目管理
-gs ga gc gp gl   # Git 快捷操作 (status/add/commit/push/log)
-extract file.gz  # 解压任意格式压缩包
-y                # 启动 Yazi 文件管理器（退出时自动 cd 到目录）
+```bash
+fd main.py              # 查找 main.py
+fd "\.toml$"            # 查找所有 toml 文件
+fd -e md                # 查找所有 md 文件
+```
 
+`fd` 替代了 `find`，语法更直观，速度更快。
+
+### 🚀 导航与跳转
+
+**Zoxide 智能跳转 — `z`**
+
+Zoxide 是最让人上瘾的工具之一。它自动记录你访问过的目录：
+
+```bash
+z proj       # 跳转到 ~/Project（输入部分路径即可）
+z dot        # 跳转到 ~/.config/dotfiles
+z lug3       # 跳转到 ~/Project/lug3zz.github.io
+z dm         # 跳转到 ~/Project/DM
+```
+
+用的次数越多，匹配越精准。如果你去过两个名字相似的目录，按 `z` 后再按 `↑` 会弹出选择菜单。
+
+**目录快捷键**
+
+```bash
+..           # 返回上一级
+...          # 返回上两级
+....         # 返回上三级
+-            # 返回上一个目录
+d            # 查看目录栈
+1            # 跳转到目录栈第 1 个
+2            # 跳转到目录栈第 2 个
+```
+
+输入目录名直接回车即可进入——因为启用了 `AUTO_CD`，不需要打 `cd`。
+
+**mkcd — 创建并进入**
+
+```bash
+mkcd new-project    # mkdir -p new-project && cd new-project
+```
+
+### 🐙 Git 快捷操作
+
+```bash
+gs           # git status
+ga           # git add（默认加当前目录所有文件）
+gc           # git commit（打开编辑器写提交信息）
+gp           # git push
+gl           # git log --oneline --graph（图形化提交历史）
+gd           # git diff
+```
+
+### 🐍 Python 虚拟环境
+
+激活虚拟环境后，提示符右侧会自动显示 `(venv-name)`：
+
+```bash
+source .venv/bin/activate    # 激活后 → 提示符出现 (venv)
+deactivate                   # 退出后 → 提示符自动隐藏
+```
+
+### 📦 解压文件
+
+```bash
+extract archive.tar.gz    # 自动识别格式并解压
+extract file.zip
+extract file.7z
+```
+
+支持 `.tar.gz`、`.tgz`、`.tar.xz`、`.tar.bz2`、`.zip`、`.rar`、`.7z`，不需要记参数。
+
+### ↩️ 命令历史与补全
+
+**自动建议** — 输入命令时，历史中的匹配命令会以灰色显示在光标右侧，按 `→` 接受建议，按 `Ctrl+\` 开关建议功能。
+
+**历史子串搜索** — 输入部分命令，按 `↑` 搜索历史中匹配的上一行，按 `↓` 搜索下一行。比如打了 `docker` 再按 `↑`，就能翻出所有以 docker 开头的历史命令。
+
+**命令补全** — 按 `Tab` 弹出交互式补全菜单，用 `↑/↓` 选择。补全是**大小写不敏感**的，打 `CD` 也能补全成 `cd`，打 `ZsHrc` 也能找到 `.zshrc`。
+
+### ⌨️ Vi 模式
+
+按 `ESC` 进入 Vi 普通模式，可以用 Vi 快捷键编辑命令行：
+
+```bash
+ESC → h/j/k/l     # 左右上下移动
+ESC → /           # 搜索历史
+ESC → dw          # 删除一个单词
+ESC → dd          # 删除整行
+ESC → u           # 撤销
+ESC → Ctrl+R      # 重做
+i                 # 回到插入模式
+```
+
+光标样式会自动变化：插入模式为下划线 `_`，普通模式为块状 `█`。
+
+### 🔧 其他常用功能
+
+```bash
 # 插件管理
-zplugin-update   # 一键更新所有 Zsh 插件
+zplugin-update    # 一键更新所有手动安装的 Zsh 插件
 
-# 代理
-proxy_toggle     # 启用/禁用 HTTP 代理
+# 代理切换（如果配置了地址）
+proxy_toggle      # 启用/禁用 HTTP/HTTPS 代理
+
+# 文件管理器（Yazi）
+y                 # 启动终端文件管理器，退出时自动 cd 到所在目录
+
+# man 手册（带语法高亮）
+man ls            # 用 bat 渲染，彩色输出
 ```
-
-### 一些实用技巧
-
-- **`z foo`** — Zoxide 会自动学习你最常去的目录，只用输入部分路径就能跳转
-- **隐藏历史** — 命令以空格开头就不会被记录，适合输密码或临时命令
-- **进入目录** — 直接输入目录名按回车就行（`AUTO_CD`），不需要 `cd`
-- **目录栈** — `d` 查看历史目录列表，`1` `2` `3` 快速跳转
-- **`Ctrl+R` 用法** — 按 `Ctrl+R` 后，输入关键词，匹配的历史命令会实时预览，按回车执行
-- **Vi 模式** — 按 `ESC` 进入普通模式后，可以使用 `vi`/`l` 移动光标，`/` 搜索历史，`dw` 删除单词等操作
-
-## 日常效果一览
-
-配置好之后，终端体验是这样的：
-
-| 功能 | 操作 | 效果 |
-|---|---|---|
-| 文件列表 | `ls` / `ll` | 彩色图标 + Git 状态 + 目录优先 |
-| 文件预览 | `cat file.rs` | 语法高亮 + 行号 |
-| 目录树 | `lt` / `llt` / `tree` | 两层或完整树形视图 |
-| 模糊搜索文件 | `Ctrl+T` | 带 `bat` 预览 |
-| 模糊搜索目录 | `Alt+C` | 带 `eza` 树预览 |
-| 模糊搜索历史 | `Ctrl+R` | 按时间排序，带预览 |
-| 快速跳转 | `z 部分路径` | 智能匹配历史目录 |
-| 命令补全 | Tab | 交互式菜单，大小写不敏感 |
-| 历史建议 | 输入时 | 灰色显示，`→` 接受 |
-| Vi 模式 | `ESC` | `hjkl` 移动，`/` 搜索 |
 
 ## 总结
 
 这套配置的核心理念很明确：**去掉黑盒，完全掌控**。
 
-没有 Oh My Zsh 的启动性能损耗，没有插件管理器的复杂 DSL，每个文件、每行配置都清清楚楚。所有文件通过 `chezmoi` 管理（源码在 [GitHub](https://github.com/LuG3Zz/dotfiles)），安装方法见上方「安装与使用」章节。
+没有 Oh My Zsh 的启动性能损耗，没有插件管理器的复杂 DSL，每个文件、每行配置都清清楚楚。所有文件通过 `chezmoi` 管理（源码在 [GitHub](https://github.com/LuG3Zz/dotfiles)）。
 
 如果你也厌倦了那些厚重的框架，不妨试试这个路子。从零开始搭建的配置，会比任何一个开箱即用的方案都更懂你的需求。
