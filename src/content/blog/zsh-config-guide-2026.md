@@ -239,12 +239,27 @@ add_newline = false
 [os]
 disabled = false
 style = "bg:#1e1e2e fg:#ACB0BE"
+
 [username]
 show_always = true
 style_user = "bg:#1e1e2e fg:#89B4FA"
+style_root = "bg:#1e1e2e fg:#F38BA8"
+
 [directory]
 style = "bg:#1e1e2e fg:#F5C2E7"
 truncation_length = 3
+
+[git_branch]
+style = "bg:#1e1e2e fg:#B4BEFE"
+
+[git_status]
+style = "bg:#1e1e2e fg:#B4BEFE"
+
+[cmd_duration]
+style = "bg:#1e1e2e fg:#A6E3A1"
+show_milliseconds = false
+min_time = 2000
+
 [character]
 success_symbol = "[❯](fg:#A6E3A1)"
 error_symbol = "[❯](fg:#F38BA8)"
