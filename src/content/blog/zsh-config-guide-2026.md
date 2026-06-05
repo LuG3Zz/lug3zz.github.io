@@ -218,53 +218,13 @@ alias gl='git log --oneline --graph'
 
 ## Starship 提示符（14-prompt.zsh + starship.toml）
 
-Starship 使用 Catppuccin Mocha 配色，简洁的单行非 Powerline 风格：
+Starship 使用 Jetpack 预设，独特的双行布局——命令信息在上排，目录和 Git 状态在右侧，干净有层次感：
 
-```toml
-format = """
-$username\
-$directory\
-$git_branch\
-$git_status\
-$python\
-$fill\
-$cmd_duration\
-$line_break\
-$character"""
-
-add_newline = false
-
-[username]
-show_always = true
-style_user = "fg:peach"
-
-[directory]
-style = "fg:yellow"
-truncation_length = 3
-
-[git_branch]
-style = "fg:green"
-
-[git_status]
-style = "fg:green"
-
-[python]
-symbol = " "
-style = "fg:sapphire"
-format = '[$symbol$virtualenv]($style)'
-
-[cmd_duration]
-style = "fg:lavender"
-min_time = 2000
-
-[character]
-success_symbol = "[❯](fg:green)"
-error_symbol = "[❯](fg:red)"
+```bash
+starship preset jetpack -o ~/.config/zshrc/starship.toml
 ```
 
-配置文件和 Zsh 配置放在同一目录，通过 `.zshenv` 中的 `STARSHIP_CONFIG` 指向。
-
-效果：用户名（橙）→ 目录（黄）→ Git 信息（绿）→ Python venv（蓝）→ 执行时长（紫），每段使用 Catppuccin Mocha 配色。
+配置文件和 Zsh 配置放在同一目录，通过 `.zshenv` 中的 `STARSHIP_CONFIG` 指向。激活 Python 虚拟环境时会显示 `(venv-name)`。上排显示命令耗时 → 主机名 → 用户名 → `❯`，右侧显示目录和 Git 状态等信息。
 
 ## Zoxide 智能导航（20-customization）
 
