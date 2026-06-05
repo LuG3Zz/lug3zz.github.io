@@ -226,6 +226,7 @@ $username\
 $directory\
 $git_branch\
 $git_status\
+$python\
 $fill\
 $cmd_duration\
 $line_break\
@@ -247,6 +248,11 @@ style = "fg:green"
 [git_status]
 style = "fg:green"
 
+[python]
+symbol = " "
+style = "fg:sapphire"
+format = '[$symbol$virtualenv]($style)'
+
 [cmd_duration]
 style = "fg:lavender"
 min_time = 2000
@@ -258,7 +264,7 @@ error_symbol = "[❯](fg:red)"
 
 配置文件和 Zsh 配置放在同一目录，通过 `.zshenv` 中的 `STARSHIP_CONFIG` 指向。
 
-效果：用户名（橙）→ 目录（黄）→ Git 信息（绿）→ 执行时长（紫），每段使用 Catppuccin Mocha 配色。
+效果：用户名（橙）→ 目录（黄）→ Git 信息（绿）→ Python venv（蓝）→ 执行时长（紫），每段使用 Catppuccin Mocha 配色。
 
 ## Zoxide 智能导航（20-customization）
 
